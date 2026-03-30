@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    />
+
+    <!-- css -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <!-- favicon -->
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
+
+    <title><%= title %></title>
+
+    <style type="text/tailwindcss">
+      @theme {
+        --color-clifford: #da373d;
+      }
+    </style>
+  </head>
+  <body>
+    <div><%- body %></div>
+    <% if (msg) { %>
+    <div
+      id="toast-success"
+      class="fixed right-5 bottom-5 z-50 flex items-center gap-3 rounded-lg border border-green-600 bg-green-600/20 px-3 py-2 text-sm text-green-700 opacity-0 shadow-lg backdrop-blur-md transition-opacity duration-300"
+    >
+      <i class="bi bi-check-circle text-xl"></i>
+      <span><%= msg %></span>
+    </div>
+    <% } %> <% if (typeof errors != "undefined" && errors.length > 0) { %>
+    <div
+      id="toast-error"
+      class="fixed right-5 bottom-5 z-50 flex items-center gap-3 rounded-lg border border-red-600 bg-red-600/20 px-3 py-2 text-sm text-red-700 opacity-0 shadow-lg backdrop-blur-md transition-opacity duration-300"
+    >
+      <i class="bi bi-x-circle text-xl"></i>
+
+      <div class="flex flex-col gap-1">
+        <% errors.forEach(err => { %>
+        <span><%= err.msg %></span>
+        <% }) %>
+      </div>
+    </div>
+    <% } %>
+
+    <script>
+      function showToast(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        setTimeout(() => {
+          el.style.opacity = "1";
+        }, 100);
+
+        setTimeout(() => {
+          el.style.opacity = "0";
+        }, 3000);
+
+        setTimeout(() => {
+          el.remove();
+        }, 3500);
+      }
+
+      showToast("toast-success");
+      showToast("toast-error");
+    </script>
+  </body>
+</html>

@@ -1,0 +1,213 @@
+<div class="grid w-full grid-cols-1 gap-6 p-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="mb-2 text-3xl font-bold">Contacts</h2>
+      <p class="text-neutral-500">Manage your contact list with ease</p>
+    </div>
+    <button
+      class="cursor-pointer rounded-md bg-neutral-950 px-3.5 py-1.5 text-sm text-white transition duration-200 ease-in-out hover:bg-neutral-800"
+      onclick="window.location.href = '/contact/new'"
+    >
+      <i class="bi bi-plus"></i> New Contact
+    </button>
+  </div>
+  <div class="relative">
+    <div class="absolute inset-y-0 left-3 flex h-full items-center">
+      <i class="bi bi-search text-base text-neutral-500"></i>
+    </div>
+    <input
+      type="text"
+      id="search"
+      name="search"
+      value="<%= search %>"
+      placeholder="Search by name, email, phone or company"
+      oninput="searchContacts(this.value)"
+      class="w-full rounded-lg border border-neutral-300 py-1.5 pr-3 pl-10 text-sm shadow-2xs outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-800/20"
+    />
+    <% if (search) { %>
+    <button
+      type="button"
+      onclick="clearSearch()"
+      class="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-neutral-500 transition duration-200 ease-in-out hover:text-neutral-800"
+    >
+      <i class="bi bi-x text-xl"></i>
+    </button>
+    <% } %>
+  </div>
+  <div>
+    <div class="w-full">
+      <!-- Table Container -->
+      <div
+        class="overflow-x-auto rounded-lg border border-neutral-200 shadow-sm"
+      >
+        <table class="w-full text-sm">
+          <thead class="border-b border-neutral-200 bg-neutral-100">
+            <tr>
+              <th class="px-4 py-2 text-left font-medium text-neutral-700">
+                #
+              </th>
+              <th class="px-4 py-2 text-left font-medium text-neutral-700">
+                Avatar
+              </th>
+              <th class="px-4 py-2 text-left font-medium text-neutral-700">
+                Name
+              </th>
+              <th class="px-4 py-2 text-left font-medium text-neutral-700">
+                Email
+              </th>
+              <th class="px-4 py-2 text-left font-medium text-neutral-700">
+                Phone
+              </th>
+              <th class="px-4 py-2 text-left font-medium text-neutral-700">
+                Company
+              </th>
+              <th class="px-4 py-2 text-left font-medium text-neutral-700">
+                Actions
+              </th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-neutral-200">
+            <% if (students.length === 0) { %>
+            <tr>
+              <td colspan="7" class="p-4">
+                <div class="text-center">The contact data is empty.</div>
+              </td>
+            </tr>
+            <% } %> <% students.forEach((contact, i) => { %>
+            <tr class="hover:bg-neutral-50">
+              <td class="px-4 py-2">
+                <%= (currentPage - 1) * limit + (i + 1) %>
+              </td>
+              <td class="px-4 py-2">
+                <% if (contact.image) { %>
+                <img
+                  src="<%= contact.image %>"
+                  alt="Avatar"
+                  class="h-10 w-10 rounded-xl"
+                />
+                <% } else { %>
+                <i
+                  id="default-avatar"
+                  class="bi bi-person-fill mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-300/50 text-2xl text-neutral-600/50"
+                ></i>
+                <% } %>
+              </td>
+              <td class="px-4 py-2"><%= contact.name %></td>
+              <td class="px-4 py-2"><%= contact.email %></td>
+              <td class="px-4 py-2"><%= contact.phone %></td>
+              <td class="px-4 py-2">
+                <%= contact.company ? contact.company : '-' %>
+              </td>
+              <td class="px-4 py-2">
+                <button
+                  class="cursor-pointer rounded-md bg-neutral-950 px-2 py-1 text-sm text-white transition duration-200 ease-in-out hover:bg-neutral-800"
+                  onclick="window.location.href = '/contact/<%= contact._id %>'"
+                >
+                  <i class="bi bi-eye mr-1"></i>
+                  View Detail
+                </button>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+
+      <% if (students.length !== 0) { %>
+      <div class="mt-4 flex items-center justify-between">
+        <p class="text-sm text-neutral-600">
+          Showing <%= (currentPage - 1) * limit + 1 %> – <%=
+          Math.min(currentPage * limit, totalContacts) %> of <%= totalContacts
+          %>
+        </p>
+
+        <div class="flex items-center space-x-2">
+          <!-- Previous -->
+          <% if (currentPage > 1) { %>
+          <a
+            href="/contacts?page=<%= currentPage - 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>"
+            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100"
+          >
+            Previous
+          </a>
+          <% } else { %>
+          <button
+            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-400"
+            disabled
+          >
+            Previous
+          </button>
+          <% } %>
+
+          <!-- Page numbers -->
+
+          <% for (let i = 1; i <= totalPages; i++) { %> <% if (i ===
+          currentPage) { %>
+          <span
+            class="rounded-md bg-neutral-900 px-3 py-1.5 text-sm text-white"
+          >
+            <%= i %>
+          </span>
+          <% } else { %>
+          <a
+            href="/contacts?page=<%= i %><%= search ? '&search=' + encodeURIComponent(search) : '' %>"
+            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100"
+          >
+            <%= i %>
+          </a>
+          <% } %> <% } %>
+
+          <!-- Next -->
+
+          <% if (currentPage < totalPages) { %>
+          <a
+            href="/contacts?page=<%= currentPage + 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>"
+            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100"
+          >
+            Next
+          </a>
+          <% } else { %>
+          <button
+            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-400"
+            disabled
+          >
+            Next
+          </button>
+          <% } %>
+        </div>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script>
+  let timeout = null;
+
+  function searchContacts(value) {
+    clearTimeout(timeout);
+
+    timeout = setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+
+      if (value.trim() === "") {
+        params.delete("search");
+      } else {
+        params.set("search", value);
+      }
+
+      params.set("page", 1);
+
+      window.location.href = "/contacts?" + params.toString();
+    }, 400);
+  }
+
+  function clearSearch() {
+    const input = document.getElementById("search");
+    input.value = "";
+    searchContacts("");
+  }
+</script>
