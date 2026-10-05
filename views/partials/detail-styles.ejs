@@ -1,0 +1,371 @@
+<%# detail pages (contact and note): paper page, a hero with a round badge,
+    the title under a stabilo and a caption line, one wobbly card with
+    labelled rows, quiet buttons, floating back / edit and the delete
+    dialog. The page's own bits (the phone line, the note body) sit in its
+    own view %>
+<style>
+  .detail-page {
+    padding-bottom: 7rem;
+  }
+
+  /* hero row: badge + title on the left, actions on the right */
+  .detail-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 1.25rem;
+  }
+
+  .detail-hero-main {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .detail-avatar {
+    display: inline-flex;
+    width: 5.5rem;
+    height: 5.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: var(--font-comic);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    background-color: var(--color-blush);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 35%, var(--color-line));
+    border-radius: 999px;
+    box-shadow: 5px 4px 0 -1px color-mix(in srgb, var(--color-marker) 45%, transparent);
+  }
+
+  /* wrapper: carries the fade into the page at the bottom (like the peep on
+     /contacts), with room so the marker offset isn't clipped */
+  .detail-avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    padding: 6px;
+    margin: -6px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  }
+
+  .detail-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .detail-name {
+    font-size: 1.6rem;
+    line-height: 1.15;
+    word-break: break-word;
+  }
+
+  .detail-caption {
+    margin-top: 0.3rem;
+    font-family: var(--font-comic);
+    font-weight: 700;
+    color: var(--color-ink-soft);
+  }
+
+  /* the card: wobbly capsule corners, pale line, a second pencil pass */
+  .detail-card {
+    position: relative;
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 34px 28px 36px 26px / 26px 36px 28px 34px;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 4px 12px -8px rgba(0, 0, 0, 0.18);
+  }
+
+  .detail-card::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 22%, var(--color-line));
+    border-radius: 28px 38px 26px 36px / 36px 26px 38px 28px;
+    transform: rotate(-0.5deg) translate(3px, 2px);
+    pointer-events: none;
+  }
+
+  .detail-label {
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+  }
+
+  /* quiet pill buttons: paper fill, pale line (like the search / switch) */
+  .quiet-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.9rem;
+    font-family: var(--font-comic);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    background-color: color-mix(in srgb, var(--color-paper-deep) 55%, var(--color-paper));
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 16px 12px 17px 11px / 11px 17px 12px 16px;
+    cursor: pointer;
+    transition:
+      color 0.35s var(--ease-smooth),
+      border-color 0.35s var(--ease-smooth),
+      background-color 0.35s var(--ease-smooth);
+  }
+
+  .quiet-btn:hover,
+  .quiet-btn:focus-visible {
+    color: var(--color-ink);
+    background-color: var(--color-card);
+    border-color: color-mix(in srgb, var(--color-ink) 30%, var(--color-line));
+    outline: none;
+  }
+
+  .quiet-btn.is-primary {
+    color: var(--color-crayon);
+    background-color: color-mix(in srgb, var(--color-primary) 14%, var(--color-card));
+    border-color: color-mix(in srgb, var(--color-crayon) 30%, var(--color-line));
+  }
+
+  .quiet-btn.is-primary:hover,
+  .quiet-btn.is-primary:focus-visible {
+    color: var(--color-primary-hover);
+    border-color: color-mix(in srgb, var(--color-crayon) 55%, var(--color-line));
+  }
+
+  .detail-divider {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-line) 90%, transparent),
+      transparent 90%
+    );
+  }
+
+  /* info rows: small pastel icon, Comic label, value */
+  .detail-rows {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.1rem;
+  }
+
+  @media (min-width: 640px) {
+    .detail-rows {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .detail-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    min-width: 0;
+  }
+
+  .detail-row-icon {
+    display: inline-flex;
+    width: 2.4rem;
+    height: 2.4rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    color: color-mix(in srgb, var(--color-ink-soft) 85%, var(--color-ink));
+    background-color: var(--icon-bg, var(--color-mint));
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 55% 45% 52% 48% / 48% 55% 45% 52%;
+  }
+
+  .detail-row-value {
+    display: block;
+    font-family: var(--font-comic);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
+
+  a.detail-row-value {
+    transition: color 0.3s var(--ease-smooth);
+  }
+
+  a.detail-row-value:hover {
+    color: var(--color-crayon);
+  }
+
+  .detail-empty {
+    color: color-mix(in srgb, var(--color-ink-soft) 70%, transparent);
+  }
+
+  /* the header's actions: the Actions menu, on the name's line */
+  .detail-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .delete-link {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 1rem;
+    font-family: var(--font-comic);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    transition: color 0.3s var(--ease-smooth);
+  }
+
+  .delete-link:hover,
+  .delete-link:focus-visible {
+    color: var(--color-berry);
+    outline: none;
+  }
+
+  /* in the delete popup, Cancel at the small button's size beside Yes */
+  .delete-dialog .delete-link {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  /* floating back, just above the menu (edit is in the Actions menu) */
+  /* a tab on the right edge, like the menu under it: round on its left,
+     flat where it meets the screen's edge */
+  .fab-back,
+  .fab-back:hover,
+  .fab-back:focus-visible,
+  .fab-back:active {
+    border-right-width: 0;
+    /* stays a tab when pointed at or pressed (the shared round buttons
+       change to another wobbly circle then) */
+    border-radius: 999px 0 0 999px;
+  }
+
+  .fab-back {
+    right: 0;
+    bottom: 5.1rem; /* menu: 1.5rem + 2.5rem + 1.1rem */
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.05rem;
+  }
+
+  /* delete confirmation dialog, same frame as the card */
+  .delete-dialog {
+    position: relative;
+    width: min(22rem, calc(100vw - 2rem));
+    padding: 1.75rem;
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 30px 24px 32px 22px / 22px 32px 24px 30px;
+    box-shadow: 0 16px 36px -18px rgba(0, 0, 0, 0.35);
+  }
+
+  @media (min-width: 640px) and (max-width: 959px) {
+    .detail-page {
+      padding-right: 5.25rem;
+      padding-left: 5.25rem;
+    }
+  }
+
+  @media (max-width: 639px) {
+    /* the same wider gutters as the contacts and writing pages */
+    .detail-page {
+      padding-right: 2.5rem;
+      padding-left: 2.5rem;
+      padding-bottom: 6rem;
+    }
+
+    /* the card sits close under the title, as the list does on the
+       contacts page */
+    .detail-card {
+      margin-top: -0.6rem;
+    }
+
+    /* the avatar on a row of its own, then the name with Actions beside
+       it on the name's first line (the name gives way, wrapping, before
+       Actions would drop under it) */
+    .detail-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      column-gap: 0.75rem;
+      row-gap: 0.9rem;
+      align-items: start;
+    }
+
+    .detail-hero-main {
+      display: contents;
+    }
+
+    .detail-hero .detail-avatar-wrap {
+      grid-column: 1 / -1;
+      justify-self: start;
+    }
+
+    .detail-hero .detail-actions {
+      grid-row: 2;
+      grid-column: 2;
+    }
+
+    /* every bit of text a step smaller, as on the contacts list */
+    .detail-name {
+      font-size: 1.25rem;
+    }
+
+    .detail-avatar {
+      font-size: 1.2rem;
+    }
+
+    .detail-caption,
+    .detail-row-value,
+    .delete-link {
+      font-size: 0.85rem;
+    }
+
+    .detail-label {
+      font-size: 0.75rem;
+    }
+
+    .quiet-btn {
+      font-size: 0.8rem;
+    }
+
+    .detail-row-icon {
+      font-size: 0.95rem;
+    }
+
+    /* the delete dialog with it, as wide as the page's content inside its
+       2.5rem gutters */
+    .delete-dialog {
+      width: calc(100vw - 5rem);
+      padding: 1.4rem;
+    }
+
+    .delete-dialog h2 {
+      font-size: 1.25rem;
+    }
+
+    .delete-dialog p,
+    .delete-dialog .doodle-btn {
+      font-size: 0.85rem;
+    }
+
+    .fab-back {
+      right: 0;
+      bottom: 3.25rem; /* menu: 0.75rem + 1.75rem + 0.75rem */
+      width: 1.75rem;
+      height: 1.75rem;
+      font-size: 0.75rem;
+    }
+  }
+</style>

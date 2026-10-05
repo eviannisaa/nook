@@ -1,0 +1,318 @@
+<% if (path !== "/") { %>
+<%
+  const onContacts = path.startsWith("/contact");
+  const onJournal = path.startsWith("/writing");
+%>
+<style>
+  /* geometry: items sit on a quarter circle around the menu button's centre
+     (up, up-left, left). --x/--y on each item are its cos/sin on that arc,
+     which opens upward from the tab in the bottom-right corner. */
+  .menu-dial {
+    /* the layout gives every body child "position: relative; z-index: 1",
+       which would trap these fixed buttons under the page; stay neutral */
+    position: static;
+    z-index: auto;
+    --menu-size: 2.5rem;
+    --menu-right: 0rem;
+    --menu-bottom: 1.5rem;
+    --item-size: 2.5rem;
+    --radius: 4.6rem;
+  }
+
+  /* a tab on the right edge: round on its left, flat where it meets the
+     screen's edge, as tall as the search / + buttons (2.5rem) */
+  .home-nav {
+    right: var(--menu-right);
+    bottom: var(--menu-bottom);
+    width: var(--menu-size);
+    height: var(--menu-size);
+    font-size: 1.05rem;
+    border-right-width: 0;
+    border-radius: 999px 0 0 999px;
+  }
+
+  /* dim the page (and the other floating buttons) while the dial is open */
+  .menu-dial-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    background-color: color-mix(in srgb, var(--color-paper) 72%, transparent);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.35s var(--ease-smooth),
+      visibility 0s linear 0.35s;
+  }
+
+  .menu-dial.is-open .menu-dial-scrim {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity 0.35s var(--ease-smooth),
+      visibility 0s;
+  }
+
+  /* the menu stays the one green button; a shade deeper while open */
+  .menu-dial.is-open .home-nav {
+    z-index: 50;
+    background-color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+  }
+
+  /* menu icon ↔ close icon, swapped in place */
+  .home-nav .fab-icon {
+    transition:
+      opacity 0.3s var(--ease-smooth),
+      transform 0.4s var(--ease-smooth);
+  }
+
+  .home-nav .dial-icon-close {
+    position: absolute;
+    opacity: 0;
+    transform: rotate(-45deg) scale(0.6);
+  }
+
+  .menu-dial.is-open .home-nav .dial-icon-open {
+    opacity: 0;
+    transform: rotate(45deg) scale(0.6);
+  }
+
+  .menu-dial.is-open .home-nav .dial-icon-close {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* items start tucked behind the menu button and fan out along the arc */
+  .dial-item {
+    position: fixed;
+    /* 0.5rem in from the edge, so the item straight above (or under) the
+       tab doesn't touch it */
+    right: calc(var(--menu-right) + (var(--menu-size) - var(--item-size)) / 2 + 0.5rem);
+    bottom: calc(var(--menu-bottom) + (var(--menu-size) - var(--item-size)) / 2);
+    z-index: 50;
+    display: inline-flex;
+    width: var(--item-size);
+    height: var(--item-size);
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--color-ink);
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 50%, var(--color-line));
+    border-radius: 999px;
+    box-shadow: 0 8px 18px -10px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate(0, 0) scale(0.4);
+    transition:
+      transform 0.45s var(--ease-smooth),
+      opacity 0.3s var(--ease-smooth),
+      border-color 0.3s var(--ease-smooth),
+      visibility 0s linear 0.45s;
+  }
+
+  .menu-dial.is-open .dial-item {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate(calc(var(--x) * var(--radius)), calc(var(--y) * var(--radius)));
+    transition:
+      transform 0.45s var(--ease-smooth) var(--d),
+      opacity 0.3s var(--ease-smooth) var(--d),
+      border-color 0.3s var(--ease-smooth),
+      visibility 0s;
+  }
+
+  /* while fanning out, the items pass under the pointer still resting on
+     the menu: they take no hover until they've landed, so no label flashes */
+  .menu-dial.is-opening .dial-item {
+    pointer-events: none;
+  }
+
+  .dial-item:hover,
+  .dial-item:focus-visible {
+    border-color: var(--color-ink);
+    outline: none;
+  }
+
+  .dial-item:focus-visible {
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--color-secondary) 55%, transparent),
+      0 8px 18px -10px rgba(0, 0, 0, 0.4);
+  }
+
+  /* the page you're on is filled in */
+  .dial-item.is-current {
+    color: var(--color-on-primary);
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  /* small paper label above an item (left of it for .is-left), shown on hover / keyboard
+     focus only (always-on labels would collide along the arc); the text is
+     still the link's accessible name */
+  .dial-label {
+    position: absolute;
+    bottom: calc(100% + 0.4rem);
+    left: 50%;
+    padding: 0.15rem 0.6rem;
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--color-ink);
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 35%, var(--color-line));
+    border-radius: 999px;
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    pointer-events: none;
+    transition:
+      opacity 0.25s var(--ease-smooth),
+      transform 0.3s var(--ease-smooth);
+  }
+
+  .dial-item:hover .dial-label,
+  .dial-item:focus-visible .dial-label {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  /* Writing and Contacts: the label above the item, lined up with its
+     right side and running leftward, so Writing's (straight above the tab,
+     close to the screen's edge) isn't cut off by the edge */
+  .dial-label:not(.is-left) {
+    right: 0;
+    left: auto;
+    transform: translateY(4px);
+  }
+
+  .dial-item:hover .dial-label:not(.is-left),
+  .dial-item:focus-visible .dial-label:not(.is-left) {
+    transform: none;
+  }
+
+  /* Home sits to the left of the button, so its label goes on its left
+     side instead of above */
+  .dial-label.is-left {
+    right: calc(100% + 0.5rem);
+    bottom: auto;
+    top: 50%;
+    left: auto;
+    transform: translate(4px, -50%);
+  }
+
+  .dial-item:hover .dial-label.is-left,
+  .dial-item:focus-visible .dial-label.is-left {
+    transform: translate(0, -50%);
+  }
+
+  /* hovered/focused item floats above its neighbours so its label is clear */
+  .dial-item:hover,
+  .dial-item:focus-visible {
+    z-index: 51;
+  }
+
+  /* phones: matches the smaller floating buttons (1.75rem). Plain CSS (not
+     in a Tailwind layer) so it wins over the size utilities. */
+  @media (max-width: 639px) {
+    .menu-dial {
+      --menu-size: 1.75rem;
+      --menu-right: 0rem;
+      --menu-bottom: 0.75rem;
+      --item-size: 2rem;
+      --radius: 3.6rem;
+    }
+
+    /* the icon with it: 0.9rem */
+    .home-nav {
+      font-size: 0.75rem;
+    }
+
+    /* the floating buttons look 1.75rem here, but each still takes a 2.75rem
+       (44px) touch: an unseen ring around it, out over the edge air */
+    .home-nav::after,
+    .fab-simple::after {
+      content: "";
+      position: absolute;
+      inset: -0.5rem;
+      border-radius: 50%;
+    }
+
+    .dial-item {
+      font-size: 1rem;
+    }
+  }
+</style>
+<!-- Menu: a round button in the bottom-right corner. Pressing it fans out
+     Home / Contacts / Writing in an arc around it (a speed dial) instead of
+     jumping straight home. -->
+<div class="menu-dial" id="menu-dial">
+  <div class="menu-dial-scrim" data-dial-close aria-hidden="true"></div>
+
+  <button
+    type="button"
+    class="home-nav doodle-btn doodle-btn-ink fixed right-6 bottom-6 z-40 h-12 w-12 p-0 text-xl shadow-[0_10px_24px_-10px_rgba(0,0,0,0.5)]"
+    aria-expanded="false"
+    aria-controls="menu-dial-items"
+    aria-label="Open menu"
+    title="Menu"
+  >
+    <%- include("doodle-icon", { name: "grid", cls: "fab-icon dial-icon-open" }) %>
+    <%- include("doodle-icon", { name: "x", cls: "fab-icon dial-icon-close" }) %>
+  </button>
+
+  <nav class="menu-dial-items" id="menu-dial-items" aria-label="Main">
+    <a href="/writing" class="dial-item <%= onJournal ? 'is-current' : '' %>" style="--x: 0; --y: -1; --d: 0ms"
+      <%- onJournal ? 'aria-current="page"' : '' %>>
+      <%- include("doodle-icon", { name: "journal" }) %>
+      <span class="dial-label">Writing</span>
+    </a>
+    <a href="/contacts" class="dial-item <%= onContacts ? 'is-current' : '' %>" style="--x: -0.7071; --y: -0.7071; --d: 40ms"
+      <%- onContacts ? 'aria-current="page"' : '' %>>
+      <%- include("doodle-icon", { name: "people" }) %>
+      <span class="dial-label">Contacts</span>
+    </a>
+    <a href="/" class="dial-item" style="--x: -1; --y: 0; --d: 80ms">
+      <%- include("doodle-icon", { name: "home" }) %>
+      <span class="dial-label is-left">Home</span>
+    </a>
+  </nav>
+</div>
+
+<script>
+  (function () {
+    const dial = document.getElementById("menu-dial");
+    if (!dial) return;
+    const btn = dial.querySelector(".home-nav");
+    // the fan-out: 0.45s, the last item 80ms behind
+    const OPENING_MS = 550;
+    let openingTimer = null;
+    const setOpen = (open) => {
+      clearTimeout(openingTimer);
+      dial.classList.toggle("is-opening", open);
+      if (open) openingTimer = setTimeout(() => dial.classList.remove("is-opening"), OPENING_MS);
+      dial.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", String(open));
+      btn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    };
+    btn.addEventListener("click", () => setOpen(!dial.classList.contains("is-open")));
+
+    // the spot an earlier version let the menu be dragged to: not used now
+    try {
+      localStorage.removeItem("menu-dial-position");
+    } catch {}
+
+    dial.querySelector("[data-dial-close]").addEventListener("click", () => setOpen(false));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && dial.classList.contains("is-open")) {
+        setOpen(false);
+        btn.focus();
+      }
+    });
+  })();
+</script>
+<% } %>

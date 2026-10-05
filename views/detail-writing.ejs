@@ -1,0 +1,501 @@
+<%- include("partials/detail-styles") %>
+<%- include("partials/note-body-styles") %>
+<%- include("partials/actions-menu-styles") %>
+<%
+  const face = writing.mood ? moodFaces[writing.mood] : "";
+  // a locked note reaches the page still encrypted: it's opened here in the
+  // browser with its key (public/js/note-crypto.js)
+  const lockedNote = Boolean(writing.isEncrypted);
+  // the downloaded PDF is named after the note, e.g. hello-world-2026-09-30.pdf
+  const pdfSlug = String(writing.title || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60) || "note";
+  const pdfDay = writing.date ? new Date(writing.date).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" }) : "";
+  const pdfName = pdfSlug + (pdfDay ? "-" + pdfDay : "") + ".pdf";
+  // a value for the inline script: JSON with "<" escaped, so a title can't
+  // close the script tag
+  const jsValue = (v) => JSON.stringify(v).replace(/</g, "\\u003c");
+  // what the browser needs to open it: the ciphertext, or for a note locked
+  // on the server before, only that it's one of those (it's upgraded when
+  // opened)
+  const lockedPayload = lockedNote
+    ? writing.encVersion
+      ? { id: String(writing._id), content: writing.content, salt: writing.salt, iv: writing.iv }
+      : { id: String(writing._id), legacy: true }
+    : null;
+%>
+<style>
+  /* the parts a locked note shows or hides as it's opened: hidden wins over
+     their own display */
+  .detail-page [hidden] {
+    display: none !important;
+  }
+
+  /* note detail: the writing page's header on top, then one card like the
+     contact detail's: the date / mood rows, then the note's title (set
+     like the month on the calendar) under the note's label
+     and the note itself; encrypt / decrypt sits by delete, out of the
+     card */
+  /* the lined paper's rules softer here than in the editor, so they sit
+     back behind the words */
+  .detail-card .note-body {
+    --note-rule-color: color-mix(in srgb, var(--color-line) 38%, transparent);
+  }
+
+  /* the title stands apart from the label above it and the note under
+     it, with clear air on both sides */
+  .detail-note-title {
+    margin-bottom: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+
+  .detail-row-icon.is-face {
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  /* the note's label, with the "decrypted" mark beside it when open */
+  .detail-note-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* the header keeps its actions on the title's line: the title's text
+     gives way (its line wraps) before they would drop under it */
+  .detail-page > .header {
+    flex-wrap: nowrap;
+  }
+
+  .detail-header-text {
+    min-width: 0;
+  }
+
+  .detail-page > .header .detail-actions {
+    align-self: center;
+    flex-shrink: 0;
+  }
+
+  /* the header's actions sit on the line under the title */
+  .detail-page > .header .detail-actions {
+    align-self: flex-end;
+    padding-bottom: 0.3rem;
+  }
+
+  /* when it was last edited, a quiet line under the date */
+  .detail-edited {
+    display: block;
+    margin-top: 0.15rem;
+    font-family: var(--font-comic);
+    font-size: 0.8rem;
+    color: var(--color-ink-soft);
+  }
+
+  @media (max-width: 639px) {
+    .detail-edited {
+      font-size: 0.7rem;
+    }
+  }
+
+  /* a quiet line about the lock */
+  .detail-lock-note {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+  }
+
+  /* the locked text: a pale inset box, scrambled letters you can't select,
+     shown at its full height */
+  .detail-cipher {
+    padding: 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--color-ink-soft);
+    word-break: break-all;
+    user-select: none;
+    background-color: color-mix(in srgb, var(--color-paper-deep) 55%, var(--color-paper));
+    border: 1.5px dashed color-mix(in srgb, var(--color-ink) 16%, var(--color-line));
+    border-radius: 22px 18px 24px 16px / 16px 24px 18px 22px;
+  }
+
+  @media (max-width: 639px) {
+    /* the title's text keeps at least 10rem; when "Decrypt" and Actions
+       don't fit beside that, they step down under it, to the right */
+    .detail-page > .header {
+      flex-wrap: wrap;
+      row-gap: 0.6rem;
+    }
+
+    .detail-header-text {
+      flex: 1 1 10rem;
+    }
+
+    .detail-page > .header .detail-actions {
+      gap: 0.35rem;
+      margin-left: auto;
+    }
+
+    .detail-page > .header .detail-actions {
+      padding-bottom: 0.15rem;
+    }
+
+    .detail-row-icon.is-face {
+      font-size: 1.1rem;
+    }
+
+    /* the note's title at the calendar month's phone size */
+    .detail-note-title {
+      font-size: 1.05rem;
+    }
+
+    /* page title and its line a size down, as on the writing page */
+    .header .header-title {
+      font-size: 1.75rem;
+    }
+
+    .header .header-title + p {
+      font-size: 0.8rem;
+    }
+
+    .detail-lock-note {
+      font-size: 0.75rem;
+    }
+
+    .detail-cipher {
+      font-size: 0.7rem;
+    }
+
+    /* the note reads a step smaller too, headings with it */
+    .detail-note-head {
+      margin-bottom: 0.35rem;
+    }
+
+    .detail-note-title {
+      margin-bottom: 0.5rem;
+    }
+
+    .detail-card .note-body {
+      font-size: 0.8rem;
+    }
+
+    .detail-card .note-body h2 {
+      font-size: 1.08rem;
+    }
+
+    .detail-card .note-body h3 {
+      font-size: 0.92rem;
+    }
+  }
+
+  /* the note reads at the size of the contact's notes, headings with it */
+  @media (min-width: 640px) {
+    .detail-card .note-body {
+      font-size: 0.9rem;
+    }
+
+    .detail-card .note-body h2 {
+      font-size: 1.2rem;
+    }
+
+    .detail-card .note-body h3 {
+      font-size: 1rem;
+    }
+  }
+</style>
+
+<!-- as wide as the writing calendar -->
+<div class="detail-page mx-auto grid w-full max-w-3xl grid-cols-1 gap-6 p-6 pt-14">
+  <!-- floating back button, just above the menu button -->
+  <a
+    href="/writing"
+    aria-label="Back to writing"
+    title="Back to writing"
+    class="fab-back fab-simple doodle-btn fixed right-6 z-40 h-12 w-12 p-0 text-xl"
+  >
+    <%- include("partials/doodle-icon", { name: "arrow-left", cls: "fab-icon" }) %>
+  </a>
+
+  <!-- page header, as on the writing page (the peep reading here), with
+       the note's actions on the same line -->
+  <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
+    <div class="detail-header-text flex items-end gap-4">
+      <%- include("partials/peep", { pose: "read", cls: "header-peep-fade -mb-1 hidden h-24 sm:block" }) %>
+      <div class="pb-1">
+        <h2 class="header-title mb-1 text-4xl">
+          <span class="header-title-mark">Writing</span>
+        </h2>
+        <p class="text-ink-soft font-comic font-bold">Read back your daily notes and stories</p>
+      </div>
+    </div>
+
+    <!-- the note's actions, all in the Actions menu:
+           plain    edit · download PDF · lock note · delete
+           locked   edit · remove lock · delete, with "decrypt" out beside
+                    Actions (without it the note can't be read at all)
+           opened   edit · download PDF · remove lock · delete
+         (decrypt reads it once and it stays locked; edit and remove lock
+         ask the key too. The PDF is made here in the browser, from the note
+         on the page) -->
+    <div class="detail-actions pb-1">
+      <% if (lockedNote) { %>
+      <button type="button" class="header-link is-primary" id="note-open" onclick="openKeyModal(event, 'unlock', '<%= writing._id %>')">
+        <%- include("partials/doodle-icon", { name: "unlock" }) %>
+        Decrypt
+      </button>
+      <% } %>
+
+      <div class="actions-menu">
+        <button type="button" class="header-link actions-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="note-actions-menu">
+          Actions
+          <span class="actions-menu-chevron" aria-hidden="true"><%- include("partials/doodle-icon", { name: "chevron-right" }) %></span>
+        </button>
+        <div class="actions-menu-list" id="note-actions-menu" role="menu" aria-label="Note actions">
+          <a href="/writing/edit/<%= writing._id %>" role="menuitem">
+            <%- include("partials/doodle-icon", { name: "pencil" }) %>
+            Edit
+          </a>
+          <!-- a locked note's PDF waits until it's opened -->
+          <button type="button" role="menuitem" id="note-pdf" data-file="<%= pdfName %>" <%= lockedNote ? "hidden" : "" %>>
+            <%- include("partials/doodle-icon", { name: "download" }) %>
+            <span id="note-pdf-label">Download PDF</span>
+          </button>
+          <% if (writing.isEncrypted) { %>
+          <button type="button" role="menuitem" onclick="openKeyModal(event, 'decrypt', '<%= writing._id %>')">
+            <%- include("partials/doodle-icon", { name: "unlock" }) %>
+            Remove lock
+          </button>
+          <% } else { %>
+          <button type="button" role="menuitem" onclick="openKeyModal(event, 'encrypt', '<%= writing._id %>')">
+            <%- include("partials/doodle-icon", { name: "lock" }) %>
+            Lock note
+          </button>
+          <% } %>
+          <span class="actions-menu-sep" role="separator"></span>
+          <button type="button" role="menuitem" class="is-danger" onclick="openDeleteModal()">
+            <%- include("partials/doodle-icon", { name: "trash" }) %>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- card -->
+  <div class="detail-card grid grid-cols-1 gap-6 p-6 sm:p-8" data-stagger style="--i: 1">
+    <div class="detail-rows">
+      <div class="detail-row">
+        <span class="detail-row-icon" style="--icon-bg: var(--color-blush)">
+          <%- include("partials/doodle-icon", { name: "calendar" }) %>
+        </span>
+        <div class="min-w-0">
+          <span class="detail-label">Date</span>
+          <span class="detail-row-value"><%= formatDate(writing.date) %></span>
+          <%
+            // a note saved before editedAt was kept falls back to its last
+            // update, when that came after it was written
+            const edited =
+              writing.editedAt ||
+              (writing.updatedAt && writing.createdAt && writing.updatedAt - writing.createdAt > 1000
+                ? writing.updatedAt
+                : null);
+          %>
+          <% if (edited) { %>
+          <span class="detail-edited">Edited <%= formatDate(edited) %></span>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="detail-row">
+        <span class="detail-row-icon <%= face ? 'is-face' : '' %>" style="--icon-bg: var(--color-mint)">
+          <% if (face) { %><span aria-hidden="true"><%= face %></span><% } else { %><%- include("partials/doodle-icon", { name: "heart" }) %><% } %>
+        </span>
+        <div class="min-w-0">
+          <span class="detail-label">Feeling</span>
+          <span class="detail-row-value <%= writing.mood ? '' : 'detail-empty' %>"><%= writing.mood || "—" %></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-divider"></div>
+
+    <div class="flex flex-col gap-3">
+      <!-- the note's label, with a small mark beside it on a locked note:
+           "locked", then "decrypted" while it's open for this visit -->
+      <div class="detail-note-head">
+        <span class="detail-label inline-flex items-center gap-1.5">
+          <%- include("partials/doodle-icon", { name: "note" }) %>
+          Note
+        </span>
+        <% if (lockedNote) { %>
+        <span class="detail-lock-note" id="note-locked-mark">
+          <%- include("partials/doodle-icon", { name: "lock" }) %>
+          This note is locked
+        </span>
+        <span class="detail-lock-note" id="note-decrypted" hidden>
+          <%- include("partials/doodle-icon", { name: "unlock" }) %>
+          Decrypted
+        </span>
+        <% } %>
+      </div>
+
+      <!-- the note's title, under its label, set like the month on the
+           calendar -->
+      <h3 class="detail-note-title text-2xl"><span class="header-title-mark"><%= writing.title %></span></h3>
+
+      <% if (lockedNote) { %>
+      <div id="note-locked">
+        <div class="detail-cipher"><%= writing.content.slice(0, 3000) %></div>
+      </div>
+      <!-- filled once the note is opened -->
+      <div class="note-body <%= writing.paper === 'lined' ? 'is-lined' : '' %>" id="note-body" hidden></div>
+      <% } else { %>
+      <div class="note-body <%= writing.paper === 'lined' ? 'is-lined' : '' %>"><%- noteHtml(writing.content) %></div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- delete confirmation -->
+  <div id="delete-modal" class="doodle-modal">
+    <div class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <h2 id="delete-title" class="mb-1 text-2xl">Delete note?</h2>
+      <p class="text-ink-soft font-comic font-bold">
+        <%= writing.title %> will be removed from your notes.
+      </p>
+
+      <div class="mt-6 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeDeleteModal()" class="delete-link">Cancel</button>
+        <form id="delete-form" action="/writing?_method=DELETE" method="post">
+          <input type="hidden" name="_id" value="<%= writing._id %>" />
+          <input type="hidden" name="title" value="<%= writing.title %>" />
+          <button type="submit" class="doodle-btn doodle-btn-sm doodle-btn-danger">
+            Yes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- lock and remove lock send the note back from here: locked, or opened
+       with its key (never the key itself) -->
+  <form id="lock-form" method="post" hidden>
+    <input type="hidden" name="_id" value="<%= writing._id %>" />
+    <input type="hidden" name="redirect" id="lock-redirect" />
+    <input type="hidden" name="content" id="lock-content" />
+    <input type="hidden" name="salt" id="lock-salt" />
+    <input type="hidden" name="iv" id="lock-iv" />
+  </form>
+
+  <%- include("partials/key-modal") %>
+</div>
+
+<% if (lockedNote) { %>
+<script type="application/json" id="note-cipher"><%- jsValue(lockedPayload) %></script>
+<% } %>
+
+<script>
+  // what the key popup does on this page, all in the browser
+  (() => {
+    const lockForm = document.getElementById("lock-form");
+    const cipherEl = document.getElementById("note-cipher");
+    const note = cipherEl ? JSON.parse(cipherEl.textContent) : null;
+    const body = document.querySelector(".detail-card .note-body");
+
+    function send(action, fields) {
+      lockForm.action = "/writing/" + action;
+      document.getElementById("lock-redirect").value =
+        window.location.pathname + window.location.search;
+      ["content", "salt", "iv"].forEach((name) => {
+        document.getElementById("lock-" + name).value = fields[name] || "";
+      });
+      lockForm.submit();
+    }
+
+    window.keyModalActions = {
+      // read it here; it stays locked on the server
+      async unlock(key) {
+        body.innerHTML = await noteCrypto.open(note, key);
+        body.hidden = false;
+        document.getElementById("note-locked").hidden = true;
+        document.getElementById("note-locked-mark").hidden = true;
+        document.getElementById("note-decrypted").hidden = false;
+        document.getElementById("note-open").hidden = true;
+        document.getElementById("note-pdf").hidden = false;
+        closeKeyModal();
+      },
+      // saved open from now on: the words go back, the key doesn't
+      async decrypt(key) {
+        send("decrypt", { content: await noteCrypto.open(note, key) });
+      },
+      // locked here, sent back as ciphertext
+      async encrypt(key) {
+        const problem = noteCrypto.keyProblem(key);
+        if (problem) throw new Error(problem);
+        send("encrypt", await noteCrypto.encrypt(body.innerHTML, key));
+      },
+    };
+
+    // from a locked note on the writing calendar: ask its key straight away
+    // (once the layout's popup helpers below are in)
+    if (note && window.location.hash === "#open") {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+      document.addEventListener("DOMContentLoaded", () => openKeyModal(null, "unlock", note.id));
+    }
+  })();
+</script>
+
+<%- include("partials/actions-menu-script") %>
+
+<script src="/js/note-pdf.js"></script>
+<script>
+  // the note, downloaded as a PDF with its title, date and mood
+  (() => {
+    const btn = document.getElementById("note-pdf");
+    const label = document.getElementById("note-pdf-label");
+    const labelHtml = label.innerHTML;
+    btn.addEventListener("click", async () => {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      label.textContent = "Making PDF…";
+      try {
+        await notePdf({
+          body: document.querySelector(".detail-card .note-body"),
+          title: <%- jsValue(writing.title || "") %>,
+          meta: [
+            <%- jsValue(formatDate(writing.date)) %>,
+            <%- jsValue(writing.mood || "") %>,
+            <%- jsValue(edited ? "Edited " + formatDate(edited) : "") %>,
+          ].filter(Boolean).join("  ·  "),
+          fileName: btn.dataset.file,
+          decrypted: <%- jsValue(Boolean(writing.isEncrypted)) %>,
+        });
+        label.innerHTML = labelHtml;
+      } catch (e) {
+        label.textContent = "Couldn't make it, try again";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  })();
+</script>
+
+<script>
+  const modal = document.getElementById("delete-modal");
+
+  function openDeleteModal() {
+    openModal(modal);
+  }
+
+  function closeDeleteModal() {
+    closeModal(modal);
+  }
+</script>

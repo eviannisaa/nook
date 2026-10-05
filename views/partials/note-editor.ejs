@@ -1,0 +1,2429 @@
+<%
+  // Rich note field for new-writing and edit-writing: paragraphs, headings,
+  // lists, quotes, links and pictures. Pictures are shrunk in the browser and
+  // kept inside the note as data URLs, so encrypting the note covers them.
+  // The paper can be plain or lined (saved with the note), or a drawing pad
+  // whose sketch goes into the note as a picture.
+  // include("partials/note-editor", { content: "<p>…</p>", paper: "lined", error: "" })
+  const editorContent = typeof content !== "undefined" && content ? content : "";
+  const editorPaper = typeof paper !== "undefined" && paper === "lined" ? "lined" : "plain";
+  const editorError = typeof error !== "undefined" && error ? error : "";
+%>
+<%- include("note-body-styles") %>
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+<style>
+  /* the whole editor is one pale field like the inputs above it; the
+     toolbar sits on top, split off by a dashed pen line */
+  .note-editor {
+    display: flex;
+    flex-direction: column;
+    background-color: color-mix(in srgb, var(--color-paper-deep) 55%, var(--color-paper));
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 20px 16px 22px 14px / 14px 22px 16px 20px;
+    transition:
+      border-color 0.5s var(--ease-smooth),
+      background-color 0.5s var(--ease-smooth),
+      box-shadow 0.5s var(--ease-smooth);
+  }
+
+  .note-editor:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 28%, var(--color-line));
+  }
+
+  .note-editor:focus-within {
+    background-color: var(--color-card);
+    border-color: color-mix(in srgb, var(--color-ink) 40%, var(--color-line));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-secondary) 35%, transparent);
+  }
+
+  .field.has-error .note-editor {
+    border-color: var(--color-berry);
+  }
+
+  .note-editor .ql-toolbar.ql-snow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.25rem;
+    padding: 0.45rem 0.6rem;
+    font-family: var(--font-comic);
+    border: 0;
+    border-bottom: 1.5px dashed color-mix(in srgb, var(--color-ink) 12%, var(--color-line));
+  }
+
+  .note-editor .ql-toolbar.ql-snow .ql-formats {
+    display: inline-flex;
+    margin-right: 0;
+    padding-right: 0.25rem;
+    border-right: 1.5px dashed color-mix(in srgb, var(--color-ink) 10%, var(--color-line));
+  }
+
+  .note-editor .ql-toolbar.ql-snow .ql-formats:last-child {
+    border-right: 0;
+  }
+
+  .toolbar-break,
+  .note-editor .ql-toolbar.ql-snow .note-more-menu .more-align {
+    display: none;
+  }
+
+  .note-editor .ql-toolbar.ql-snow button {
+    width: 1.8rem;
+    height: 2rem;
+    padding: 0.35rem 0.25rem;
+    border-radius: 10px 8px 11px 7px / 7px 11px 8px 10px;
+    transition: background-color 0.25s var(--ease-smooth);
+  }
+
+  .note-editor .ql-snow .ql-stroke {
+    stroke: var(--color-ink-soft);
+  }
+
+  .note-editor .ql-snow .ql-fill {
+    fill: var(--color-ink-soft);
+  }
+
+  .note-editor .ql-toolbar.ql-snow button:hover,
+  .note-editor .ql-toolbar.ql-snow button:focus-visible {
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+    outline: none;
+  }
+
+  .note-editor .ql-toolbar.ql-snow button:hover .ql-stroke,
+  .note-editor .ql-toolbar.ql-snow button.ql-active .ql-stroke {
+    stroke: var(--color-ink);
+  }
+
+  .note-editor .ql-toolbar.ql-snow button:hover .ql-fill,
+  .note-editor .ql-toolbar.ql-snow button.ql-active .ql-fill {
+    fill: var(--color-ink);
+  }
+
+  /* the picked format gets a soft marker wash, like the switch thumb */
+  .note-editor .ql-toolbar.ql-snow button.ql-active {
+    background-color: color-mix(in srgb, var(--color-marker) 22%, var(--color-card));
+  }
+
+  /* left is simply the default, not a picked format: its button never
+     lights up, only center and right do */
+  .note-editor .ql-toolbar.ql-snow button.ql-align.ql-active:not([value="center"]):not([value="right"]) {
+    background-color: transparent;
+  }
+
+  .note-editor .ql-toolbar.ql-snow button.ql-align.ql-active:not([value="center"]):not([value="right"]) .ql-stroke {
+    stroke: var(--color-ink-soft);
+  }
+
+  .note-editor .ql-toolbar.ql-snow button.ql-align.ql-active:not([value="center"]):not([value="right"]):hover {
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  }
+
+  .note-editor .ql-toolbar.ql-snow button.ql-align.ql-active:not([value="center"]):not([value="right"]):hover .ql-stroke {
+    stroke: var(--color-ink);
+  }
+
+  /* phones: small buttons kept on one row (no wrapping), lined up from
+     the start with a little air between groups; quote and align live in
+     the "more" menu */
+  @media (max-width: 639px) {
+    .note-editor .ql-toolbar.ql-snow {
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      gap: 0.22rem;
+      /* same side padding as the text inputs above (0.8rem on phones) */
+      padding: 0.3rem 0.8rem;
+    }
+
+    /* buttons in a group get a little air between them too */
+    .note-editor .ql-toolbar.ql-snow .ql-formats {
+      gap: 0.17rem;
+      padding-right: 0.25rem;
+    }
+
+    /* the last group has no line after it, so no room kept for one */
+    .note-editor .ql-toolbar.ql-snow .ql-formats:last-child {
+      padding-right: 0;
+    }
+
+    .note-editor .ql-toolbar.ql-snow button {
+      width: 0.95rem;
+      height: 1.3rem;
+      padding: 0.17rem 0;
+    }
+
+    /* underline, strikethrough, quote and align move into the "more"
+       menu, so the row fits the narrow card with room between buttons */
+    .note-editor .ql-toolbar.ql-snow .note-align,
+    .note-editor .ql-toolbar.ql-snow .note-quote,
+    .note-editor .ql-toolbar.ql-snow .note-extra {
+      display: none;
+    }
+
+    .note-editor .ql-toolbar.ql-snow .note-more-menu .more-align {
+      display: flex;
+    }
+  }
+
+  /* "more" menu (normal field): a small paper card under the dots button,
+     one row per option with its name next to the icon */
+  .note-more {
+    position: relative;
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-more-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--color-ink-soft);
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-more-btn:hover,
+  .note-editor .ql-toolbar.ql-snow .note-more-btn[aria-expanded="true"] {
+    color: var(--color-ink);
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-more-btn[aria-expanded="true"] {
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  }
+
+  .note-more-menu {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    z-index: 20;
+    display: flex;
+    min-width: 11rem;
+    flex-direction: column;
+    padding: 0.3rem;
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 18%, var(--color-line));
+    border-radius: 16px 12px 17px 11px / 11px 17px 12px 16px;
+    box-shadow: 0 10px 28px -14px rgba(0, 0, 0, 0.3);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+    transform-origin: top right;
+    transition:
+      opacity 0.2s var(--ease-smooth),
+      transform 0.2s var(--ease-smooth),
+      visibility 0.2s;
+  }
+
+  .note-more.is-open .note-more-menu {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-more-menu button {
+    display: flex;
+    width: 100%;
+    height: 2.1rem;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 0.6rem;
+    font-family: var(--font-comic);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    text-align: left;
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-more-menu button svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-more-menu button::after {
+    content: attr(data-label);
+    white-space: nowrap;
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-more-menu button:hover {
+    color: var(--color-ink);
+  }
+
+  /* fullscreen has room: no dots, the three are plain toolbar buttons.
+     "is-roomy" follows fullscreen but switches at the narrow end of the
+     move (after growing, before shrinking), so the toolbar never has more
+     buttons than fit and its bottom line doesn't jump */
+  .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-btn {
+    display: none;
+  }
+
+  .note-editor.is-roomy .note-more-menu {
+    position: static;
+    min-width: 0;
+    flex-direction: row;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-menu button {
+    width: 2rem;
+    height: 2rem;
+    padding: 0.35rem;
+  }
+
+  .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-menu button::after {
+    content: none;
+  }
+
+  /* fullscreen on phones: the link / picture / clear buttons laid out in
+     the row keep the same smaller size (after the roomy rule, so it wins) */
+  @media (max-width: 639px) {
+    .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-menu {
+      gap: 0.15rem;
+    }
+
+    .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-menu button {
+      width: 0.9rem;
+      height: 1.3rem;
+      padding: 0.17rem 0;
+    }
+
+    /* their icons fill the small button like the rest, not the menu's
+       bigger size, so they don't run into each other */
+    .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-menu button svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .note-more-menu {
+      transition: none;
+    }
+  }
+
+  .note-editor .ql-container.ql-snow {
+    font-family: inherit;
+    font-size: inherit;
+    border: 0;
+  }
+
+  /* typed text matches the other fields: Comic Neue at 0.95rem, unless a
+     bigger size is picked with A− / A+ (everything below is in em, so the
+     spacing and the lined paper grow with it) */
+  .note-editor .ql-editor {
+    font-family: var(--font-comic);
+    font-size: var(--note-size, 0.95rem);
+    line-height: 1.6;
+    /* the normal field keeps one short height however much is written;
+       longer notes scroll inside it (fullscreen gives the room) */
+    height: 14rem;
+    /* one pair of values for the text and its placeholder, so the
+       placeholder sits exactly where typing starts. The top looks as wide
+       as the sides: a line of text already has room above its letters
+       (half the line gap plus the font's space over the letters), so
+       0.85em comes off the top padding */
+    --pad-x: 1.1rem;
+    --pad-y: calc(var(--pad-x) - 0.85em);
+    padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 0.2rem);
+  }
+
+  .note-editor .ql-editor.ql-blank::before {
+    top: var(--pad-y);
+    right: var(--pad-x);
+    left: var(--pad-x);
+    font-style: normal;
+    /* same as the other fields' placeholder */
+    color: color-mix(in srgb, var(--color-ink-soft) 70%, transparent);
+  }
+
+  .note-editor .ql-editor img {
+    cursor: default;
+  }
+
+  /* link popup: a small paper card instead of the grey default */
+  .note-editor .ql-snow .ql-tooltip {
+    z-index: 10;
+    padding: 0.45rem 0.8rem;
+    font-family: var(--font-comic);
+    color: var(--color-ink);
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 22%, var(--color-line));
+    border-radius: 14px 10px 15px 9px / 9px 15px 10px 14px;
+    box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.2);
+  }
+
+  .note-editor .ql-snow .ql-tooltip input[type="text"] {
+    font-family: var(--font-comic);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 10px;
+  }
+
+  .note-editor .ql-snow .ql-tooltip a {
+    color: var(--color-crayon);
+  }
+
+  /* bottom bar inside the field: the fullscreen toggle on the right */
+  .note-editor-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    border-top: 1.5px dashed color-mix(in srgb, var(--color-ink) 12%, var(--color-line));
+  }
+
+  /* done: a round box like the checklist. Empty and pressable while you're
+     writing in the note; pressing it ticks it sage and leaves the field,
+     and it rests (disabled) until you're in the note again */
+  /* Done and Expand: icon only (the names stay for screen readers and in
+     the tooltip), each a small square button */
+  .note-done {
+    display: inline-flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-ink);
+    cursor: pointer;
+    border-radius: 10px 8px 11px 7px / 7px 11px 8px 10px;
+    transition:
+      color 0.25s var(--ease-smooth),
+      background-color 0.25s var(--ease-smooth),
+      opacity 0.25s var(--ease-smooth);
+  }
+
+  /* hover tooltip for the icon-only buttons: a small ink label above,
+     fading in a beat after the pointer arrives */
+  .note-done,
+  .note-expand {
+    position: relative;
+  }
+
+  .note-done::after,
+  .note-expand::after,
+  .paper-btn::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 0.4rem);
+    left: 50%;
+    z-index: 30;
+    padding: 0.25rem 0.55rem;
+    font-family: var(--font-comic);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    color: var(--color-card);
+    background-color: var(--color-ink);
+    border-radius: 10px 8px 11px 7px / 7px 11px 8px 10px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 3px);
+    transition:
+      opacity 0.2s var(--ease-smooth),
+      transform 0.2s var(--ease-smooth);
+  }
+
+  /* the last button sits at the right edge: its label hangs left instead */
+  .note-expand::after {
+    right: 0;
+    left: auto;
+    transform: translateY(3px);
+  }
+
+  /* the first paper button sits at the left edge: its label hangs right */
+  .paper-btn[data-paper="plain"]::after {
+    left: 0;
+    transform: translateY(3px);
+  }
+
+  @media (hover: hover) {
+    .note-done:not(:disabled):hover::after,
+    .note-expand:hover::after,
+    .paper-btn:hover::after {
+      opacity: 1;
+      transform: translate(-50%, 0);
+      transition-delay: 0.25s;
+    }
+
+    .note-expand:hover::after,
+    .paper-btn[data-paper="plain"]:hover::after {
+      transform: none;
+    }
+  }
+
+  .note-done:focus-visible::after,
+  .note-expand:focus-visible::after,
+  .paper-btn:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  .note-expand:focus-visible::after,
+  .paper-btn[data-paper="plain"]:focus-visible::after {
+    transform: none;
+  }
+
+  .note-done:hover {
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  }
+
+  .note-done:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+    outline-offset: 1px;
+  }
+
+  .note-done:disabled {
+    color: var(--color-ink-soft);
+    cursor: default;
+    background-color: transparent;
+    opacity: 0.5;
+  }
+
+  /* an empty round box while you write; pressing it ticks it sage */
+  .note-done-box {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    background-color: var(--color-card);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 0%;
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 35%, var(--color-line));
+    border-radius: 52% 48% 50% 50% / 48% 52% 48% 52%;
+    transition:
+      background-color 0.25s var(--ease-smooth),
+      border-color 0.25s var(--ease-smooth),
+      background-size 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+
+  .note-done.is-done .note-done-box {
+    background-color: var(--color-crayon);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5.5 12.8c1.6 1.4 3 2.9 4.3 4.5 2.6-3.9 5.4-7.5 8.7-10.6'/%3E%3C/svg%3E");
+    background-size: 70%;
+    border-color: var(--color-crayon);
+  }
+
+  /* marked Done: the text rests, it can't be scrolled until you're back
+     in the note */
+  .note-editor.is-done .ql-editor {
+    overflow: hidden;
+  }
+
+  /* in the form, scrolling past the end of the note carries on to the
+     page (so you can reach Save); only fullscreen keeps it in the note */
+  .note-editor.is-full .ql-editor {
+    overscroll-behavior: contain;
+  }
+
+  /* pulling down on this page never triggers the browser's pull-to-refresh
+     and loses what's written */
+  html:has(.note-editor),
+  html:has(.note-editor) body {
+    overscroll-behavior-y: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .note-done,
+    .note-done-box {
+      transition: none;
+    }
+  }
+
+  .note-expand {
+    display: inline-flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 1rem;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    border-radius: 10px 8px 11px 7px / 7px 11px 8px 10px;
+    transition:
+      color 0.25s var(--ease-smooth),
+      background-color 0.25s var(--ease-smooth);
+  }
+
+  .note-expand > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .note-expand:hover {
+    color: var(--color-ink);
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  }
+
+  .note-expand:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+    outline-offset: 1px;
+  }
+
+  .note-expand-out,
+  /* "is-expanded" is where the field is heading: set the moment you press
+     the button, so the label, the inner spacing and the next press follow
+     straight away instead of snapping when the move ends */
+  .note-editor.is-expanded .note-expand-in {
+    display: none !important;
+  }
+
+  .note-editor.is-expanded .note-expand-out {
+    display: inline-flex !important;
+  }
+
+  /* fullscreen: the field lifts off the form and grows out of its own spot
+     to fill the window (the script animates the size from where it was);
+     a spacer keeps the form from jumping while it's away */
+  .note-editor.is-full {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 70;
+    width: calc(100vw - 1.5rem);
+    height: calc(100dvh - 1.5rem);
+    background-color: var(--color-card);
+    box-shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.35);
+  }
+
+  /* while growing or shrinking, only the size moves: no hover/focus fades */
+  .note-editor.is-switching {
+    transition: none;
+  }
+
+  .note-editor.is-switching .ql-editor {
+    overflow: hidden;
+  }
+
+  /* the "more" menu swaps between a popup and plain buttons in one step;
+     with its fade on, it would flash open for a moment on leaving */
+  .note-editor.is-switching .note-more-menu {
+    transition: none;
+  }
+
+  /* the page behind is washed out with paper, fading in and out */
+  .note-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 69;
+    background-color: color-mix(in srgb, var(--color-paper) 92%, transparent);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s var(--ease-smooth);
+  }
+
+  html.note-fullscreen .note-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* nothing floats over the fullscreen note: the round menu (speed dial),
+     the side menu tab and the back button fade away until you leave it */
+  #menu-dial,
+  #side-menu,
+  .fab-simple {
+    transition:
+      opacity 0.3s var(--ease-smooth),
+      visibility 0.3s;
+  }
+
+  html.note-fullscreen #menu-dial,
+  html.note-fullscreen #side-menu,
+  html.note-fullscreen .fab-simple {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .note-backdrop,
+    #menu-dial,
+    #side-menu,
+    .fab-simple {
+      transition: none;
+    }
+  }
+
+  .note-editor.is-full .ql-container {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .note-editor.is-full .ql-editor {
+    height: 100%;
+  }
+
+  /* roomier fullscreen spacing, switched with the text reflow (see the
+     script) rather than mid-move */
+  .note-editor.is-roomy .ql-editor {
+    --pad-x: 1.5rem;
+  }
+
+  /* while the field grows or shrinks, the text steps aside for a small
+     loader in the middle: three ink dots bouncing one after another; the
+     text comes back once the new size has settled */
+  .note-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s var(--ease-smooth);
+  }
+
+  .note-loading.is-on {
+    opacity: 1;
+  }
+
+  .note-loading i {
+    width: 0.55rem;
+    height: 0.55rem;
+    background-color: var(--color-crayon);
+    border-radius: 52% 48% 50% 50% / 48% 52% 48% 52%;
+    opacity: 0.35;
+    animation: note-loading-dot 0.9s var(--ease-smooth) infinite;
+  }
+
+  .note-loading i:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .note-loading i:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes note-loading-dot {
+    0%,
+    70%,
+    100% {
+      opacity: 0.35;
+      transform: none;
+    }
+    35% {
+      opacity: 1;
+      transform: translateY(-5px);
+    }
+  }
+
+  /* lined paper while writing: the rules come from the text blocks (see
+     note-body-styles); the empty page under the last line keeps ruling
+     on at the normal line height, so the sheet is lined to the bottom */
+  .note-editor.is-lined .ql-editor {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .note-editor.is-lined .ql-editor > * {
+    flex-shrink: 0;
+  }
+
+  .note-editor.is-lined .ql-editor::after {
+    content: "";
+    flex: 1 0 auto;
+    min-height: 1lh;
+  }
+
+  /* headings scale with the picked text size too */
+  .note-editor .ql-editor h2 {
+    font-size: 1.58em;
+  }
+
+  .note-editor .ql-editor h3 {
+    font-size: 1.26em;
+  }
+
+  /* text size: a dropdown in the toolbar, laid out like the "more" menu:
+     the trigger shows Aa and the size in use, the menu lists every size */
+  .size-ctl {
+    position: relative;
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-size-btn {
+    display: inline-flex;
+    width: auto;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 0.35rem;
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-ink-soft);
+    white-space: nowrap;
+  }
+
+  /* Aa only where there's room (fullscreen); the normal field needs the
+     space to keep the toolbar on one line */
+  .note-size-aa {
+    display: none;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: color-mix(in srgb, var(--color-ink) 35%, var(--color-ink-soft));
+  }
+
+  .note-editor.is-roomy .note-size-aa {
+    display: inline;
+  }
+
+  .note-size-chevron {
+    display: inline-flex;
+    transform: rotate(90deg);
+    transition: transform 0.3s var(--ease-smooth);
+  }
+
+  .note-size-chevron .doodle-i {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-size-btn:hover,
+  .note-editor .ql-toolbar.ql-snow .note-size-btn[aria-expanded="true"] {
+    color: var(--color-ink);
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-size-btn[aria-expanded="true"] {
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  }
+
+  .note-size-btn[aria-expanded="true"] .note-size-chevron {
+    transform: rotate(-90deg);
+  }
+
+  /* phones: the size trigger and the dots a step down with the other
+     toolbar buttons (here, after their base rules, so these win) */
+  @media (max-width: 639px) {
+    .note-editor .ql-toolbar.ql-snow .note-size-btn {
+      gap: 0.05rem;
+      padding: 0 0.1rem;
+      font-size: 0.72rem;
+    }
+
+    /* just "Aa" for the size, the name would push the row onto two lines */
+    .note-size-aa {
+      display: inline;
+      font-size: 0.7rem;
+    }
+
+    .note-size-current {
+      display: none;
+    }
+
+    .note-size-chevron .doodle-i {
+      width: 0.45rem;
+      height: 0.45rem;
+    }
+
+    .note-editor .ql-toolbar.ql-snow .note-more-btn {
+      font-size: 0.75rem;
+    }
+
+    /* the typed text lines up with the toolbar and the inputs too; the top
+       padding keeps its usual size (fullscreen keeps its roomier 1.5rem) */
+    .note-editor:not(.is-roomy) .ql-editor {
+      --pad-x: 0.8rem;
+      --pad-y: calc(1.1rem - 0.85em);
+    }
+  }
+
+  /* opens down from the trigger, lined up with its right edge, so it stays
+     inside the note card even with the trigger near the card's end */
+  .note-size-menu {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    z-index: 20;
+    display: flex;
+    min-width: 9rem;
+    flex-direction: column;
+    padding: 0.3rem;
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 18%, var(--color-line));
+    border-radius: 16px 12px 17px 11px / 11px 17px 12px 16px;
+    box-shadow: 0 10px 28px -14px rgba(0, 0, 0, 0.3);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+    transform-origin: top right;
+    transition:
+      opacity 0.2s var(--ease-smooth),
+      transform 0.2s var(--ease-smooth),
+      visibility 0.2s;
+  }
+
+  /* the toolbar's zoom dropdown only shows while drawing */
+  .note-editor .ql-toolbar.ql-snow .zoom-ctl {
+    display: none;
+  }
+
+  .size-ctl.is-open .note-size-menu {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-size-option {
+    display: flex;
+    width: 100%;
+    height: 2.1rem;
+    align-items: center;
+    padding: 0.35rem 0.6rem;
+    font-family: var(--font-comic);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .note-editor .ql-toolbar.ql-snow .note-size-option:hover {
+    color: var(--color-ink);
+  }
+
+  /* the size in use gets the same soft marker wash as a picked format */
+  .note-editor .ql-toolbar.ql-snow .note-size-option[aria-checked="true"] {
+    color: var(--color-ink);
+    background-color: color-mix(in srgb, var(--color-marker) 22%, var(--color-card));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .note-size-menu,
+    .note-size-chevron {
+      transition: none;
+    }
+  }
+
+  .foot-gap {
+    flex: 1;
+  }
+
+  /* paper switch: just three icons, sized and hovered like Done and
+     Expand; the picked one is inked, the others stay faint */
+  .paper-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .paper-btn {
+    position: relative;
+    display: inline-flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: color-mix(in srgb, var(--color-ink-soft) 45%, var(--color-paper));
+    border-radius: 10px 8px 11px 7px / 7px 11px 8px 10px;
+    cursor: pointer;
+    transition:
+      color 0.25s var(--ease-smooth),
+      background-color 0.25s var(--ease-smooth);
+  }
+
+  .paper-btn[aria-pressed="true"],
+  .paper-btn:hover {
+    color: var(--color-ink);
+  }
+
+  .paper-btn:hover {
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  }
+
+  .paper-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+    outline-offset: 1px;
+  }
+
+  /* drawing pad: covers the text area with a card-white sheet and a faint
+     dot grid; the text formatting buttons rest while it's open */
+  .note-draw {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background-color: var(--color-card);
+    border-radius: 0 0 4px 4px;
+  }
+
+  .note-draw[hidden] {
+    display: none;
+  }
+
+  /* the sheet is bigger than the pad (twice as wide, three times as tall):
+     it scrolls inside both ways, the dot grid moving with it, while the
+     tools stay put */
+  .note-draw-scroll {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    overscroll-behavior-x: contain;
+    background-image: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--color-ink) 12%, transparent) 1px,
+      transparent 1.4px
+    );
+    background-size: 18px 18px;
+    background-attachment: local;
+    /* no scrollbars on the sheet: it's slid with the Move tool (or a
+       trackpad / wheel), and bars would sit over the drawing */
+    scrollbar-width: none;
+  }
+
+  .note-draw-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .note-draw canvas {
+    display: block;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  .note-draw.is-erasing canvas {
+    cursor: cell;
+  }
+
+  /* move: dragging (mouse or finger) slides the sheet any way, and up or
+     down past its ends carries on to the page */
+  .note-draw.is-moving canvas {
+    cursor: grab;
+  }
+
+  .note-draw.is-panning canvas {
+    cursor: grabbing;
+  }
+
+  .draw-tools {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.2rem;
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 16%, var(--color-line));
+    border-radius: 14px 10px 15px 9px / 9px 15px 10px 14px;
+    box-shadow: 0 6px 18px -12px rgba(0, 0, 0, 0.3);
+  }
+
+  .draw-tool {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    border-radius: 10px 8px 11px 7px / 7px 11px 8px 10px;
+    transition:
+      color 0.25s var(--ease-smooth),
+      background-color 0.25s var(--ease-smooth);
+  }
+
+  .draw-tool:hover {
+    color: var(--color-ink);
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  }
+
+  .draw-tool[aria-pressed="true"] {
+    color: var(--color-ink);
+    background-color: color-mix(in srgb, var(--color-marker) 22%, var(--color-card));
+  }
+
+  .draw-zoom {
+    position: absolute;
+    right: 0.6rem;
+    bottom: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.2rem;
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 16%, var(--color-line));
+    border-radius: 14px 10px 15px 9px / 9px 15px 10px 14px;
+    box-shadow: 0 6px 18px -12px rgba(0, 0, 0, 0.3);
+  }
+
+  .draw-zoom .draw-tool:disabled {
+    cursor: default;
+    opacity: 0.35;
+    background-color: transparent;
+  }
+
+  .draw-zoom-level {
+    width: 2.2rem;
+    padding: 0.1rem 0;
+    font-family: var(--font-comic);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    border-top: 1.5px dashed color-mix(in srgb, var(--color-ink) 10%, var(--color-line));
+    border-bottom: 1.5px dashed color-mix(in srgb, var(--color-ink) 10%, var(--color-line));
+    transition: color 0.25s var(--ease-smooth);
+  }
+
+  .draw-zoom-level:hover {
+    color: var(--color-ink);
+  }
+
+  .draw-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 2rem;
+    margin-left: 0.2rem;
+    padding: 0 0.7rem;
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-on-primary);
+    cursor: pointer;
+    background-color: var(--color-primary);
+    border-radius: 10px 8px 11px 7px / 7px 11px 8px 10px;
+    transition:
+      background-color 0.25s var(--ease-smooth),
+      opacity 0.25s var(--ease-smooth);
+  }
+
+  .draw-add:hover {
+    background-color: var(--color-primary-hover);
+  }
+
+  .draw-add:disabled {
+    cursor: default;
+    opacity: 0.4;
+  }
+
+  .draw-tool:focus-visible,
+  .draw-add:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+    outline-offset: 1px;
+  }
+
+  .note-editor.is-drawing .ql-toolbar.ql-snow .ql-formats {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  /* while drawing, the text size dropdown gives its place to the sheet's
+     zoom, as the same kind of dropdown up in the toolbar; the + / 100% / −
+     box on the sheet and the resting "more" menu (it only holds text
+     formatting) step out */
+  .note-editor.is-drawing .ql-toolbar.ql-snow .size-ctl:not(.zoom-ctl),
+  .note-editor.is-drawing .ql-toolbar.ql-snow .note-more,
+  .note-editor.is-drawing .draw-zoom {
+    display: none;
+  }
+
+  .note-editor.is-drawing .ql-toolbar.ql-snow .zoom-ctl {
+    display: inline-flex;
+    padding-right: 0;
+    border-right: 0;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .paper-btn {
+      transition: none;
+    }
+  }
+
+  .note-hint {
+    font-family: var(--font-comic);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+  }
+
+  .note-field .field-error[hidden] {
+    display: none;
+  }
+
+  .note-editor.is-busy .ql-editor {
+    cursor: progress;
+    opacity: 0.6;
+  }
+
+  /* tablets and desktop: the toolbar icons a touch smaller, their buttons
+     keep the same size (fullscreen's link / picture / clear in the row
+     too); phones have their own smaller buttons */
+  @media (min-width: 640px) {
+    .note-editor .ql-toolbar.ql-snow .ql-formats > button:not(.note-size-btn):not(.note-more-btn),
+    .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-menu button {
+      padding: 0.45rem 0.33rem;
+    }
+
+    .note-editor .ql-toolbar.ql-snow .note-more-btn {
+      font-size: 1rem;
+    }
+
+    /* the bottom bar's paper, Done and Expand buttons sit closer together */
+    .note-editor-foot {
+      gap: 0.1rem;
+    }
+
+    /* the paper choices closer still: no gap and slimmer buttons */
+    .paper-switch {
+      gap: 0;
+    }
+
+    .paper-btn {
+      width: 1.45rem;
+    }
+  }
+
+  /* fullscreen: the paper choices move up into the toolbar's row, in its
+     right corner behind a dashed line like the other groups; the toolbar
+     keeps that corner free. From 720px, where the row still fits them */
+  @media (min-width: 720px) {
+    .note-editor.is-full-layout .ql-toolbar.ql-snow {
+      padding-right: calc(0.6rem + 4.35rem + 0.5rem);
+    }
+
+    .note-editor.is-full-layout .paper-switch {
+      position: absolute;
+      top: calc(0.45rem + 1rem - 0.875rem);
+      right: 0.6rem;
+      padding-left: 0.25rem;
+      border-left: 1.5px dashed color-mix(in srgb, var(--color-ink) 10%, var(--color-line));
+    }
+
+    /* up there their names hang below instead, the last one leaning left
+       off the corner */
+    .note-editor.is-full-layout .paper-btn::after {
+      top: calc(100% + 0.4rem);
+      bottom: auto;
+      left: 50%;
+      transform: translate(-50%, -3px);
+    }
+
+    .note-editor.is-full-layout .paper-btn[data-paper="draw"]::after {
+      right: 0;
+      left: auto;
+      transform: translateY(-3px);
+    }
+
+    .note-editor.is-full-layout .paper-btn:hover::after,
+    .note-editor.is-full-layout .paper-btn:focus-visible::after {
+      transform: translate(-50%, 0);
+    }
+
+    .note-editor.is-full-layout .paper-btn[data-paper="draw"]:hover::after,
+    .note-editor.is-full-layout .paper-btn[data-paper="draw"]:focus-visible::after {
+      transform: none;
+    }
+  }
+
+  /* desktop: the drawing tools stack in a column down the right edge with
+     "Add to note" as a + button, and go back to a row with its name only
+     in fullscreen, where there's room ("is-full-layout" is switched while
+     the tools are faded out, so the move itself is never seen) */
+  @media (min-width: 960px) {
+    .note-editor:not(.is-full-layout) .draw-tools {
+      flex-direction: column;
+    }
+
+    .note-editor:not(.is-full-layout) .draw-add {
+      width: 2rem;
+      justify-content: center;
+      margin: 0.2rem 0 0;
+      padding: 0;
+    }
+
+    .note-editor:not(.is-full-layout) .draw-add-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+  }
+
+  /* tablets: the drawing tools stack in a column down the right edge too,
+     keeping their full size; "Add to note" becomes a + button */
+  @media (min-width: 640px) and (max-width: 959px) {
+    /* the toolbar keeps desktop's button size on one row: like on phones,
+       underline, strikethrough, quote and align move into the "more" menu */
+    .note-editor .ql-toolbar.ql-snow {
+      flex-wrap: nowrap;
+    }
+
+    .note-editor .ql-toolbar.ql-snow .note-align,
+    .note-editor .ql-toolbar.ql-snow .note-quote,
+    .note-editor .ql-toolbar.ql-snow .note-extra {
+      display: none;
+    }
+
+    .note-editor .ql-toolbar.ql-snow .note-more-menu .more-align {
+      display: flex;
+    }
+
+    /* fullscreen lays the menu's buttons out in the row: just "Aa" for the
+       text size there, so they all still fit */
+    .note-editor.is-roomy .note-size-current {
+      display: none;
+    }
+
+    .draw-tools {
+      flex-direction: column;
+    }
+
+    .draw-add {
+      width: 2rem;
+      justify-content: center;
+      margin: 0.2rem 0 0;
+      padding: 0;
+    }
+
+    .draw-add-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+  }
+
+  /* phones: the bottom bar's buttons slimmer and closer together */
+  @media (max-width: 639px) {
+    .note-editor-foot,
+    .paper-switch {
+      gap: 0;
+    }
+
+    .paper-btn,
+    .note-done,
+    .note-expand {
+      width: 1.4rem;
+      height: 1.5rem;
+    }
+
+    /* the size and "more" dropdowns a step down, like the form text */
+    .note-size-menu {
+      min-width: 5.5rem;
+    }
+
+    .note-more-menu {
+      min-width: 7.5rem;
+    }
+
+    .note-size-menu,
+    .note-more-menu {
+      top: calc(100% + 0.25rem);
+      padding: 0.2rem;
+      border-radius: 12px 9px 13px 8px / 8px 13px 9px 12px;
+    }
+
+    .note-editor .ql-toolbar.ql-snow .note-size-option,
+    .note-editor .ql-toolbar.ql-snow .note-more-menu button {
+      height: 1.4rem;
+      padding: 0.15rem 0.45rem;
+      font-size: 0.72rem;
+    }
+
+    .note-editor .ql-toolbar.ql-snow .note-more-menu button {
+      gap: 0.4rem;
+    }
+
+    /* drawing tools: a slim column down the right edge with small icons;
+       "Add to note" becomes a + button (its name kept for screen readers) */
+    .draw-tools {
+      top: 0.45rem;
+      right: 0.45rem;
+      flex-direction: column;
+      gap: 0.1rem;
+      padding: 0.15rem;
+    }
+
+    .draw-tool,
+    .draw-add {
+      width: 1.5rem;
+      height: 1.5rem;
+      font-size: 0.8rem;
+    }
+
+    .draw-add {
+      justify-content: center;
+      margin: 0.1rem 0 0;
+      padding: 0;
+    }
+
+    .draw-add-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    /* zoom moves to the bottom-left corner, clear of the tools column */
+    .draw-zoom {
+      right: auto;
+      bottom: 0.45rem;
+      left: 0.45rem;
+      padding: 0.15rem;
+    }
+
+    .draw-zoom-level {
+      width: 1.5rem;
+      font-size: 0.58rem;
+    }
+
+    /* fullscreen: the typed text lines up with the toolbar's 0.8rem sides
+       too, keeping fullscreen's roomier top padding */
+    .note-editor.is-roomy .ql-editor {
+      --pad-x: 0.8rem;
+      --pad-y: calc(1.5rem - 0.85em);
+    }
+
+    /* the zoom dropdown's "100%" a step down with the other buttons */
+    .note-editor.is-drawing .ql-toolbar.ql-snow .zoom-ctl .note-size-btn {
+      font-size: 0.66rem;
+    }
+
+    /* the hover and picked wash is a round pill, not a square */
+    .note-editor .ql-toolbar.ql-snow .note-size-option,
+    .note-editor:not(.is-roomy) .ql-toolbar.ql-snow .note-more-menu button {
+      border-radius: 999px;
+    }
+
+    .note-editor:not(.is-roomy) .ql-toolbar.ql-snow .note-more-menu button svg {
+      width: 0.8rem;
+      height: 0.8rem;
+    }
+  }
+</style>
+
+<div class="field note-field sm:col-span-2 <%= editorError ? 'has-error' : '' %>">
+  <label id="content-label" class="field-label"><span>Note</span><span class="req" aria-hidden="true"></span></label>
+  <div class="note-backdrop" id="note-backdrop" aria-hidden="true"></div>
+  <div class="note-editor <%= editorPaper === 'lined' ? 'is-lined' : '' %>" id="note-editor">
+    <div id="note-toolbar">
+      <span class="ql-formats">
+        <button type="button" class="ql-header" value="2" title="Heading" aria-label="Heading"></button>
+        <button type="button" class="ql-header" value="3" title="Subheading" aria-label="Subheading"></button>
+      </span>
+      <span class="ql-formats">
+        <button type="button" class="ql-bold" title="Bold" aria-label="Bold"></button>
+        <button type="button" class="ql-italic" title="Italic" aria-label="Italic"></button>
+        <button type="button" class="ql-underline note-extra" title="Underline" aria-label="Underline"></button>
+        <button type="button" class="ql-strike note-extra" title="Strikethrough" aria-label="Strikethrough"></button>
+      </span>
+      <!-- phones: the toolbar breaks here into two tidy rows -->
+      <span class="toolbar-break" aria-hidden="true"></span>
+      <span class="ql-formats note-align">
+        <button type="button" class="ql-align" value="" title="Align left" aria-label="Align left"></button>
+        <button type="button" class="ql-align" value="center" title="Align center" aria-label="Align center"></button>
+        <button type="button" class="ql-align" value="right" title="Align right" aria-label="Align right"></button>
+      </span>
+      <span class="ql-formats">
+        <button type="button" class="ql-list" value="bullet" title="Bullet list" aria-label="Bullet list"></button>
+        <button type="button" class="ql-list" value="ordered" title="Numbered list" aria-label="Numbered list"></button>
+        <button type="button" class="ql-list" value="check" title="Checklist" aria-label="Checklist"></button>
+        <button type="button" class="ql-blockquote note-quote" title="Quote" aria-label="Quote"></button>
+      </span>
+      <!-- text size: a dropdown of sizes, back to Normal each time the page
+           opens -->
+      <span class="ql-formats size-ctl" id="note-size">
+        <button type="button" class="note-size-btn" id="note-size-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="note-size-menu" title="Text size" aria-label="Text size: Normal">
+          <span class="note-size-aa" aria-hidden="true">Aa</span>
+          <span class="note-size-current" id="note-size-current">Normal</span>
+          <span class="note-size-chevron" aria-hidden="true"><%- include("doodle-icon", { name: "chevron-right" }) %></span>
+        </button>
+        <span class="note-size-menu" id="note-size-menu" role="menu" aria-label="Text size">
+          <% ["Small", "Normal", "Large", "X-Large", "Huge", "Giant"].forEach((label, i) => { %>
+          <button type="button" class="note-size-option" role="menuitemradio" data-size="<%= i %>" aria-checked="<%= i === 1 ? 'true' : 'false' %>" style="--i: <%= i %>"><%= label %></button>
+          <% }) %>
+        </span>
+      </span>
+      <!-- while drawing: the sheet's zoom takes the text size's
+           place, as the same kind of dropdown -->
+      <span class="ql-formats size-ctl zoom-ctl" id="draw-zoom-ctl">
+        <button type="button" class="note-size-btn" id="draw-zoom-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="draw-zoom-menu" title="Zoom" aria-label="Zoom: 100%">
+          <span class="zoom-current" id="draw-zoom-current">100%</span>
+          <span class="note-size-chevron" aria-hidden="true"><%- include("doodle-icon", { name: "chevron-right" }) %></span>
+        </button>
+        <span class="note-size-menu" id="draw-zoom-menu" role="menu" aria-label="Zoom">
+          <% [50, 75, 100, 150, 200, 300].forEach((pct, i) => { %>
+          <button type="button" class="note-size-option" role="menuitemradio" data-zoom="<%= i %>" aria-checked="<%= i === 2 ? 'true' : 'false' %>"><%= pct %>%</button>
+          <% }) %>
+        </span>
+      </span>
+      <!-- link, picture and clear formatting: tucked into a "more" menu in
+           the normal field, laid out like the other groups in fullscreen -->
+      <span class="ql-formats note-more" id="note-more">
+        <button type="button" class="note-more-btn" id="note-more-btn" aria-expanded="false" aria-controls="note-more-menu" title="More options" aria-label="More options">
+          <%- include("doodle-icon", { name: "dots" }) %>
+        </button>
+        <span class="note-more-menu" id="note-more-menu">
+          <button type="button" class="ql-link" title="Link" aria-label="Link" data-label="Link"></button>
+          <button type="button" class="ql-image" title="Add picture" aria-label="Add picture" data-label="Picture"></button>
+          <button type="button" class="ql-clean" title="Clear formatting" aria-label="Clear formatting" data-label="Clear formatting"></button>
+          <!-- phones: underline, strikethrough, quote and the align
+               buttons live here instead of in the row -->
+          <button type="button" class="ql-underline more-align" title="Underline" aria-label="Underline" data-label="Underline"></button>
+          <button type="button" class="ql-strike more-align" title="Strikethrough" aria-label="Strikethrough" data-label="Strikethrough"></button>
+          <button type="button" class="ql-blockquote more-align" title="Quote" aria-label="Quote" data-label="Quote"></button>
+          <button type="button" class="ql-align more-align" value="" title="Align left" aria-label="Align left" data-label="Align left"></button>
+          <button type="button" class="ql-align more-align" value="center" title="Align center" aria-label="Align center" data-label="Align center"></button>
+          <button type="button" class="ql-align more-align" value="right" title="Align right" aria-label="Align right" data-label="Align right"></button>
+        </span>
+      </span>
+    </div>
+    <div id="note-editor-area" aria-labelledby="content-label"><%- noteHtml(editorContent) %></div>
+    <!-- drawing pad: laid over the text area while "Drawing" is picked -->
+    <div class="note-draw" id="note-draw" hidden>
+      <div class="note-draw-scroll" id="note-draw-scroll">
+        <canvas id="note-draw-canvas" aria-label="Drawing pad"></canvas>
+      </div>
+      <div class="draw-tools" role="toolbar" aria-label="Drawing tools">
+        <button type="button" class="draw-tool" data-tool="pen" aria-pressed="true" title="Pencil" aria-label="Pencil">
+          <%- include("doodle-icon", { name: "pencil" }) %>
+        </button>
+        <button type="button" class="draw-tool" data-tool="eraser" aria-pressed="false" title="Eraser" aria-label="Eraser">
+          <%- include("doodle-icon", { name: "eraser" }) %>
+        </button>
+        <button type="button" class="draw-tool" data-tool="move" aria-pressed="false" title="Move the sheet" aria-label="Move">
+          <%- include("doodle-icon", { name: "hand" }) %>
+        </button>
+        <button type="button" class="draw-tool" id="draw-clear" title="Clear drawing" aria-label="Clear drawing">
+          <%- include("doodle-icon", { name: "trash" }) %>
+        </button>
+        <button type="button" class="draw-add" id="draw-add" title="Add to note" disabled>
+          <%- include("doodle-icon", { name: "plus" }) %>
+          <span class="draw-add-label">Add to note</span>
+        </button>
+      </div>
+      <!-- zoom: bottom right, stacked -->
+      <div class="draw-zoom" role="group" aria-label="Zoom">
+        <button type="button" class="draw-tool" id="draw-zoom-in" title="Zoom in" aria-label="Zoom in">
+          <%- include("doodle-icon", { name: "plus" }) %>
+        </button>
+        <button type="button" class="draw-zoom-level" id="draw-zoom-level" title="Back to 100%" aria-label="Reset zoom">100%</button>
+        <button type="button" class="draw-tool" id="draw-zoom-out" title="Zoom out" aria-label="Zoom out">
+          <%- include("doodle-icon", { name: "minus" }) %>
+        </button>
+      </div>
+    </div>
+    <div class="note-editor-foot">
+      <!-- paper: plain, lined, or a drawing pad -->
+      <div class="paper-switch" id="paper-switch" role="group" aria-label="Paper">
+        <button type="button" class="paper-btn" data-paper="plain" aria-pressed="<%= editorPaper === 'plain' %>" data-tip="Plain paper" aria-label="Plain paper">
+          <%- include("doodle-icon", { name: "paper" }) %>
+        </button>
+        <button type="button" class="paper-btn" data-paper="lined" aria-pressed="<%= editorPaper === 'lined' %>" data-tip="Lined paper" aria-label="Lined paper">
+          <%- include("doodle-icon", { name: "lined" }) %>
+        </button>
+        <button type="button" class="paper-btn" data-paper="draw" aria-pressed="false" data-tip="Drawing" aria-label="Drawing">
+          <%- include("doodle-icon", { name: "pencil" }) %>
+        </button>
+      </div>
+      <span class="foot-gap"></span>
+      <button type="button" id="note-done" class="note-done" data-tip="Done" aria-label="Done writing" disabled>
+        <span class="note-done-box" aria-hidden="true"></span>
+        <span class="sr-only">Done</span>
+      </button>
+      <button type="button" id="note-expand" class="note-expand" aria-pressed="false" data-tip="Expand">
+        <span class="note-expand-in"><%- include("doodle-icon", { name: "expand" }) %><span class="sr-only">Expand</span></span>
+        <span class="note-expand-out"><%- include("doodle-icon", { name: "shrink" }) %><span class="sr-only">Exit fullscreen</span></span>
+      </button>
+    </div>
+  </div>
+  <input type="hidden" name="content" id="content" />
+  <input type="hidden" name="paper" id="paper" value="<%= editorPaper %>" />
+  <span id="content-error" class="field-error" <%= editorError ? "" : "hidden" %>><%= editorError %></span>
+  <span class="note-hint">Press Enter for a new paragraph. Paste or drop pictures right into the note.</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script>
+  (function () {
+    // pictures are resized so a note with a few photos stays a few MB
+    const MAX_SIDE = 1600;
+    const MAX_GIF_BYTES = 2 * 1024 * 1024;
+    // same cap as the server: encrypting doubles it and MongoDB stops at 16MB
+    const MAX_NOTE_LENGTH = 7 * 1024 * 1024;
+    const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+
+    const field = document.querySelector(".note-field");
+    const wrap = document.getElementById("note-editor");
+    const input = document.getElementById("content");
+    const errorEl = document.getElementById("content-error");
+
+    const readAsDataURL = (blob) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+    // GIFs keep their animation (so no resize), everything else is redrawn
+    // at most 1600px on its longest side as WebP, or JPEG where the browser
+    // can't write WebP
+    async function shrinkImage(file) {
+      if (!IMAGE_TYPES.includes(file.type)) return null;
+      if (file.type === "image/gif") {
+        if (file.size > MAX_GIF_BYTES) {
+          showError("That GIF is too big (max 2MB).");
+          return null;
+        }
+        return readAsDataURL(file);
+      }
+
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+
+      const webp = canvas.toDataURL("image/webp", 0.85);
+      if (webp.startsWith("data:image/webp")) return webp;
+
+      // JPEG has no transparency: put the picture on white first
+      ctx.globalCompositeOperation = "destination-over";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/jpeg", 0.85);
+    }
+
+    async function insertImages(files, index) {
+      wrap.classList.add("is-busy");
+      clearError();
+      try {
+        for (const file of files) {
+          const url = await shrinkImage(file);
+          if (!url) continue;
+          quill.insertEmbed(index, "image", url, "user");
+          index += 1;
+        }
+        quill.setSelection(index, 0, "user");
+      } catch {
+        showError("That picture couldn't be added. Try another one.");
+      } finally {
+        wrap.classList.remove("is-busy");
+      }
+    }
+
+    function showError(message) {
+      errorEl.textContent = message;
+      errorEl.hidden = false;
+      field.classList.add("has-error");
+    }
+
+    function clearError() {
+      errorEl.hidden = true;
+      field.classList.remove("has-error");
+    }
+
+    const quill = new Quill("#note-editor-area", {
+      theme: "snow",
+      placeholder: "What happened today?",
+      formats: ["header", "bold", "italic", "underline", "strike", "align", "list", "blockquote", "link", "image"],
+      modules: {
+        toolbar: {
+          container: "#note-toolbar",
+          handlers: {
+            // pick one or more pictures from the device
+            image() {
+              const picker = document.createElement("input");
+              picker.type = "file";
+              picker.accept = IMAGE_TYPES.join(",");
+              picker.multiple = true;
+              picker.addEventListener("change", () => {
+                const range = quill.getSelection(true);
+                insertImages([...picker.files], range.index);
+              });
+              picker.click();
+            },
+          },
+        },
+        // pasted and dropped pictures go through the same shrink step
+        uploader: {
+          mimetypes: IMAGE_TYPES,
+          handler(range, files) {
+            insertImages(files, range.index);
+          },
+        },
+      },
+    });
+
+    quill.on("text-change", () => {
+      if (!errorEl.hidden) clearError();
+    });
+
+    // the checklist button never matches "checked"/"unchecked" on its own,
+    // so light it up by hand while the cursor is in a checklist
+    const checkBtn = wrap.querySelector('.ql-list[value="check"]');
+    quill.on("editor-change", () => {
+      const range = quill.getSelection();
+      const list = range ? quill.getFormat(range).list : null;
+      checkBtn.classList.toggle("ql-active", list === "checked" || list === "unchecked");
+    });
+
+    // fullscreen toggle at the bottom of the field; Esc leaves it too
+    const expandBtn = document.getElementById("note-expand");
+
+    const backdrop = document.getElementById("note-backdrop");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const GROW = { duration: 460, easing: "cubic-bezier(0.22, 1, 0.36, 1)" };
+    const SHRINK = { duration: 380, easing: "cubic-bezier(0.4, 0, 0.2, 1)" };
+    let spacer = null;
+    let animation = null;
+
+    // the lifted card's shadow grows and fades with it, rather than
+    // popping on or off at the ends
+    const LIFTED = "0 18px 50px -20px rgba(0, 0, 0, 0.35)";
+    const FLAT = "0 0 0 0 rgba(0, 0, 0, 0)";
+
+    const box = (rect, shadow) => ({
+      top: rect.top + "px",
+      left: rect.left + "px",
+      width: rect.width + "px",
+      height: rect.height + "px",
+      boxShadow: shadow,
+    });
+
+    // link / picture / clear: when fullscreen settles they step out of the
+    // dots one after another; before shrinking they tuck back in and the
+    // dots spin back in their place
+    const moreItems = [...document.querySelectorAll("#note-more-menu button")];
+    const ITEM_IN = { duration: 320, easing: "cubic-bezier(0.34, 1.4, 0.64, 1)", fill: "backwards" };
+    const ITEM_OUT = { duration: 150, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" };
+    let tucking = false;
+
+    function showMoreItems() {
+      if (reduceMotion.matches) return;
+      moreItems.forEach((item, i) =>
+        item.animate(
+          [
+            { opacity: 0, transform: "translateX(-10px) scale(0.7)" },
+            { opacity: 1, transform: "none" },
+          ],
+          { ...ITEM_IN, delay: i * 55 }
+        )
+      );
+    }
+
+    function tuckMoreItems() {
+      if (reduceMotion.matches || !wrap.classList.contains("is-roomy")) return Promise.resolve();
+      const last = moreItems.length - 1;
+      const anims = moreItems.map((item, i) =>
+        item.animate(
+          [
+            { opacity: 1, transform: "none" },
+            { opacity: 0, transform: "translateX(-8px) scale(0.75)" },
+          ],
+          { ...ITEM_OUT, delay: (last - i) * 30 }
+        )
+      );
+      return Promise.all(anims.map((a) => a.finished)).then(() => anims);
+    }
+
+    function showDots() {
+      dotsFade?.cancel();
+      dotsFade = null;
+      if (reduceMotion.matches) return;
+      moreBtn.animate(
+        [
+          { opacity: 0, transform: "rotate(-90deg) scale(0.6)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 300, easing: "cubic-bezier(0.34, 1.4, 0.64, 1)" }
+      );
+    }
+
+    // expanding: the dots bow out right away (spinning off the way they
+    // came in) instead of waiting for the three buttons to replace them
+    let dotsFade = null;
+
+    function hideDots() {
+      dotsFade?.cancel();
+      if (reduceMotion.matches) return;
+      dotsFade = moreBtn.animate(
+        [
+          { opacity: 1, transform: "none" },
+          { opacity: 0, transform: "rotate(90deg) scale(0.6)" },
+        ],
+        { duration: 180, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" }
+      );
+    }
+
+    function setFullscreen(on) {
+      if (tucking || on === wrap.classList.contains("is-expanded")) return;
+      setMoreOpen(false);
+
+      // leaving: tuck the three buttons away first, then shrink
+      if (!on && wrap.classList.contains("is-roomy") && !animation) {
+        tucking = true;
+        tuckMoreItems().then((anims) => {
+          tucking = false;
+          moveFullscreen(false);
+          // they're inside the closed menu now; drop the faded-out state
+          anims?.forEach((a) => a.cancel());
+        });
+        return;
+      }
+      moveFullscreen(on);
+    }
+
+    // while the field moves, the text steps aside for a loader and
+    // comes back at the new size; its lines are also held at the small
+    // width meanwhile, so it only reflows once
+    const editorEl = quill.root;
+
+    function holdTextWidth(width) {
+      editorEl.style.width = width ? width + "px" : "";
+    }
+
+    // loader: three dots in the middle of the field
+    const loader = document.createElement("div");
+    loader.className = "note-loading";
+    loader.setAttribute("aria-hidden", "true");
+    loader.innerHTML = "<i></i><i></i><i></i>";
+    editorEl.parentElement.append(loader);
+    let textFade = null;
+
+    function showLoader() {
+      if (reduceMotion.matches || quill.getText().trim() === "") return;
+      loader.classList.add("is-on");
+
+      textFade?.cancel();
+      textFade = editorEl.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 120,
+        easing: "ease-out",
+        fill: "forwards",
+      });
+    }
+
+    function hideLoader() {
+      if (!loader.classList.contains("is-on")) return;
+      loader.classList.remove("is-on");
+      textFade?.cancel();
+      textFade = editorEl.animate(
+        [
+          { opacity: 0, transform: "translateY(4px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 320, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+      );
+      textFade.onfinish = () => (textFade = null);
+    }
+
+    // what changes place in fullscreen (tablet and desktop): the paper
+    // choices go up to the toolbar row, and the drawing tools turn from a
+    // column into a row (desktop). They fade out as the field starts to
+    // move, switch places while unseen ("is-full-layout"), and fade back
+    // in once it has settled
+    const movers = [document.getElementById("paper-switch"), document.querySelector(".draw-tools")];
+    let moverFades = [];
+
+    function shownMovers() {
+      if (reduceMotion.matches) return [];
+      return movers.filter((el) => !el.closest("[hidden]"));
+    }
+
+    function fadeMoversOut() {
+      moverFades.forEach((a) => a.cancel());
+      moverFades = shownMovers().map((el) =>
+        el.animate([{ opacity: getComputedStyle(el).opacity }, { opacity: 0 }], {
+          duration: 110,
+          easing: "ease-out",
+          fill: "forwards",
+        })
+      );
+      return Promise.all(moverFades.map((a) => a.finished)).catch(() => {});
+    }
+
+    function fadeMoversIn() {
+      if (!moverFades.length) return;
+      moverFades.forEach((a) => a.cancel());
+      moverFades = shownMovers().map((el) =>
+        el.animate(
+          [
+            { opacity: 0, transform: "translateY(-4px) scale(0.97)" },
+            { opacity: 1, transform: "none" },
+          ],
+          { duration: 260, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+        )
+      );
+      moverFades.at(-1)?.addEventListener("finish", () => (moverFades = []));
+    }
+
+    function moveFullscreen(on) {
+      // a click mid-way turns the running move around from where it is
+      const from = wrap.getBoundingClientRect();
+      if (animation) {
+        animation.cancel();
+        animation = null;
+      }
+
+      showLoader();
+      // the paper choices and drawing tools step out of sight first;
+      // shrinking, they go back to their places once unseen
+      fadeMoversOut().then(() => {
+        if (!wrap.classList.contains("is-expanded")) wrap.classList.remove("is-full-layout");
+      });
+      wrap.classList.toggle("is-expanded", on);
+      expandBtn.setAttribute("aria-pressed", String(on));
+      expandBtn.dataset.tip = on ? "Exit fullscreen (Esc)" : "Expand";
+      document.documentElement.classList.toggle("note-fullscreen", on);
+      wrap.classList.add("is-switching");
+
+      // shrinking: back to the dots and the normal spacing, and the lines
+      // take the width they'll have in the form, before the field narrows
+      if (!on) {
+        // (also when turned around mid-grow, while the dots were fading off)
+        if (wrap.classList.contains("is-roomy") || dotsFade) {
+          wrap.classList.remove("is-roomy");
+          showDots();
+        }
+        if (spacer && !reduceMotion.matches) {
+          const border = wrap.offsetWidth - wrap.clientWidth;
+          holdTextWidth(spacer.getBoundingClientRect().width - border);
+        }
+      }
+
+      if (on) {
+        hideDots();
+        // growing: keep the lines at their current width until it's done
+        if (!reduceMotion.matches) holdTextWidth(editorEl.getBoundingClientRect().width);
+        // hold the field's place in the form while it's lifted out
+        if (!spacer) {
+          spacer = document.createElement("div");
+          spacer.style.height = from.height + "px";
+          wrap.after(spacer);
+        }
+        document.documentElement.style.overflow = "hidden";
+        wrap.classList.add("is-full");
+      }
+
+      const done = () => {
+        animation = null;
+        holdTextWidth(null);
+        // grown: now there's room for the three buttons and wider lines
+        if (on) {
+          wrap.classList.add("is-roomy");
+          wrap.classList.add("is-full-layout");
+          // the dots are display:none now; drop their faded-out state
+          dotsFade?.cancel();
+          dotsFade = null;
+          showMoreItems();
+        }
+        if (!on) {
+          const kept = spacer ? spacer.offsetHeight : 0;
+          wrap.classList.remove("is-full");
+          spacer?.remove();
+          spacer = null;
+          document.documentElement.style.overflow = "";
+          // typing in fullscreen can change how tall the field wants to be:
+          // settle into the new height instead of jumping to it
+          const natural = wrap.offsetHeight;
+          if (kept && Math.abs(natural - kept) > 1 && !reduceMotion.matches) {
+            wrap.animate([{ height: kept + "px" }, { height: natural + "px" }], {
+              duration: 220,
+              easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+            });
+          }
+        }
+        // the settled look is painted first, so the card fill doesn't fade
+        // over the normal field; then hover/focus fades come back
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            if (!animation) wrap.classList.remove("is-switching");
+          })
+        );
+        // back to the text, unless the note was just marked Done: then the
+        // field rests (the pressed Expand button lets go of focus, so the
+        // field doesn't keep its active look)
+        if (!doneBtn.classList.contains("is-done")) {
+          quill.focus();
+          quill.scrollSelectionIntoView();
+        } else if (wrap.contains(document.activeElement)) {
+          document.activeElement.blur();
+        }
+        if (!on) wrap.classList.remove("is-full-layout");
+        fadeMoversIn();
+        hideLoader();
+      };
+
+      if (reduceMotion.matches) return done();
+
+      // grow from the field's spot to the full window, or shrink back into
+      // the spot the spacer kept
+      const to = on ? wrap.getBoundingClientRect() : spacer.getBoundingClientRect();
+      animation = wrap.animate([box(from, on ? FLAT : LIFTED), box(to, on ? LIFTED : FLAT)], {
+        ...(on ? GROW : SHRINK),
+        fill: "forwards",
+      });
+      animation.onfinish = () => {
+        animation.cancel();
+        done();
+      };
+    }
+
+    expandBtn.addEventListener("click", () => setFullscreen(!wrap.classList.contains("is-expanded")));
+
+    // "more" menu: opens under the dots, closes after a pick, a click
+    // elsewhere or Esc
+    const more = document.getElementById("note-more");
+    const moreBtn = document.getElementById("note-more-btn");
+
+    function setMoreOpen(open) {
+      more.classList.toggle("is-open", open);
+      moreBtn.setAttribute("aria-expanded", String(open));
+    }
+
+    moreBtn.addEventListener("click", () => setMoreOpen(!more.classList.contains("is-open")));
+    document.getElementById("note-more-menu").addEventListener("click", (e) => {
+      if (e.target.closest("button")) setMoreOpen(false);
+    });
+    document.addEventListener("click", (e) => {
+      if (!more.contains(e.target)) setMoreOpen(false);
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && more.classList.contains("is-open")) {
+        setMoreOpen(false);
+        moreBtn.focus();
+        return;
+      }
+      // the link popup uses Esc to close itself first
+      if (e.key !== "Escape" || !wrap.classList.contains("is-expanded")) return;
+      if (wrap.querySelector(".ql-tooltip.ql-editing")) return;
+      setFullscreen(false);
+    });
+
+    // done: pressable while focus is anywhere in the field (text or
+    // toolbar); pressing it ticks it and leaves the field. Pressing the tick
+    // again, or coming back into the note, clears it
+    const doneBtn = document.getElementById("note-done");
+    const syncDone = () => {
+      // the bottom bar (paper, Expand) and the text size don't count as
+      // writing: using them after Done keeps the tick
+      const active = document.activeElement;
+      const inField = wrap.contains(active) && !active.closest(".note-editor-foot, .size-ctl");
+      // a ticked Done stays pressable, so it can be unticked
+      doneBtn.disabled = !inField && !doneBtn.classList.contains("is-done");
+      if (inField) {
+        doneBtn.classList.remove("is-done");
+        wrap.classList.remove("is-done");
+      }
+    };
+    wrap.addEventListener("focusin", syncDone);
+    // focus may be on its way to another part of the field: check once it lands
+    wrap.addEventListener("focusout", () => setTimeout(syncDone));
+    // keep the text focused while pressing, so the click still counts
+    doneBtn.addEventListener("mousedown", (e) => e.preventDefault());
+    doneBtn.addEventListener("click", () => {
+      // pressed again while ticked: untick and carry on writing
+      if (doneBtn.classList.contains("is-done")) {
+        quill.focus();
+        syncDone();
+        return;
+      }
+      doneBtn.classList.add("is-done");
+      wrap.classList.add("is-done");
+      quill.blur();
+      document.activeElement?.blur();
+      syncDone();
+    });
+
+    document.getElementById("content-label").addEventListener("click", () => quill.focus());
+
+    // ---- text size: a few steps around the normal field size; every note
+    // opens at the normal size ----
+    const SIZES = [0.85, 0.95, 1.1, 1.25, 1.45, 1.7];
+    const sizeCtl = document.getElementById("note-size");
+    const sizeBtn = document.getElementById("note-size-btn");
+    const sizeCurrent = document.getElementById("note-size-current");
+    const sizeOptions = [...document.querySelectorAll("#note-size-menu .note-size-option")];
+    let sizeIndex = 1;
+
+    function applySize() {
+      wrap.style.setProperty("--note-size", SIZES[sizeIndex] + "rem");
+      sizeOptions.forEach((opt, i) => opt.setAttribute("aria-checked", String(i === sizeIndex)));
+      sizeCurrent.textContent = sizeOptions[sizeIndex].textContent;
+      sizeBtn.setAttribute("aria-label", "Text size: " + sizeCurrent.textContent);
+    }
+
+    // the menu opens under the trigger, closes after a pick, a click
+    // elsewhere or Esc
+    function setSizeOpen(open) {
+      sizeCtl.classList.toggle("is-open", open);
+      sizeBtn.setAttribute("aria-expanded", String(open));
+    }
+
+    sizeBtn.addEventListener("click", () => setSizeOpen(!sizeCtl.classList.contains("is-open")));
+    sizeOptions.forEach((opt) =>
+      opt.addEventListener("click", () => {
+        sizeIndex = Number(opt.dataset.size);
+        applySize();
+        setSizeOpen(false);
+        quill.scrollSelectionIntoView();
+      })
+    );
+    document.addEventListener("click", (e) => {
+      if (!sizeCtl.contains(e.target)) setSizeOpen(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && sizeCtl.classList.contains("is-open")) {
+        // caught first (capture), so Esc only closes the menu, not fullscreen
+        e.stopPropagation();
+        setSizeOpen(false);
+        sizeBtn.focus();
+      }
+    }, true);
+    applySize();
+
+    // ---- paper: plain / lined (saved with the note) or the drawing pad ----
+    const paperInput = document.getElementById("paper");
+    const paperBtns = [...document.querySelectorAll(".paper-btn")];
+    const drawLayer = document.getElementById("note-draw");
+    const canvas = document.getElementById("note-draw-canvas");
+    const ctx = canvas.getContext("2d");
+    const addBtn = document.getElementById("draw-add");
+    // the pad sits over the text area, inside Quill's container
+    editorEl.parentElement.append(drawLayer);
+
+    // where the drawing goes: the last place the cursor was in the text
+    let lastIndex = null;
+    quill.on("selection-change", (range) => {
+      if (range) lastIndex = range.index;
+    });
+
+    function setPaper(kind) {
+      const drawing = kind === "draw";
+      const wasDrawing = wrap.classList.contains("is-drawing");
+      // leaving the pad keeps the sketch: it goes into the note first
+      if (wasDrawing && !drawing) addDrawing();
+
+      paperBtns.forEach((btn) => btn.setAttribute("aria-pressed", String(btn.dataset.paper === kind)));
+      wrap.classList.toggle("is-drawing", drawing);
+      drawLayer.hidden = !drawing;
+      if (drawing) {
+        sizeCanvas();
+      } else {
+        paperInput.value = kind;
+        wrap.classList.toggle("is-lined", kind === "lined");
+      }
+    }
+
+    paperBtns.forEach((btn) => btn.addEventListener("click", () => setPaper(btn.dataset.paper)));
+
+    // canvas matches the pad's size at the screen's pixel density; a resize
+    // (fullscreen in or out) keeps what's drawn, pinned to the top left
+    let dpr = 1;
+    const scroller = document.getElementById("note-draw-scroll");
+
+    function sizeCanvas() {
+      const viewW = scroller.clientWidth;
+      const viewH = scroller.clientHeight;
+      if (!viewW || !viewH) return;
+      const nextDpr = Math.min(window.devicePixelRatio || 1, 2);
+      // twice as wide and three times as tall as the pad, and never
+      // smaller than what's already there
+      const cssW = Math.max(viewW * 2, canvas.width / dpr || 0);
+      const cssH = Math.max(viewH * 3, canvas.height / dpr || 0);
+      const w = Math.round(cssW * nextDpr);
+      const h = Math.round(cssH * nextDpr);
+      if (canvas.width === w && canvas.height === h) return;
+
+      let keep = null;
+      if (canvas.width && canvas.height && hasInk) {
+        keep = document.createElement("canvas");
+        keep.width = canvas.width;
+        keep.height = canvas.height;
+        keep.getContext("2d").drawImage(canvas, 0, 0);
+      }
+      canvas.width = w;
+      canvas.height = h;
+      if (keep) ctx.drawImage(keep, 0, 0, keep.width * (nextDpr / dpr), keep.height * (nextDpr / dpr));
+      dpr = nextDpr;
+      applyZoom();
+    }
+
+    // zoom: the sheet is shown bigger or smaller (the drawing itself keeps
+    // its resolution); the middle of the view stays in the middle
+    const ZOOMS = [0.5, 0.75, 1, 1.5, 2, 3];
+    let zoomIndex = 2;
+    const zoomLevel = document.getElementById("draw-zoom-level");
+    const zoomIn = document.getElementById("draw-zoom-in");
+    const zoomOut = document.getElementById("draw-zoom-out");
+    // the same zoom as a dropdown in the toolbar, like text size
+    const zoomCtl = document.getElementById("draw-zoom-ctl");
+    const zoomBtn = document.getElementById("draw-zoom-btn");
+    const zoomCurrent = document.getElementById("draw-zoom-current");
+    const zoomOptions = [...document.querySelectorAll("#draw-zoom-menu .note-size-option")];
+    const zoom = () => ZOOMS[zoomIndex];
+
+    function applyZoom() {
+      const z = zoom();
+      canvas.style.width = (canvas.width / dpr) * z + "px";
+      canvas.style.height = (canvas.height / dpr) * z + "px";
+      scroller.style.backgroundSize = `${18 * z}px ${18 * z}px`;
+      zoomLevel.textContent = Math.round(z * 100) + "%";
+      zoomIn.disabled = zoomIndex === ZOOMS.length - 1;
+      zoomOut.disabled = zoomIndex === 0;
+      zoomCurrent.textContent = zoomLevel.textContent;
+      zoomBtn.setAttribute("aria-label", "Zoom: " + zoomLevel.textContent);
+      zoomOptions.forEach((opt, i) => opt.setAttribute("aria-checked", String(i === zoomIndex)));
+    }
+
+    function setZoom(index) {
+      index = Math.max(0, Math.min(ZOOMS.length - 1, index));
+      if (index === zoomIndex) return;
+      const before = zoom();
+      // the sheet point in the middle of the view, before zooming
+      const cx = (scroller.scrollLeft + scroller.clientWidth / 2) / before;
+      const cy = (scroller.scrollTop + scroller.clientHeight / 2) / before;
+      zoomIndex = index;
+      applyZoom();
+      scroller.scrollLeft = cx * zoom() - scroller.clientWidth / 2;
+      scroller.scrollTop = cy * zoom() - scroller.clientHeight / 2;
+    }
+
+    zoomIn.addEventListener("click", () => setZoom(zoomIndex + 1));
+    zoomOut.addEventListener("click", () => setZoom(zoomIndex - 1));
+    zoomLevel.addEventListener("click", () => setZoom(2));
+
+    function setZoomOpen(open) {
+      zoomCtl.classList.toggle("is-open", open);
+      zoomBtn.setAttribute("aria-expanded", String(open));
+    }
+
+    zoomBtn.addEventListener("click", () => setZoomOpen(!zoomCtl.classList.contains("is-open")));
+    zoomOptions.forEach((opt) =>
+      opt.addEventListener("click", () => {
+        setZoom(Number(opt.dataset.zoom));
+        setZoomOpen(false);
+      })
+    );
+    document.addEventListener("click", (e) => {
+      if (!zoomCtl.contains(e.target)) setZoomOpen(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && zoomCtl.classList.contains("is-open")) {
+        // caught first (capture), so Esc only closes the menu, not fullscreen
+        e.stopPropagation();
+        setZoomOpen(false);
+        zoomBtn.focus();
+      }
+    }, true);
+
+    new ResizeObserver(() => {
+      if (!drawLayer.hidden) sizeCanvas();
+    }).observe(drawLayer);
+
+    // pen strokes: smoothed through the midpoints between pointer samples;
+    // the eraser rubs out with a wider round tip
+    let tool = "pen";
+    let hasInk = false;
+    let stroke = null;
+    // bounds of everything drawn (canvas pixels), for cropping the picture
+    let bounds = null;
+
+    const inkColor = () => getComputedStyle(wrap).getPropertyValue("--color-ink").trim() || "#30332f";
+
+    document.querySelectorAll(".draw-tool[data-tool]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        tool = btn.dataset.tool;
+        document.querySelectorAll(".draw-tool[data-tool]").forEach((b) =>
+          b.setAttribute("aria-pressed", String(b === btn))
+        );
+        drawLayer.classList.toggle("is-erasing", tool === "eraser");
+        drawLayer.classList.toggle("is-moving", tool === "move");
+      })
+    );
+
+    // screen point to sheet pixels, whatever the zoom
+    const pointAt = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) * (canvas.width / rect.width),
+        y: (e.clientY - rect.top) * (canvas.height / rect.height),
+      };
+    };
+
+    function grow(p, r) {
+      if (!bounds) bounds = { x0: p.x - r, y0: p.y - r, x1: p.x + r, y1: p.y + r };
+      else {
+        bounds.x0 = Math.min(bounds.x0, p.x - r);
+        bounds.y0 = Math.min(bounds.y0, p.y - r);
+        bounds.x1 = Math.max(bounds.x1, p.x + r);
+        bounds.y1 = Math.max(bounds.y1, p.y + r);
+      }
+    }
+
+    // move tool: drag to slide the sheet any way; past its top or bottom
+    // the drag scrolls the page instead
+    let pan = null;
+    canvas.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || tool !== "move") return;
+      canvas.setPointerCapture(e.pointerId);
+      pan = { x: e.clientX, y: e.clientY };
+      drawLayer.classList.add("is-panning");
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!pan) return;
+      const dx = pan.x - e.clientX;
+      const dy = pan.y - e.clientY;
+      pan = { x: e.clientX, y: e.clientY };
+      scroller.scrollLeft += dx;
+      const before = scroller.scrollTop;
+      scroller.scrollTop += dy;
+      const left = dy - (scroller.scrollTop - before);
+      if (Math.abs(left) > 0.5) window.scrollBy(0, left);
+    });
+    const endPan = () => {
+      pan = null;
+      drawLayer.classList.remove("is-panning");
+    };
+    canvas.addEventListener("pointerup", endPan);
+    canvas.addEventListener("pointercancel", endPan);
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || tool === "move") return;
+      canvas.setPointerCapture(e.pointerId);
+      const p = pointAt(e);
+      const erasing = tool === "eraser";
+      ctx.globalCompositeOperation = erasing ? "destination-out" : "source-over";
+      ctx.strokeStyle = inkColor();
+      ctx.fillStyle = inkColor();
+      // the pen is the same thickness on the drawing at any zoom (it just
+      // looks thinner zoomed out and thicker zoomed in, like the rest)
+      ctx.lineWidth = (erasing ? 18 : 2.6) * dpr;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      stroke = { last: p, mid: p };
+      // a tap leaves a dot
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+      ctx.fill();
+      if (!erasing) {
+        hasInk = true;
+        grow(p, ctx.lineWidth);
+        addBtn.disabled = false;
+      }
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (!stroke) return;
+      const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      for (const ev of events) {
+        const p = pointAt(ev);
+        const mid = { x: (stroke.last.x + p.x) / 2, y: (stroke.last.y + p.y) / 2 };
+        ctx.beginPath();
+        ctx.moveTo(stroke.mid.x, stroke.mid.y);
+        ctx.quadraticCurveTo(stroke.last.x, stroke.last.y, mid.x, mid.y);
+        ctx.stroke();
+        stroke = { last: p, mid };
+        if (tool === "pen") grow(p, ctx.lineWidth);
+      }
+    });
+
+    const endStroke = () => {
+      stroke = null;
+    };
+    canvas.addEventListener("pointerup", endStroke);
+    canvas.addEventListener("pointercancel", endStroke);
+
+    function clearDrawing() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasInk = false;
+      bounds = null;
+      addBtn.disabled = true;
+    }
+
+    document.getElementById("draw-clear").addEventListener("click", clearDrawing);
+
+    // the sketch, cropped to what's drawn (plus a margin), becomes a picture
+    // in the note where the cursor last was; the pad is cleared for the next
+    function addDrawing() {
+      if (!hasInk || !bounds) return false;
+      const margin = 16 * dpr;
+      const x = Math.max(0, Math.floor(bounds.x0 - margin));
+      const y = Math.max(0, Math.floor(bounds.y0 - margin));
+      const w = Math.min(canvas.width, Math.ceil(bounds.x1 + margin)) - x;
+      const h = Math.min(canvas.height, Math.ceil(bounds.y1 + margin)) - y;
+      if (w <= 0 || h <= 0) return false;
+
+      const out = document.createElement("canvas");
+      out.width = w;
+      out.height = h;
+      const outCtx = out.getContext("2d");
+      // on white, so it reads on any paper
+      outCtx.fillStyle = "#ffffff";
+      outCtx.fillRect(0, 0, w, h);
+      outCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+
+      const index = lastIndex ?? Math.max(0, quill.getLength() - 1);
+      quill.insertEmbed(index, "image", out.toDataURL("image/png"), "user");
+      lastIndex = index + 1;
+      clearDrawing();
+      return true;
+    }
+
+    addBtn.addEventListener("click", () => {
+      addDrawing();
+      // back to writing on the paper that was picked before
+      setPaper(paperInput.value);
+      quill.focus();
+      quill.setSelection(lastIndex, 0, "user");
+    });
+
+    // called by the page's save button: fills the hidden field, or shows why
+    // the note can't be saved yet
+    window.noteEditor = {
+      sync() {
+        // a sketch still on the pad is part of the note
+        if (wrap.classList.contains("is-drawing")) setPaper(paperInput.value);
+        const empty = quill.getText().trim() === "" && !quill.root.querySelector("img");
+        if (empty) {
+          showError("Content is required!");
+          quill.focus();
+          return false;
+        }
+
+        const html = quill.getSemanticHTML().replace(/&nbsp;/g, " ");
+        if (html.length > MAX_NOTE_LENGTH) {
+          showError("This note is too big. Try fewer or smaller images.");
+          return false;
+        }
+
+        input.value = html;
+        return true;
+      },
+
+      // a locked note's words, opened on the edit page once its key is given
+      // (already cleaned by note-crypto)
+      load(html) {
+        quill.setContents(quill.clipboard.convert({ html }), "silent");
+        quill.history.clear();
+      },
+    };
+  })();
+</script>

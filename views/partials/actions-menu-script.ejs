@@ -1,0 +1,44 @@
+<script>
+  // Actions menu: opens under its button; closes after a pick, a click
+  // elsewhere or Esc (focus back on the button); arrow keys move through
+  // its items
+  document.querySelectorAll(".actions-menu").forEach((wrap) => {
+    const btn = wrap.querySelector(".actions-menu-btn");
+    const allItems = [...wrap.querySelectorAll('[role="menuitem"]')];
+    // a page may hide an item for now (a locked note's PDF until it's opened)
+    const shown = () => allItems.filter((item) => !item.hidden);
+
+    function setOpen(open, focusFirst) {
+      wrap.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", String(open));
+      if (open && focusFirst) shown()[0]?.focus();
+    }
+
+    btn.addEventListener("click", () => setOpen(!wrap.classList.contains("is-open")));
+    btn.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setOpen(true, true);
+      }
+    });
+    allItems.forEach((item) => {
+      item.addEventListener("click", () => setOpen(false));
+      item.addEventListener("keydown", (e) => {
+        if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+        e.preventDefault();
+        const items = shown();
+        const i = items.indexOf(item);
+        items[(i + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length].focus();
+      });
+    });
+    document.addEventListener("click", (e) => {
+      if (!wrap.contains(e.target)) setOpen(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && wrap.classList.contains("is-open")) {
+        setOpen(false);
+        btn.focus();
+      }
+    });
+  });
+</script>

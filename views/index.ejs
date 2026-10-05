@@ -1,2 +1,308 @@
-<h1>Hello World!</h1>
-<p>Welcome to my site</p>
+<style>
+  /* same ink line + lighter second pencil pass as the contact cards */
+  .home-card {
+    position: relative;
+    border: 1.5px solid var(--color-ink);
+    border-radius: 30px 24px 32px 22px / 22px 32px 24px 30px;
+  }
+
+  /* body text in Comic Neue; the title and menu names keep the display font */
+  .home-card {
+    font-family: var(--font-comic);
+  }
+
+  .home-card::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 30%, var(--color-line));
+    border-radius: 24px 34px 22px 32px / 32px 22px 34px 24px;
+    transform: rotate(-0.7deg) translate(3px, 2px);
+    pointer-events: none;
+  }
+
+  /* entrance: a calmer cascade than the default list stagger */
+  .home-card [data-stagger] {
+    animation-duration: 0.8s;
+    animation-delay: calc(150ms + var(--i, 0) * 90ms);
+  }
+
+  /* menu rows without a box: icon, a highlighter swipe behind the name,
+     and an arrow. Each row has its own accent.
+
+     Only the arrow is a link. The hover is read from the link box, which never
+     moves, and only the drawing inside it slides. That keeps the hover steady
+     instead of flickering when the arrow moves out from under the cursor.
+
+     Every pose change uses one duration and one even curve so the pieces move
+     together; a tiny cascade (0 / 40 / 80ms) keeps it from feeling mechanical. */
+  .home-option {
+    --accent: var(--color-marker);
+    --icon-bg: var(--color-blush);
+    --highlight: var(--color-marker);
+    --hover-time: 0.55s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 1rem;
+  }
+
+  .home-option-journal {
+    --accent: var(--color-crayon);
+    --icon-bg: var(--color-mint);
+    --highlight: color-mix(in srgb, var(--color-crayon) 25%, #cfeaa0);
+  }
+
+  /* stationary hit area around the arrow */
+  .home-option-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin: -0.25rem -0.5rem -0.25rem 0;
+    border-radius: 999px;
+    outline: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .home-option-name,
+  .home-option-desc,
+  .home-option-name::before,
+  .home-option-icon,
+  .home-option-pop,
+  .home-option-arrow {
+    transition-duration: var(--hover-time);
+    transition-timing-function: var(--ease-smooth);
+  }
+
+  /* text drifts a few pixels toward the arrow */
+  .home-option-name {
+    position: relative;
+    isolation: isolate;
+    align-self: flex-start;
+    padding: 0 0.3rem;
+    margin-left: -0.3rem;
+    transition-property: transform;
+  }
+
+  .home-option-desc {
+    transition-property: color, transform;
+  }
+
+  .home-option:has(.home-option-link:hover) .home-option-name,
+  .home-option:has(.home-option-link:focus-visible) .home-option-name {
+    transform: translateX(3px);
+  }
+
+  .home-option:has(.home-option-link:hover) .home-option-desc,
+  .home-option:has(.home-option-link:focus-visible) .home-option-desc {
+    color: var(--color-ink);
+    transform: translateX(3px);
+    transition-delay: 40ms;
+  }
+
+  /* stabilo swipe, drawn as its own layer so it can scale on the GPU */
+  .home-option-name::before {
+    content: "";
+    position: absolute;
+    inset: auto 0 0.12em 0;
+    z-index: -1;
+    height: 0.62em;
+    background: linear-gradient(
+      100deg,
+      transparent 1%,
+      color-mix(in srgb, var(--highlight) 45%, transparent) 4%,
+      color-mix(in srgb, var(--highlight) 35%, transparent) 94%,
+      transparent 99%
+    );
+    border-radius: 3px 8px 4px 10px;
+    transform-origin: left bottom;
+    animation: home-swipe 0.8s var(--ease-soft) backwards;
+    animation-delay: calc(550ms + var(--i, 0) * 90ms);
+    transition-property: transform;
+  }
+
+  @keyframes home-swipe {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  .home-option:has(.home-option-link:hover) .home-option-name::before,
+  .home-option:has(.home-option-link:focus-visible) .home-option-name::before {
+    transform: scaleY(1.5);
+  }
+
+  .home-option-icon {
+    position: relative;
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-ink);
+    background-color: var(--icon-bg);
+    border: 1.5px solid var(--color-ink);
+    border-radius: 52% 48% 50% 50% / 48% 52% 48% 52%;
+    box-shadow: 3px 3px 0 -1px color-mix(in srgb, var(--accent) 45%, transparent);
+    transition-property: transform, box-shadow;
+  }
+
+  .home-option:has(.home-option-link:hover) .home-option-icon,
+  .home-option:has(.home-option-link:focus-visible) .home-option-icon {
+    transform: scale(1.04);
+    box-shadow: 4px 4px 0 -1px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+
+  /* little comic "pop" lines off the icon's top-left: quiet at rest, clear on hover */
+  .home-option-pop {
+    position: absolute;
+    top: -0.75rem;
+    left: -0.75rem;
+    width: 1.3rem;
+    height: 1.3rem;
+    overflow: visible;
+    fill: none;
+    stroke: var(--color-ink);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    opacity: 0.45;
+    transform: scale(0.9);
+    transform-origin: bottom right;
+    transition-property: transform, opacity;
+  }
+
+  .home-option:has(.home-option-link:hover) .home-option-pop,
+  .home-option:has(.home-option-link:focus-visible) .home-option-pop {
+    opacity: 1;
+    transform: scale(1.05);
+    transition-delay: 40ms;
+  }
+
+  /* the arrow drawing slides inside the still link box */
+  .home-option-arrow {
+    box-sizing: content-box;
+    padding: 0.45rem;
+    color: var(--color-ink-soft);
+    background-color: transparent;
+    border-radius: 52% 48% 50% 50% / 48% 52% 48% 52%;
+    opacity: 0.7;
+    pointer-events: none;
+    transition-property: transform, color, background-color, opacity, box-shadow;
+  }
+
+  .home-option:has(.home-option-link:hover) .home-option-arrow,
+  .home-option:has(.home-option-link:focus-visible) .home-option-arrow {
+    color: var(--accent);
+    background-color: color-mix(in srgb, var(--highlight) 30%, var(--color-card));
+    opacity: 1;
+    transform: translateX(4px);
+    transition-delay: 80ms;
+  }
+
+  .home-option-link:focus-visible .home-option-arrow {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+
+  /* press feedback, last so it wins over the hover pose */
+  .home-option .home-option-link:active .home-option-arrow {
+    transform: translateX(4px) scale(0.92);
+    transition-duration: 0.15s;
+    transition-delay: 0ms;
+  }
+
+  /* phones: as wide as the other pages' cards (2.5rem gutters), and every
+     bit of it a step smaller, like them */
+  @media (max-width: 639px) {
+    .home-page {
+      padding-right: 2.5rem;
+      padding-left: 2.5rem;
+    }
+
+    .home-card {
+      padding: 1.5rem 1.25rem;
+    }
+
+    .home-peep > * {
+      height: 6rem;
+    }
+
+    .home-card h1 {
+      font-size: 1.5rem;
+    }
+
+    .home-card h1 + p {
+      font-size: 0.85rem;
+    }
+
+    .home-card nav {
+      margin-top: 1.1rem;
+    }
+
+    .home-option {
+      gap: 0.75rem;
+      padding: 0.55rem 0.5rem;
+    }
+
+    .home-option-name {
+      font-size: 1rem;
+    }
+
+    .home-option-desc {
+      font-size: 0.78rem;
+    }
+  }
+</style>
+<div class="home-page flex min-h-screen items-center justify-center p-6">
+  <div class="doodle-card home-card w-full max-w-md p-8 text-center">
+    <div class="home-peep flex justify-center" data-stagger style="--i: 0">
+      <%- include("partials/peep", { pose: "wave", cls: "h-32" }) %>
+    </div>
+    <h1 class="mt-2 text-3xl" data-stagger style="--i: 1">Hi there!</h1>
+    <p class="text-ink-soft mt-1 font-bold" data-stagger style="--i: 2">Where would you like to go today?</p>
+
+    <nav class="mt-6 flex flex-col gap-1 text-left">
+      <div data-stagger style="--i: 3" class="home-option">
+        <span class="home-option-icon">
+          <svg class="home-option-pop" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M2 9 l-1.5 -1 M5 4 l-1.5 -3 M10 2.5 l0.5 -2.5" />
+          </svg>
+          <%- include("partials/doodle-icon", { name: "people", cls: "text-xl" }) %>
+        </span>
+        <span class="flex flex-1 flex-col">
+          <span class="home-option-name font-display text-lg font-extrabold">Contacts</span>
+          <span class="home-option-desc text-ink-soft text-sm font-bold">
+            Keep your people in one place
+          </span>
+        </span>
+        <a href="/contacts" class="home-option-link" aria-label="Go to Contacts">
+          <%- include("partials/doodle-icon", { name: "arrow-right", cls: "home-option-arrow text-lg" }) %>
+        </a>
+      </div>
+
+      <div data-stagger style="--i: 4" class="home-option home-option-journal">
+        <span class="home-option-icon">
+          <svg class="home-option-pop" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M2 9 l-1.5 -1 M5 4 l-1.5 -3 M10 2.5 l0.5 -2.5" />
+          </svg>
+          <%- include("partials/doodle-icon", { name: "journal", cls: "text-xl" }) %>
+        </span>
+        <span class="flex flex-1 flex-col">
+          <span class="home-option-name font-display text-lg font-extrabold">Writing</span>
+          <span class="home-option-desc text-ink-soft text-sm font-bold">
+            Write down your daily notes
+          </span>
+        </span>
+        <a href="/writing" class="home-option-link" aria-label="Go to Writing">
+          <%- include("partials/doodle-icon", { name: "arrow-right", cls: "home-option-arrow text-lg" }) %>
+        </a>
+      </div>
+    </nav>
+  </div>
+</div>
+

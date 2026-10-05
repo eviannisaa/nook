@@ -1,0 +1,2948 @@
+<%
+  // same rule as contacts: an active search with results starts with the
+  // search box open; with no results it's tucked away (badge on the button)
+  const searchOpen = !!search && writings.length > 0;
+%>
+<%- include("partials/list-toolbar-styles") %>
+<style>
+  .writing-pager .doodle-btn-sm {
+    padding: 0.25rem 0.65rem;
+    font-size: 0.75rem;
+  }
+
+  /* Previous / Next carry a chevron, shown on phones in place of the word */
+  .writing-pager .pager-arrow {
+    display: none;
+  }
+
+  /* phones: "Showing …" on a line of its own, the buttons under it; the
+     arrows stand in for Previous / Next, the numbers are small round
+     buttons, and they wrap rather than run off the screen */
+  @media (max-width: 639px) {
+    .writing-pager {
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .writing-pager .pager-buttons {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+
+    .writing-pager > p {
+      font-size: 0.75rem;
+    }
+
+    .writing-pager .doodle-btn-sm {
+      min-width: 1.75rem;
+      height: 1.75rem;
+      padding: 0 0.45rem;
+      font-size: 0.7rem;
+    }
+
+    .writing-pager .pager-arrow {
+      display: inline-flex;
+    }
+
+    .writing-pager .pager-word {
+      display: none;
+    }
+  }
+
+  /* calendar framed like the form card on New Contact: pale pen line,
+     wobbly capsule corners and a second, lighter pencil pass around it */
+  .calendar-card {
+    position: relative;
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 34px 28px 36px 26px / 26px 36px 28px 34px;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 4px 12px -8px rgba(0, 0, 0, 0.18);
+  }
+
+  /* prev / next month: bare hand-drawn arrows; on hover a faint marker
+     blob washes in behind them and the arrow nudges its way */
+  .month-nav {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    color: var(--color-ink-soft);
+    transition:
+      color 0.45s var(--ease-smooth),
+      transform 0.5s var(--ease-smooth);
+  }
+
+  .month-nav::before {
+    content: "";
+    position: absolute;
+    inset: 0.15rem;
+    z-index: -1;
+    background-color: color-mix(in srgb, var(--color-marker) 28%, transparent);
+    border-radius: 56% 44% 53% 47% / 46% 55% 45% 54%;
+    opacity: 0;
+    transform: scale(0.5) rotate(-12deg);
+    transition:
+      opacity 0.45s var(--ease-smooth),
+      transform 0.55s var(--ease-smooth);
+  }
+
+  .month-nav:hover,
+  .month-nav:focus-visible {
+    color: var(--color-ink);
+  }
+
+  .month-nav:hover::before,
+  .month-nav:focus-visible::before {
+    opacity: 1;
+    transform: none;
+  }
+
+  .month-nav[aria-label="Previous month"]:hover {
+    transform: translateX(-2px);
+  }
+
+  .month-nav[aria-label="Next month"]:hover {
+    transform: translateX(2px);
+  }
+
+  /* today: handwritten and a touch tilted, with a stabilo pass behind it */
+  .cal-today {
+    position: relative;
+    isolation: isolate;
+    padding: 0.15rem 0.35rem;
+    font-family: var(--font-comic);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    transform: rotate(-2deg);
+    transition: color 0.45s var(--ease-smooth);
+  }
+
+  /* stabilo pass over the lower half of the word, like the page titles:
+     a little tilted, stopping short at the ends like a real marker */
+  .cal-today::before {
+    content: "";
+    position: absolute;
+    right: 0.2rem;
+    bottom: 0.2rem;
+    left: 0.2rem;
+    z-index: -1;
+    height: 0.55em;
+    background: linear-gradient(
+      100deg,
+      transparent 1%,
+      color-mix(in srgb, var(--color-marker) 36%, transparent) 5%,
+      color-mix(in srgb, var(--color-marker) 26%, transparent) 94%,
+      transparent 99%
+    );
+    border-radius: 3px 10px 4px 12px;
+    transform: rotate(-1.5deg);
+    transform-origin: left bottom;
+    opacity: 0.65;
+    transition:
+      transform 0.5s var(--ease-smooth),
+      opacity 0.45s var(--ease-smooth);
+  }
+
+  /* hover on the link: same as a contact card's number, the text inks and
+     the stabilo darkens and thickens */
+  a.cal-today:hover,
+  a.cal-today:focus-visible {
+    color: var(--color-ink);
+  }
+
+  a.cal-today:hover::before,
+  a.cal-today:focus-visible::before {
+    opacity: 1;
+    transform: rotate(-1.5deg) scaleY(1.7);
+  }
+
+  /* already on this month: plain text in full ink (the arrows' hover
+     colour) with a full stabilo, not a link */
+  .cal-today.is-current {
+    color: var(--color-ink);
+    cursor: default;
+  }
+
+  .cal-today.is-current::before {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .month-nav,
+    .month-nav::before,
+    .cal-today,
+    .cal-today::before {
+      transition: none;
+    }
+  }
+
+  /* day popup: same plain card as the other popups (key, delete) */
+  /* as wide as the calendar card (the page's 48rem column less its 1.5rem
+     side padding), so the popup lines up with the month behind it; written in
+     the comic hand throughout, only the weekday and section titles keep
+     their Caveat scrawl */
+  .day-modal-card {
+    max-width: 45rem;
+    gap: 1.1rem;
+    font-family: var(--font-comic);
+    padding-bottom: 1.25rem;
+  }
+
+  .day-modal-card.is-resetting *,
+  .day-modal-card.is-resetting *::before,
+  .day-modal-card.is-resetting *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .day-modal-peep {
+    margin-bottom: -0.35rem;
+  }
+
+  /* popup title: its own doodle, not the page titles' stabilo. The weekday
+     is jotted small and tilted above like a margin note, and the date gets
+     a wavy crayon squiggle underneath */
+  .day-modal-title {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .day-modal-weekday {
+    margin-left: 0.1rem;
+    font-family: var(--font-hand);
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-crayon);
+    transform: rotate(-3deg);
+    transform-origin: left bottom;
+  }
+
+  .day-modal-card h2,
+  .day-modal-card .doodle-btn,
+  .day-modal-card .doodle-input {
+    font-family: var(--font-comic);
+  }
+
+  .day-modal-date {
+    position: relative;
+    padding-bottom: 0.45rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .day-modal-date::after {
+    content: "";
+    position: absolute;
+    right: 0.2rem;
+    bottom: 0;
+    left: 0;
+    height: 0.4rem;
+    background-color: var(--color-crayon);
+    opacity: 0.4;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'%3E%3Cpath d='M1 5.5C8 2 13 2.2 19 4.6s11 2.6 17-.4 11.5-2.8 17.5.2 11 2.4 17-.6 11.8-2.6 17.6.4 11 2.2 16.4-.8c3-1.6 6.2-1.8 8.5-1' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'%3E%3Cpath d='M1 5.5C8 2 13 2.2 19 4.6s11 2.6 17-.4 11.5-2.8 17.5.2 11 2.4 17-.6 11.8-2.6 17.6.4 11 2.2 16.4-.8c3-1.6 6.2-1.8 8.5-1' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  }
+
+  .day-modal-close {
+    flex-shrink: 0;
+    margin: -0.25rem -0.4rem 0 0;
+  }
+
+  .day-modal-close:hover {
+    transform: rotate(8deg);
+  }
+
+  /* list sits on a pen squiggle, same as the doodle divider */
+  .day-modal-body {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem 0.35rem;
+  }
+
+  /* the section head already opens the list, so the first row needs no
+     pen line of its own */
+  .day-modal-body > .day-note:first-child {
+    border-top: 0;
+  }
+
+  /* between notes: a straight dashed pen line drawn as a background, so it
+     doesn't curl up at the ends with the row's wobbly corners */
+  .day-modal-body .day-note + .day-note {
+    border-top: 0;
+    background-image: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-ink) 6%, var(--color-line)) 50%,
+      transparent 0
+    );
+    background-position: left top;
+    background-size: 6px 1.5px;
+    background-repeat: repeat-x;
+  }
+
+  /* search results: the popup's rows in the calendar's card, split by the
+     same straight dashed pen line */
+  .search-notes {
+    display: flex;
+    flex-direction: column;
+    padding: 0.6rem 1rem;
+  }
+
+  .search-notes > .day-note:first-child {
+    border-top: 0;
+  }
+
+  .search-notes .day-note + .day-note {
+    border-top: 0;
+    background-image: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-ink) 6%, var(--color-line)) 50%,
+      transparent 0
+    );
+    background-position: left top;
+    background-size: 6px 1.5px;
+    background-repeat: repeat-x;
+  }
+
+  /* the day sits over the time in the margin, the year (other years only)
+     a step quieter after it */
+  .day-note-day {
+    font-size: 0.85rem;
+    color: var(--color-ink);
+    white-space: nowrap;
+  }
+
+  .day-note-year {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-ink-soft);
+  }
+
+  @media (max-width: 639px) {
+    .search-notes {
+      padding: 0.4rem 0.6rem;
+    }
+
+    .day-note-day {
+      font-size: 0.8rem;
+    }
+
+    .day-note-year {
+      display: inline;
+    }
+  }
+
+  /* the notes open on the same pen line that splits the other sections */
+  .day-notes {
+    padding-top: 1rem;
+    border-top: 1.5px dashed color-mix(in srgb, var(--color-ink) 12%, var(--color-line));
+    /* when the popup runs out of room the notes give way first (their list
+       scrolls); flex-1's 0% basis reads as the content's height in a popup
+       with no set height, so without this the notes and the marks would
+       shrink side by side and squeeze Made before away */
+    flex-shrink: 1000;
+    overflow: hidden;
+  }
+
+  .day-modal-body > .day-empty {
+    padding-block: 0.75rem 1rem;
+  }
+
+  /* every section: a handwritten title on the left, its controls on the
+     right, then the content; sections are split by the same pen line */
+  .day-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .day-section-head {
+    display: flex;
+    min-height: 1.9rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .day-section-title {
+    font-family: var(--font-hand);
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1;
+    color: var(--color-ink);
+    transform: rotate(-2deg);
+    transform-origin: left center;
+  }
+
+  /* highlight dropdown: a hand-drawn trigger showing the pick, and under it
+     the same paper menu as "More options" in the note editor */
+  .kind-row {
+    position: relative;
+  }
+
+  .kind-row[hidden],
+  .kind-current[hidden] {
+    display: none;
+  }
+
+  .kind-toggle {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+  }
+
+  .kind-toggle::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--color-paper-deep);
+    border-radius: 16px 12px 17px 11px / 11px 17px 12px 16px;
+    opacity: 0;
+    transition: opacity 0.25s var(--ease-smooth);
+  }
+
+  .kind-toggle:hover,
+  .kind-toggle[aria-expanded="true"] {
+    color: var(--color-ink);
+  }
+
+  .kind-toggle:hover::before,
+  .kind-toggle[aria-expanded="true"]::before {
+    opacity: 1;
+  }
+
+  .kind-toggle:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+    outline-offset: 1px;
+    border-radius: 10px;
+  }
+
+  /* the pick, after the caption: just its icon */
+  .kind-current {
+    display: inline-flex;
+    color: var(--color-ink);
+  }
+
+  .kind-current .doodle-i {
+    width: 1.1rem;
+    height: 1.1rem;
+    /* a fresh icon each pick, so this plays every time */
+    animation: kind-pick 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes kind-pick {
+    from {
+      opacity: 0;
+      transform: scale(0.5) rotate(-12deg);
+    }
+  }
+
+  .kind-chevron {
+    display: inline-flex;
+    transform: rotate(90deg);
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .kind-chevron .doodle-i {
+    width: 0.9em;
+    height: 0.9em;
+  }
+
+  .kind-toggle[aria-expanded="true"] .kind-chevron {
+    transform: rotate(-90deg);
+  }
+
+  .kind-menu {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    z-index: 20;
+    display: flex;
+    min-width: 11rem;
+    flex-direction: column;
+    padding: 0.3rem;
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 18%, var(--color-line));
+    border-radius: 16px 12px 17px 11px / 11px 17px 12px 16px;
+    box-shadow: 0 10px 28px -14px rgba(0, 0, 0, 0.3);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.95);
+    transform-origin: top right;
+    /* closing: quiet, straight back up */
+    transition:
+      opacity 0.3s ease,
+      transform 0.35s var(--ease-smooth),
+      visibility 0s linear 0.35s;
+  }
+
+  /* opening: springs out of the trigger's corner (the popups' curve) */
+  .kind-row.is-open .kind-menu {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.35s ease-out,
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s;
+  }
+
+  .kind-glide {
+    position: absolute;
+    top: 0;
+    left: 0.3rem;
+    right: 0.3rem;
+    height: var(--glide-h, 2.1rem);
+    background-color: var(--color-paper-deep);
+    border-radius: 12px 9px 13px 8px / 8px 13px 9px 12px;
+    opacity: 0;
+    transform: translateY(var(--glide-y, 0)) scale(0.96);
+    pointer-events: none;
+    transition:
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      height 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.45s ease;
+  }
+
+  .kind-menu.is-gliding .kind-glide {
+    opacity: 1;
+    transform: translateY(var(--glide-y, 0));
+  }
+
+  /* first hover after the menu opens: appear in place, don't fly in */
+  .kind-menu.glide-jump .kind-glide {
+    transition: opacity 0.45s ease;
+  }
+
+  .kind-option {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100%;
+    height: 2.1rem;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 0.6rem;
+    font-family: var(--font-comic);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+      color 0.45s ease,
+      opacity 0.25s ease,
+      transform 0.3s var(--ease-smooth);
+  }
+
+  /* the options follow the menu down one after another */
+  .kind-row.is-open .kind-option {
+    opacity: 1;
+    transform: none;
+    transition:
+      color 0.45s ease,
+      opacity 0.4s ease-out calc(0.08s + var(--i) * 0.05s),
+      transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) calc(0.08s + var(--i) * 0.05s);
+  }
+
+  .kind-option .doodle-i {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+    /* leaving: settles back slowly, no bounce */
+    transition: transform 0.7s var(--ease-smooth);
+  }
+
+  /* hovered: the icon leans in a touch, a beat after the glide arrives,
+     on a long soft ease-out instead of a quick spring */
+  .kind-option:hover .doodle-i,
+  .kind-option:focus-visible .doodle-i {
+    transform: translateX(2px) rotate(-5deg);
+    transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1) 0.06s;
+  }
+
+  .kind-option:hover,
+  .kind-option[aria-checked="true"] {
+    color: var(--color-ink);
+  }
+
+  /* keyboard focus rides the same glide, so no ring is needed */
+  .kind-option:focus-visible {
+    color: var(--color-ink);
+    outline: none;
+  }
+
+  /* stabilo over the message text (not the title) of the notes picked in the dropdown;
+     drawn as a background on the inline text so it follows every line */
+  .day-note-ink {
+    background-image: linear-gradient(
+      100deg,
+      transparent 0.5%,
+      color-mix(in srgb, var(--color-marker) 36%, transparent) 2%,
+      color-mix(in srgb, var(--color-marker) 26%, transparent) 98%,
+      transparent 99.5%
+    );
+    background-repeat: no-repeat;
+    background-position: 0 88%;
+    background-size: 0% 0.75em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    transition: background-size 0.45s var(--ease-smooth);
+  }
+
+  .day-modal-body[data-mark="open"] .day-note[data-kind="open"] .day-note-ink,
+  .day-modal-body[data-mark="locked"] .day-note[data-kind="locked"] .day-note-ink {
+    background-size: 100% 0.75em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kind-chevron,
+    .day-note-ink {
+      transition: none;
+    }
+
+    .kind-menu,
+    .kind-row.is-open .kind-menu,
+    .kind-option,
+    .kind-row.is-open .kind-option,
+    .kind-option .doodle-i,
+    .kind-glide {
+      transition: none;
+    }
+
+    .kind-current .doodle-i {
+      animation: none;
+    }
+  }
+
+  /* one row per note: time in the margin like a journal, then the note;
+     no cards, rows split by a faint pen line */
+  .day-note {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: 3.6rem 1fr auto;
+    align-items: start;
+    gap: 0.75rem;
+    padding: 0.9rem 0.6rem;
+    border-radius: 18px 14px 20px 12px / 12px 20px 14px 18px;
+  }
+
+  .day-note {
+    border-top: 1.5px dashed color-mix(in srgb, var(--color-ink) 10%, var(--color-line));
+  }
+
+
+  /* left margin, like a journal: the time, so the title line stays clean */
+  .day-note-meta {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding-top: 0.2rem;
+    font-family: var(--font-comic);
+    font-weight: 700;
+    transform: rotate(-2deg);
+  }
+
+  .day-note-time {
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+    white-space: nowrap;
+  }
+
+  .day-note-main {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .day-note-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.35;
+    /* a step softer than full ink, so the list reads calm */
+    color: color-mix(in srgb, var(--color-ink) 78%, var(--color-card));
+    transition: color 0.45s var(--ease-smooth);
+  }
+
+  /* locked notes are buttons (they open the key popup), so reset the
+     button look to match the link rows */
+  button.day-note {
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    background: none;
+  }
+
+  /* the padlock takes the arrow's place: always a bit stronger than the
+     arrow, and on hover it wiggles like a lock being tried */
+  .day-note-go.day-note-lock {
+    --go-blob: var(--color-blush);
+    color: var(--color-berry);
+  }
+
+  .day-note-lock .doodle-i {
+    width: 1.15em;
+    height: 1.15em;
+  }
+
+  .day-note.is-locked:hover .day-note-go,
+  .day-note.is-locked:focus-visible .day-note-go {
+    transform: rotate(-10deg);
+  }
+
+  .day-note-text {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--color-ink-soft);
+    /* encrypted notes are one long unbroken string */
+    overflow-wrap: anywhere;
+  }
+
+
+  /* arrow / padlock: just the coloured doodle, sage for a note you can
+     open, terracotta for one that needs its key. The row itself stays
+     plain on hover; only the icon gets a soft wobbly blob behind it */
+  .day-note-go {
+    --go-blob: var(--color-mint);
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    margin-top: -0.1rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--color-crayon);
+    transition: transform 0.5s var(--ease-smooth);
+    will-change: transform;
+  }
+
+  /* only the arrow / padlock answers the pointer: the rest of the row
+     neither clicks nor hovers. A click on it still reaches the row's link
+     (or unlock button), and hovering it still lights up the row */
+  .day-note {
+    pointer-events: none;
+  }
+
+  button.day-note {
+    cursor: default;
+  }
+
+  .day-note-go {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  /* the blob is always painted and only its opacity fades: fading a
+     background in from transparent can flash on the way */
+  .day-note-go::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--go-blob);
+    border-radius: 56% 44% 53% 47% / 46% 55% 45% 54%;
+    opacity: 0;
+    transition: opacity 0.45s var(--ease-smooth);
+  }
+
+
+  .day-note:hover .day-note-title,
+  .day-note:focus-visible .day-note-title {
+    color: var(--color-crayon);
+  }
+
+  .day-note:hover .day-note-go,
+  .day-note:focus-visible .day-note-go {
+    transform: translateX(3px);
+  }
+
+  .day-note:hover .day-note-go::before,
+  .day-note:focus-visible .day-note-go::before {
+    opacity: 1;
+  }
+
+  .day-note:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-secondary) 35%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .day-note-go,
+    .day-note-go::before {
+      transition: none;
+    }
+
+    .day-note:hover .day-note-go,
+    .day-note.is-locked:hover .day-note-go,
+    .day-modal-close:hover {
+      transform: none;
+    }
+  }
+
+  /* tablets: as wide as the month, inside the page's 5.25rem gutters */
+  @media (min-width: 640px) and (max-width: 959px) {
+    #day-modal {
+      padding-right: 5.25rem;
+      padding-left: 5.25rem;
+    }
+  }
+
+  /* phones: the whole popup a size down, not the tablet / desktop sizes */
+  @media (max-width: 639px) {
+    /* as wide as the month, inside the page's 2.5rem gutters */
+    #day-modal {
+      padding: 1rem 2.5rem;
+    }
+
+    .day-modal-card {
+      gap: 0.8rem;
+      padding: 1rem 0.85rem 0.85rem;
+    }
+
+    .day-modal-weekday {
+      font-size: 0.85rem;
+    }
+
+    .day-modal-date {
+      padding-bottom: 0.3rem;
+      font-size: 0.95rem;
+    }
+
+    .day-modal-date::after {
+      height: 0.3rem;
+    }
+
+    .day-modal-close {
+      width: 1.75rem;
+      height: 1.75rem;
+      font-size: 1rem;
+    }
+
+    .day-section {
+      gap: 0.45rem;
+    }
+
+    .day-section-head {
+      min-height: 1.6rem;
+      gap: 0.6rem;
+    }
+
+    .day-section-title {
+      font-size: 1.15rem;
+    }
+
+    .day-notes {
+      padding-top: 0.75rem;
+    }
+
+    .kind-toggle {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .kind-option {
+      height: 1.85rem;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .kind-option .doodle-i {
+      width: 0.95rem;
+      height: 0.95rem;
+    }
+
+    .day-empty {
+      font-size: 0.85rem;
+    }
+
+    .day-empty .peep {
+      height: 4.5rem;
+    }
+
+    .day-note-title {
+      font-size: 0.9rem;
+    }
+
+    .day-note-text {
+      font-size: 0.8rem;
+    }
+
+    .day-note-go {
+      width: 1.7rem;
+      height: 1.7rem;
+      font-size: 0.95rem;
+    }
+
+    /* time moves above the title so the note gets the full width */
+    .day-note {
+      grid-template-columns: 1fr auto;
+      gap: 0.2rem 0.5rem;
+      padding: 0.7rem 0.5rem;
+    }
+
+    .day-note-meta {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.4rem;
+      padding-top: 0;
+    }
+
+    .day-note-time {
+      font-size: 0.8rem;
+    }
+  }
+
+  .calendar-card::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 22%, var(--color-line));
+    border-radius: 28px 38px 26px 36px / 36px 26px 38px 28px;
+    transform: rotate(-0.5deg) translate(3px, 2px);
+    pointer-events: none;
+  }
+
+  /* contrast ladder: the book icon is the only strong mark on the month;
+     cell fill, border, numbers and the today blob all stay a step quieter
+     so the eye lands on the days you wrote something */
+  .calendar-card {
+    /* emerald-600, bright like the mark colors but apart from their green,
+       so notes stand out from the warm terracotta used by today */
+    --cal-note: #059669;
+    /* today: filled with a terracotta wash, the number left alone */
+    --cal-today-ink: var(--color-marker);
+  }
+
+  .cal-day {
+    position: relative;
+    isolation: isolate; /* keeps the shadow layer tucked behind this cell */
+    display: flex;
+    min-height: 4rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    padding: 0.45rem 0.55rem;
+    cursor: pointer;
+    background-color: var(--color-card);
+    border: 1.5px solid var(--color-line);
+    border-radius: 0.9rem;
+    /* leaving a cell eases out slowly, so sweeping the mouse across the
+       month leaves a soft trail instead of boxes snapping on and off */
+    transition:
+      transform 0.55s var(--ease-smooth),
+      background-color 0.55s var(--ease-smooth),
+      border-color 0.55s var(--ease-smooth),
+      box-shadow 0.55s var(--ease-smooth);
+  }
+
+  /* lift shadow as its own layer: fading opacity is far smoother than
+     animating a box-shadow on every frame */
+  .cal-day::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow: 0 10px 20px -14px rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.55s var(--ease-smooth);
+  }
+
+  .cal-day-number,
+  .cal-day-mark {
+    transition:
+      color 0.55s var(--ease-smooth),
+      transform 0.55s var(--ease-smooth);
+  }
+
+  /* hover (mouse only, so a tap doesn't leave a cell stuck lifted): comes in
+     quicker than it leaves, grows a touch, and the number and book follow a
+     beat later so the cell settles rather than jumps */
+  @media (hover: hover) {
+    .cal-day:hover {
+      background-color: var(--color-paper);
+      border-color: color-mix(in srgb, var(--color-ink) 26%, var(--color-line));
+      transform: scale(1.04);
+      transition-duration: 0.45s;
+    }
+
+    .cal-day:hover::after {
+      opacity: 1;
+      transition-duration: 0.45s;
+    }
+
+    .cal-day:hover .cal-day-number {
+      color: var(--color-ink);
+      transition-duration: 0.45s;
+      transition-delay: 40ms;
+    }
+
+    .cal-day:hover .cal-day-mark {
+      transform: scale(1.1);
+      transition-duration: 0.5s;
+      transition-delay: 70ms;
+    }
+  }
+
+  /* pressing shrinks the cell a touch, like pushing on paper */
+  .cal-day:active {
+    transform: scale(0.98);
+    transition-duration: 0.3s;
+  }
+
+  .cal-day:focus-visible {
+    outline: none;
+    border-color: color-mix(in srgb, var(--color-ink) 28%, var(--color-line));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-secondary) 35%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cal-day,
+    .cal-day::after,
+    .cal-day-number,
+    .cal-day-mark {
+      transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
+    }
+
+    .cal-day:hover,
+    .cal-day:active,
+    .cal-day:hover .cal-day-mark {
+      transform: none;
+    }
+  }
+
+  /* 42 cells would drag on at the shared step, so they ripple faster */
+  .cal-day[data-stagger] {
+    animation-delay: calc(var(--i, 0) * 12ms);
+  }
+
+  .cal-day-number {
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.6;
+    color: var(--color-ink-soft);
+  }
+
+  /* days with notes keep the plain cell and number; the book does the talking */
+
+  /* today: a warm wash of the terracotta pen fills the cell, no ring;
+     a day with notes keeps it too, the book still shows those */
+  .cal-day.is-today {
+    background-color: color-mix(in srgb, var(--cal-today-ink) 22%, var(--color-card));
+  }
+
+  /* today's number stands out from the rest in a deep terracotta ink */
+  .cal-day.is-today .cal-day-number {
+    color: color-mix(in srgb, var(--cal-today-ink) 65%, var(--color-ink));
+  }
+
+  @media (hover: hover) {
+    .cal-day.is-today:hover {
+      background-color: color-mix(in srgb, var(--cal-today-ink) 30%, var(--color-card));
+    }
+  }
+
+  .cal-legend-today {
+    background-color: color-mix(in srgb, var(--cal-today-ink) 22%, var(--color-card));
+    border-radius: 0.3rem;
+  }
+
+  /* the book: the strongest mark on the calendar */
+  .cal-day-mark {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.65rem;
+    line-height: 1;
+    color: var(--cal-note);
+  }
+
+  /* the doodle sits in its 24px box with some air, so it's drawn a bit
+     larger than a font glyph to read at the same size */
+  .cal-day-mark .doodle-i,
+  .cal-legend-note .doodle-i {
+    width: 1.3em;
+    height: 1.3em;
+  }
+
+  .cal-legend-note {
+    color: var(--cal-note);
+  }
+
+
+  .cal-weekday-short {
+    display: none;
+  }
+
+  /* phones: the card sits between wide gutters (they clear the floating
+     buttons), so the whole month shrinks to fit in one tidy view: slimmer
+     card padding, tighter grid, single-letter weekdays and small square-ish
+     day cells with the number and book centred */
+  @media (max-width: 639px) {
+    /* a little wider than the shared gutter (3.5rem, only ~4px clear of the
+       floating + and menu buttons), so the month keeps some air from them */
+    .list-page {
+      padding-right: 2.5rem;
+      padding-left: 2.5rem;
+    }
+
+    /* page title and its line a size down */
+    .header .header-title {
+      font-size: 1.75rem;
+    }
+
+    .header .header-title + p {
+      font-size: 0.8rem;
+    }
+
+    /* the count sits close under the header: no tall row to centre it in,
+       and it pulls up into the page's grid gap */
+    .toolbar-row {
+      min-height: 0;
+      margin-top: -0.9rem;
+    }
+
+    /* over the calendar the count is left out: the legend already has it */
+    .toolbar-row.is-calendar {
+      display: contents;
+    }
+
+    .toolbar-row.is-calendar .contact-count {
+      display: none;
+    }
+
+    /* with no count between them, the calendar sits close under the title */
+    .toolbar-row.is-calendar ~ .calendar-card {
+      margin-top: -0.6rem;
+    }
+
+    .calendar-card {
+      gap: 0.9rem;
+      padding: 1.1rem 0.8rem 1rem;
+    }
+
+    .cal-title {
+      font-size: 1.05rem;
+    }
+
+    /* month title and prev / next share a line; only when they can't
+       (very narrow) the buttons drop below, kept right */
+    .cal-head {
+      gap: 0.5rem;
+    }
+
+    .cal-title {
+      white-space: nowrap;
+    }
+
+    .cal-nav {
+      flex-shrink: 0;
+      gap: 0.4rem;
+      margin-left: auto;
+    }
+
+    .cal-grid {
+      gap: 0.25rem;
+    }
+
+    .cal-weekday {
+      padding-bottom: 0.1rem;
+      font-size: 0.6rem;
+      letter-spacing: 0;
+    }
+
+    .cal-weekday-long {
+      display: none;
+    }
+
+    .cal-weekday-short {
+      display: inline;
+    }
+
+    .cal-day {
+      min-width: 0;
+      min-height: 2.1rem;
+      align-items: center;
+      justify-content: center;
+      gap: 0.1rem;
+      padding: 0.2rem 0;
+      border-radius: 0.65rem;
+    }
+
+    .cal-day-number {
+      font-size: 0.65rem;
+      line-height: 1.3;
+    }
+
+    .cal-day-mark {
+      font-size: 0.47rem;
+    }
+
+
+    .cal-legend {
+      gap: 0.35rem 0.9rem;
+      font-size: 0.75rem;
+    }
+
+    .cal-today {
+      font-size: 0.72rem;
+    }
+
+    .month-nav {
+      width: 1.5rem;
+      height: 1.5rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  /* very narrow phones: a smaller month title keeps prev / next on its line */
+  @media (max-width: 360px) {
+    .cal-title {
+      font-size: 0.95rem;
+    }
+  }
+  /* ---- day marks ---- */
+  .cal-day-marks {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  /* each mark in its own color; the notebook keeps the sage */
+  .cal-day-mark.is-mark {
+    color: var(--mark);
+  }
+
+  .cal-day-more {
+    font-size: 0.65rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--color-ink-soft);
+  }
+
+  .cal-day-more-mid,
+  .cal-day-more-narrow {
+    display: none;
+  }
+
+  /* tablets: two icons per cell, the rest in the +n */
+  @media (min-width: 640px) and (max-width: 959px) {
+    .cal-day-mark.is-third,
+    .cal-day-more-wide {
+      display: none;
+    }
+
+    .cal-day-more-mid {
+      display: inline;
+    }
+  }
+
+  /* small tablets: the icons a size down too */
+  @media (min-width: 640px) and (max-width: 767px) {
+    .cal-day-mark {
+      font-size: 0.58rem;
+    }
+  }
+
+  .cal-legend-icon {
+    color: var(--mark);
+  }
+
+  /* mark icons colored in like the popup's chips: the body filled with a
+     light crayon wash, the pen line on top */
+  .cal-day-mark.is-mark .doodle-i path:first-child,
+  .cal-legend-icon .doodle-i path:first-child {
+    fill: currentColor;
+    fill-opacity: 0.4;
+  }
+
+  .cal-legend-icon .doodle-i {
+    width: 1.2em;
+    height: 1.2em;
+  }
+
+  /* days marked this month: a plain number beside the name, no pill */
+  .cal-legend-count {
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink);
+  }
+
+  /* the legend: set off from the grid by a quiet dashed rule, every icon
+     the same size, one even rhythm between items */
+  .cal-legend {
+    column-gap: 1.5rem;
+    row-gap: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1.5px dashed color-mix(in srgb, var(--color-ink) 10%, var(--color-line));
+    font-size: 0.8rem;
+  }
+
+  .cal-legend > span {
+    gap: 0.4rem;
+  }
+
+  .cal-legend .doodle-i {
+    width: 1.1em;
+    height: 1.1em;
+  }
+
+  /* tablets and up: the legend in columns of two (three on desktop),
+     filled top to bottom: notes, then the marks down the first column,
+     then the next. Nothing is centred: each column is as wide as its
+     longest item and they pack from the left, every item at the top-left
+     of its cell. Today sits apart, alone in the top-right corner, on
+     notes' line. --rows-2 / --rows-3 (set on the legend) are how many rows
+     the notes and marks take at two / three columns */
+  @media (min-width: 640px) {
+    .cal-legend {
+      position: relative;
+      display: grid;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(var(--rows-2), auto);
+      grid-auto-columns: max-content;
+      justify-content: start;
+      align-content: start;
+      justify-items: start;
+      align-items: start;
+      column-gap: 2.5rem;
+      /* clear of today, on the first line */
+      padding-right: 5rem;
+    }
+
+    .cal-legend > span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .cal-legend > .ml-auto {
+      position: absolute;
+      top: 1rem; /* the legend's padding-top: on the first line */
+      right: 0;
+      margin-left: 0;
+    }
+  }
+
+  @media (min-width: 960px) {
+    .cal-legend {
+      grid-template-rows: repeat(var(--rows-3), auto);
+    }
+  }
+
+  /* popup marks: doodle chips on a pen line, filled with their own color
+     and a little offset pen shadow when they are on the day */
+  /* a bit of air under the chips, so they don't sit on the card's edge */
+  .day-marks {
+    padding-top: 1rem;
+    padding-bottom: 0.75rem;
+    border-top: 1.5px dashed color-mix(in srgb, var(--color-ink) 12%, var(--color-line));
+    /* the popup grows with the New panel, the notes list giving way first;
+       only when the marks alone outgrow the popup does this section give
+       way too: the New panel shrinks, and in it only Made before, which
+       scrolls. The section itself never scrolls */
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* its parts keep their full height: squeezed, the New panel (overflow
+     hidden, so it can shrink to nothing) would clip Made before away;
+     when the section runs out of room it scrolls instead */
+  .day-marks > * {
+    flex-shrink: 0;
+  }
+
+  /* the one part that can give: the open New panel, down to its Made
+     before list (see below) */
+  .day-marks > .new-mark-wrap {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 1;
+    min-height: 0;
+  }
+
+  .new-mark > * {
+    flex-shrink: 0;
+  }
+
+  .new-mark > .new-mark-before-row {
+    flex-shrink: 1;
+  }
+
+  /* the buttons sit inside the edge, like the Highlight toggle in Notes */
+  .day-marks-actions {
+    display: flex;
+    gap: 0.15rem;
+  }
+
+  /* New / Remove: handwritten text buttons; a wobbly blob shows on hover */
+  .mark-action {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    font-family: var(--font-comic);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.25s var(--ease-smooth);
+  }
+
+  .mark-action::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--blob, var(--color-paper-deep));
+    border-radius: 16px 12px 17px 11px / 11px 17px 12px 16px;
+    opacity: 0;
+    transition: opacity 0.25s var(--ease-smooth);
+  }
+
+  .mark-action .doodle-i {
+    width: 1em;
+    height: 1em;
+  }
+
+  .mark-action:hover,
+  .mark-action[aria-expanded="true"] {
+    color: var(--color-ink);
+  }
+
+  .mark-action:hover::before,
+  .mark-action[aria-expanded="true"]::before,
+  .mark-action-remove[aria-pressed="true"]::before {
+    opacity: 1;
+  }
+
+  .mark-action:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+    outline-offset: 1px;
+    border-radius: 10px;
+  }
+
+  .mark-action-remove[aria-pressed="true"] {
+    --blob: var(--color-blush);
+    color: var(--color-berry);
+  }
+
+  .day-marks-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.1rem 0.25rem;
+  }
+
+  /* the list is pulled left by the chips' padding, so the empty line gets
+     the same padding back and lines up with the section title */
+  .day-marks-empty {
+    padding-left: 0.55rem;
+    font-family: var(--font-comic);
+    font-size: 0.9rem;
+    color: var(--color-ink-soft);
+  }
+
+  /* marks read like the calendar legend: no pill, just the doodle and its
+     name in the comic hand, always in full color. Only a chip that can be
+     tapped (in Remove mode, or under Made before) gets the wobbly blob on
+     hover, like the New / Remove buttons */
+  .day-marks-list {
+    margin-left: -0.55rem;
+  }
+
+  .mark-chip {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.55rem;
+    font-family: var(--font-comic);
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--color-ink-soft);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.25s var(--ease-smooth);
+  }
+
+  .mark-chip::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--color-paper-deep);
+    border-radius: 16px 12px 17px 11px / 11px 17px 12px 16px;
+    opacity: 0;
+    transition: opacity 0.25s var(--ease-smooth);
+  }
+
+  .mark-chip:nth-child(even)::before {
+    border-radius: 12px 17px 11px 16px / 16px 11px 17px 12px;
+  }
+
+  .mark-chip .doodle-i {
+    width: 1.05em;
+    height: 1.05em;
+    color: var(--mark);
+    transition: color 0.25s var(--ease-smooth);
+  }
+
+  .mark-chip[hidden],
+  .mark-action[hidden],
+  .day-marks-empty[hidden],
+  .new-mark-before-row[hidden] {
+    display: none;
+  }
+
+  /* on the day's list the chips just show, until Remove is on */
+  #mark-form:not(.is-removing) .mark-chip {
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .mark-chip:hover {
+    color: var(--color-ink);
+  }
+
+  .mark-chip:hover::before {
+    opacity: 1;
+  }
+
+  .mark-chip:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+    outline-offset: 1px;
+    border-radius: 10px;
+  }
+
+
+  /* the icon's body is colored in, like a doodle filled with a crayon; the
+     pen line and any inner strokes (the pill's split, the drop's shine)
+     still show on top */
+  .mark-chip .doodle-i path:first-child {
+    fill: currentColor;
+    fill-opacity: 0.4;
+  }
+
+  /* hover, shared by the popup's blob buttons (Highlight, New, Remove and
+     the tappable mark chips): the blob springs up from a little smaller
+     with a slight tilt, the icon nudges, and a press gives a small squish */
+  .kind-toggle,
+  .mark-action,
+  .mark-chip {
+    transition:
+      color 0.45s var(--ease-smooth),
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .kind-toggle::before,
+  .mark-action::before,
+  .mark-chip::before {
+    transform: scale(0.82) rotate(-2deg);
+    transition:
+      opacity 0.45s var(--ease-smooth),
+      transform 0.55s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+
+  .kind-toggle:hover::before,
+  .kind-toggle[aria-expanded="true"]::before,
+  .mark-action:hover::before,
+  .mark-action[aria-expanded="true"]::before,
+  .mark-action-remove[aria-pressed="true"]::before,
+  .mark-chip:hover::before {
+    transform: none;
+  }
+
+  .kind-toggle:active,
+  .mark-action:active,
+  .mark-chip:active {
+    transform: scale(0.95);
+  }
+
+  .mark-action .doodle-i,
+  .mark-chip .doodle-i {
+    transition:
+      color 0.45s var(--ease-smooth),
+      transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+
+  .mark-action:hover .doodle-i,
+  .mark-chip:hover .doodle-i {
+    transform: rotate(-8deg) scale(1.08);
+  }
+
+  /* the chevron dips toward the menu it opens */
+  .kind-toggle:hover:not([aria-expanded="true"]) .kind-chevron {
+    transform: rotate(90deg) translateX(2px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kind-toggle,
+    .mark-action,
+    .mark-chip,
+    .kind-toggle::before,
+    .mark-action::before,
+    .mark-chip::before,
+    .mark-action .doodle-i,
+    .mark-chip .doodle-i {
+      transition: none;
+    }
+  }
+
+  /* remove mode: the chips get an x and take the mark off this day */
+  .mark-chip-x {
+    display: none;
+    margin-left: 0.1rem;
+  }
+
+  .mark-chip-x .doodle-i {
+    width: 0.85em;
+    height: 0.85em;
+  }
+
+  .is-removing .mark-chip[data-marker] .mark-chip-x {
+    display: inline-flex;
+  }
+
+  .is-removing .mark-chip[data-marker] .mark-chip-x .doodle-i {
+    color: var(--color-berry);
+  }
+
+  .is-removing .mark-chip[data-marker]:hover {
+    color: var(--color-berry);
+  }
+
+  /* new kind: a paper panel drawn by hand; name and Add on top, then the
+     icon and color picks, each on its own labelled line */
+  .new-mark {
+    /* a flex column all the way down from the popup, so when room runs
+       out the squeeze reaches Made before's list: name, icon and color
+       keep their height, Made before takes what is left */
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 0.7rem;
+    padding: 0.85rem;
+    background-color: var(--color-paper);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 12%, var(--color-line));
+    border-radius: 20px 16px 22px 14px / 14px 22px 16px 20px;
+  }
+
+  /* folded: no height, pulled up over the section gap, faded out. The
+     height itself is animated in px from the script (see toggleNewMark) on
+     a slow-in, slow-out curve, so the popup around it glides; here only the
+     fade and the rows are timed:
+     - open: the panel fades in and its rows drop into place one by one
+     - close: the rows fade out together while the space starts folding */
+  .new-mark-wrap {
+    --fold: cubic-bezier(0.37, 0, 0.63, 1);
+    --spring: cubic-bezier(0.22, 1, 0.36, 1);
+    height: 0;
+    margin-top: -0.6rem;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.45s ease 0.1s;
+  }
+
+  .new-mark-wrap > .new-mark {
+    transform: translateY(-6px) scale(0.985);
+    transform-origin: top center;
+    transition: transform 0.6s var(--fold);
+  }
+
+  .new-mark-wrap.is-open {
+    height: auto;
+    margin-top: 0;
+    opacity: 1;
+    transition: opacity 0.35s ease 0.08s;
+  }
+
+  .new-mark-wrap.is-open > .new-mark {
+    transform: none;
+    transition: transform 0.5s var(--fold);
+  }
+
+  /* the rows inside: out together on close, in one by one on open */
+  .new-mark > :not(input) {
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+      opacity 0.3s ease,
+      transform 0.4s var(--fold);
+  }
+
+  .new-mark-wrap.is-open .new-mark > :not(input) {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.3s ease calc(0.1s + var(--row, 0) * 0.05s),
+      transform 0.45s var(--spring) calc(0.1s + var(--row, 0) * 0.05s);
+  }
+
+  .new-mark > :nth-child(3) { --row: 1; }
+  .new-mark > :nth-child(4) { --row: 2; }
+  .new-mark > :nth-child(5) { --row: 3; }
+
+  .new-mark-wrap.no-motion,
+  .new-mark-wrap.no-motion > .new-mark,
+  .new-mark-wrap.no-motion .new-mark > :not(input) {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .new-mark-wrap,
+    .new-mark-wrap.is-open,
+    .new-mark-wrap > .new-mark,
+    .new-mark-wrap.is-open > .new-mark,
+    .new-mark > :not(input),
+    .new-mark-wrap.is-open .new-mark > :not(input) {
+      transition: none;
+    }
+  }
+
+  .new-mark-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+  }
+
+  /* Icon / Color: the label keeps to the top when the options wrap,
+     sitting on the first line of them (one option tall) */
+  fieldset.new-mark-row {
+    align-items: flex-start;
+  }
+
+  fieldset.new-mark-row .new-mark-label {
+    line-height: 2rem;
+  }
+
+  /* removed marks, picked again with one tap, under the Add form */
+  .new-mark-before-row {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 0.2rem;
+    padding-top: 0.6rem;
+    border-top: 1.5px dashed var(--color-line);
+  }
+
+  /* the plus turns a quarter-and-a-half into an x while the panel is open */
+  .new-mark-plus {
+    display: inline-flex;
+    transition: transform 0.55s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+
+  #new-mark-toggle[aria-expanded="true"] .new-mark-plus {
+    transform: rotate(135deg);
+  }
+
+  #new-mark-toggle.no-motion .new-mark-plus {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .new-mark-plus {
+      transition: none;
+    }
+  }
+
+  .made-before-item {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Made before is the only part of the Marks that scrolls; it keeps at
+     least a row and a half in view, so there is always something to
+     scroll */
+  .new-mark-before-row .day-marks-list {
+    min-height: 2.6rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .new-mark-before-row .day-marks-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .made-before-item[hidden] {
+    display: none;
+  }
+
+  /* the day's marks in a grid: three to a row on phones and tablets, five
+     on desktop; a long name wraps inside its cell (between words, and a
+     word too long for the cell breaks) */
+  #mark-form.day-marks-list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.15rem 0.25rem;
+  }
+
+  #mark-form .mark-chip {
+    min-width: 0;
+    justify-content: flex-start;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 959px) {
+    #mark-form.day-marks-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* "No marks on this day" keeps the whole row */
+  .day-marks-empty {
+    grid-column: 1 / -1;
+  }
+
+  .made-before-x {
+    display: inline-flex;
+    padding: 0.2rem;
+    margin-left: 0.2rem;
+    color: var(--color-ink-soft);
+    background: none;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 0.45s var(--ease-smooth);
+  }
+
+  .made-before-x .doodle-i {
+    width: 0.85em;
+    height: 0.85em;
+  }
+
+  .made-before-x:hover {
+    color: var(--color-berry);
+  }
+
+  .made-before-x:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+  }
+
+  .new-mark-before-row .new-mark-label {
+    flex-shrink: 0;
+    width: auto;
+  }
+
+  .new-mark-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.4rem 0.85rem;
+  }
+
+  .new-mark-label {
+    flex-shrink: 0;
+    width: 2.75rem;
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+  }
+
+  .new-mark-pick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .new-mark-option {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    color: var(--color-ink-soft);
+    border: 1.5px solid transparent;
+    border-radius: 56% 44% 53% 47% / 46% 55% 45% 54%;
+    cursor: pointer;
+    transition:
+      color 0.45s var(--ease-smooth),
+      background-color 0.45s var(--ease-smooth),
+      border-color 0.45s var(--ease-smooth),
+      box-shadow 0.45s var(--ease-smooth);
+  }
+
+  .new-mark-option:hover {
+    color: var(--color-ink);
+    background-color: var(--color-paper-deep);
+  }
+
+  /* the pick: circled in pen with the same offset shadow as the switches */
+  .new-mark-option:has(input:checked) {
+    color: var(--color-ink);
+    background-color: var(--color-card);
+    border-color: color-mix(in srgb, var(--color-ink) 70%, var(--color-line));
+    box-shadow: 2px 2px 0 -1px color-mix(in srgb, var(--color-marker) 40%, transparent);
+  }
+
+  .new-mark-option:has(input:focus-visible) {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+    outline-offset: 1px;
+  }
+
+  .new-mark-swatch span {
+    width: 1.05rem;
+    height: 1.05rem;
+    background-color: var(--mark);
+    border-radius: 56% 44% 53% 47% / 46% 55% 45% 54%;
+  }
+
+  /* phones: the Marks section and the New panel a size down, tighter all
+     round (here, after their base rules, so these win) */
+  @media (max-width: 639px) {
+    .day-marks {
+      padding-top: 0.75rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .mark-action {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.78rem;
+    }
+
+    .mark-chip {
+      gap: 0.3rem;
+      padding: 0.2rem 0.45rem;
+      font-size: 0.78rem;
+    }
+
+    .day-marks-list {
+      margin-left: -0.45rem;
+    }
+
+    .day-marks-empty {
+      padding-left: 0.45rem;
+      font-size: 0.78rem;
+    }
+
+    .new-mark {
+      gap: 0.5rem;
+      padding: 0.65rem;
+    }
+
+    .new-mark-row {
+      gap: 0.45rem;
+    }
+
+    .new-mark-name {
+      padding: 0.3rem 0.7rem;
+      font-size: 0.85rem;
+    }
+
+    .new-mark .doodle-btn-sm {
+      padding: 0.25rem 0.65rem;
+      font-size: 0.78rem;
+    }
+
+    .new-mark-label {
+      width: 2.3rem;
+      font-size: 0.75rem;
+    }
+
+    fieldset.new-mark-row .new-mark-label {
+      line-height: 1.6rem;
+    }
+
+    .new-mark-pick {
+      gap: 0.15rem;
+    }
+
+    .new-mark-option {
+      width: 1.6rem;
+      height: 1.6rem;
+      font-size: 0.85rem;
+    }
+
+    .new-mark-swatch span {
+      width: 0.85rem;
+      height: 0.85rem;
+    }
+
+    .new-mark-before-row {
+      padding-top: 0.45rem;
+    }
+
+    /* many marks: the day's list and Made before each scroll inside a
+       few rows, so the New panel's name field stays in the popup instead
+       of being pushed past its foot. A sliver of padding keeps the chips'
+       pen shadows clear of the scroll edge */
+    #mark-form.day-marks-list {
+      max-height: 6.2rem;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 0.15rem 0.2rem 0.2rem 0;
+    }
+
+    .new-mark-before-row .day-marks-list {
+      max-height: 5rem;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 0.15rem 0.2rem 0.2rem 0;
+    }
+
+    /* they still scroll, only the bars are hidden */
+    #mark-form.day-marks-list,
+    .new-mark-before-row .day-marks-list {
+      scrollbar-width: none;
+    }
+
+    #mark-form.day-marks-list::-webkit-scrollbar,
+    .new-mark-before-row .day-marks-list::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* while New is open the day's marks step aside, leaving the panel
+       the room */
+    .day-marks.is-adding #mark-form {
+      display: none;
+    }
+  }
+
+  @media (max-width: 639px) {
+    /* the dots sit out of the flow along the cell's foot, so the number
+       stays dead centre whether a day has marks or not */
+    .cal-day-marks {
+      position: absolute;
+      bottom: 0.22rem;
+      left: 50%;
+      transform: translateX(-50%);
+      gap: 0.1rem;
+    }
+
+    /* phone cells trade the icons for tiny dots in each icon's color
+       (the book's sage, then the marks'); one at most, the rest counted
+       in the +n */
+    .cal-day-mark .doodle-i {
+      display: none;
+    }
+
+    .cal-day-mark {
+      width: 0.2rem;
+      height: 0.2rem;
+      background-color: currentColor;
+      border-radius: 999px;
+    }
+
+    .cal-day-mark.is-extra,
+    .cal-day-more-wide,
+    .cal-day-more-mid {
+      display: none;
+    }
+
+    .cal-day-more-narrow {
+      display: inline;
+    }
+
+    .cal-day-more {
+      font-size: 0.5rem;
+    }
+
+    /* phones: the legend stacks, one item per line, while today keeps
+       to the right on the first line */
+    .cal-legend {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      column-gap: 1rem;
+      row-gap: 0.3rem;
+      padding-top: 0.6rem;
+      font-size: 0.68rem;
+    }
+
+    .cal-legend > span {
+      grid-column: 1;
+      gap: 0.3rem;
+    }
+
+    .cal-legend-count {
+      font-size: 0.68rem;
+    }
+
+    .cal-legend .doodle-i {
+      width: 1em;
+      height: 1em;
+    }
+
+    .cal-legend-today {
+      width: 0.6rem;
+      height: 0.6rem;
+    }
+
+    .cal-legend > .ml-auto {
+      grid-column: 2;
+      grid-row: 1;
+    }
+  }
+</style>
+<div class="list-page mx-auto grid w-full max-w-3xl grid-cols-1 gap-6 p-6 pt-14 pb-28">
+  <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
+    <div class="flex items-end gap-4">
+      <%- include("partials/peep", { pose: "write", cls: "header-peep-fade -mb-1 hidden h-24 sm:block" }) %>
+      <div class="pb-1">
+        <h2 class="header-title mb-1 text-4xl">
+          <span class="header-title-mark">Writing</span>
+        </h2>
+        <p class="text-ink-soft font-comic font-bold">Write down your daily notes and stories</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- floating add button, same spot as on the contacts page -->
+  <a
+    href="/writing/new"
+    aria-label="New note"
+    title="New note"
+    class="fab fab-simple doodle-btn fixed right-6 z-40 h-12 w-12 p-0 text-xl"
+  >
+    <%- include("partials/doodle-icon", { name: "plus", cls: "fab-icon" }) %>
+  </a>
+
+  <!-- floating search button (phones), above the add button -->
+  <button
+    type="button"
+    onclick="toggleSearch()"
+    aria-controls="search-box"
+    aria-expanded="<%= searchOpen ? 'true' : 'false' %>"
+    aria-label="Search notes"
+    data-label="Search notes"
+    title="Search notes"
+    class="fab-search fab-simple doodle-btn fixed right-6 z-40 h-12 w-12 p-0 text-xl"
+  >
+    <%- include("partials/doodle-icon", { name: "search", cls: "fab-icon fab-icon-open" }) %>
+    <%- include("partials/doodle-icon", { name: "chevron-right", cls: "fab-icon fab-icon-close" }) %>
+    <span class="search-badge" aria-hidden="true"></span>
+  </button>
+
+  <div class="search-scrim" aria-hidden="true"></div>
+
+  <div class="toolbar-row <%= mode === 'calendar' ? 'is-calendar' : '' %>" data-stagger style="--i: 1">
+    <% const countNum = search ? totalWritings : totalNotes; %>
+    <span class="contact-count">
+      <span class="contact-count-num"><%= countNum %></span>
+      <span class="contact-count-label"><%= countNum === 1 ? "note" : "notes" %><%= search ? " found" : "" %></span>
+    </span>
+
+    <!-- search: inline in this row on tablet/desktop, a floating capsule
+         from the search button on phones -->
+    <div id="search-box" class="search-box <%= searchOpen ? 'is-open' : '' %>">
+      <span class="search-inline-icon" aria-hidden="true"><%- include("partials/doodle-icon", { name: "search" }) %></span>
+      <input
+        type="text"
+        id="search"
+        name="search"
+        value="<%= search %>"
+        placeholder="Search notes..."
+        title="Search by title, content or mood"
+        oninput="searchWritings(this.value)"
+        onkeydown="if (event.key === 'Escape') closeSearch()"
+        class="doodle-input search-input"
+      />
+      <% if (search) { %>
+      <button
+        type="button"
+        onclick="clearSearch()"
+        aria-label="Clear search"
+        class="search-clear text-ink-soft hover:text-ink cursor-pointer transition duration-400 ease-in-out"
+      >
+        <%- include("partials/doodle-icon", { name: "x" }) %>
+      </button>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (mode === "calendar") { %>
+  <!-- Month calendar -->
+  <div class="doodle-card calendar-card grid grid-cols-1 gap-5" data-stagger style="--i: 2">
+    <div class="cal-head flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-baseline gap-3">
+        <h3 class="cal-title text-2xl"><span class="header-title-mark"><%= monthLabel %></span></h3>
+      </div>
+      <!-- month nav: plain arrows with the today link between them -->
+      <div class="cal-nav flex items-center gap-1">
+        <a
+          href="/writing?month=<%= prevMonth %>"
+          class="month-nav"
+          aria-label="Previous month"
+          title="Previous month"
+        >
+          <%- include("partials/doodle-icon", { name: "chevron-left" }) %>
+        </a>
+        <% if (month === thisMonth) { %>
+        <span class="cal-today is-current" aria-current="date">Today</span>
+        <% } else { %>
+        <a href="/writing" class="cal-today" title="Go to today, <%= formatDay(today) %>">Today</a>
+        <% } %>
+        <a
+          href="/writing?month=<%= nextMonth %>"
+          class="month-nav"
+          aria-label="Next month"
+          title="Next month"
+        >
+          <%- include("partials/doodle-icon", { name: "chevron-right" }) %>
+        </a>
+      </div>
+    </div>
+
+    <div class="cal-grid grid grid-cols-7 gap-1.5">
+      <% ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach((label) => {
+      %>
+      <div
+        class="cal-weekday text-ink-soft pb-1 text-center text-xs font-bold tracking-wider uppercase"
+        aria-label="<%= label %>"
+      >
+        <span class="cal-weekday-long"><%= label %></span>
+        <span class="cal-weekday-short" aria-hidden="true"><%= label.charAt(0) %></span>
+      </div>
+      <% }) %> <% weeks.forEach((week, w) => { %> <% week.forEach((cell, d) => {
+      %> <% if (!cell) { %>
+      <div></div>
+      <% } else { %>
+      <button
+        type="button"
+        data-stagger
+        style="--i: <%= w * 7 + d %>"
+        onclick="openDayModal('<%= cell.key %>')"
+        class="cal-day <%= cell.key === today ? 'is-today' : '' %> <%= cell.notes.length ? 'has-notes' : '' %>"
+        aria-label="<%= formatDay(cell.key) %>, <%= cell.notes.length %> note(s)<%= cell.marks.map((m) => ', ' + m.name).join('') %>"
+      >
+        <span class="cal-day-number"><%= cell.day %></span>
+        <%
+          // room for three icons: the book first when there are notes, then
+          // the marks; any more fold into a +n. Phones and tablets show two,
+          // so the third is dropped there and the mid +n counts the rest
+          const shown = cell.marks.slice(0, 3 - (cell.notes.length ? 1 : 0));
+          const lead = cell.notes.length ? 1 : 0;
+          const total = cell.marks.length + lead;
+          const hidden = total - 3;
+          const hiddenMid = total - 2;
+          const hiddenNarrow = total - 1;
+        %>
+        <% if (cell.notes.length || cell.marks.length) { %>
+        <span class="cal-day-marks">
+          <% if (cell.notes.length) { %>
+          <span class="cal-day-mark">
+            <%- include("partials/doodle-icon", { name: "notebook" }) %>
+          </span>
+          <% } %> <% shown.forEach((mark, i) => { %>
+          <span class="cal-day-mark is-mark <%= i + lead > 0 ? 'is-extra' : '' %> <%= i + lead > 1 ? 'is-third' : '' %>" style="--mark: <%= mark.hex %>">
+            <%- include("partials/doodle-icon", { name: mark.icon }) %>
+          </span>
+          <% }) %> <% if (hidden > 0) { %>
+          <span class="cal-day-more cal-day-more-wide">+<%= hidden %></span>
+          <% } %> <% if (hiddenMid > 0) { %>
+          <span class="cal-day-more cal-day-more-mid">+<%= hiddenMid %></span>
+          <% } %> <% if (hiddenNarrow > 0) { %>
+          <span class="cal-day-more cal-day-more-narrow">+<%= hiddenNarrow %></span>
+          <% } %>
+        </span>
+        <% } %>
+      </button>
+      <% } %> <% }) %> <% }) %>
+    </div>
+
+    <%
+      // items in the legend's grid: notes and the marks on this month
+      // (today sits apart, in the corner)
+      const legendCells = Math.max(1, (totalWritings ? 1 : 0) + markers.filter((marker) => markCounts[marker.id]).length);
+    %>
+    <div class="cal-legend text-ink-soft flex flex-wrap items-center" style="--rows-2: <%= Math.ceil(legendCells / 2) %>; --rows-3: <%= Math.ceil(legendCells / 3) %>">
+      <!-- notes, like the marks, only when this month has any -->
+      <% if (totalWritings) { %>
+      <span class="flex items-center gap-1.5" style="--mark: var(--cal-note)">
+        <span class="cal-legend-note inline-flex"><%- include("partials/doodle-icon", { name: "notebook" }) %></span>
+        notes
+        <span class="cal-legend-count" title="Notes this month"><%= totalWritings %></span>
+      </span>
+      <% } %>
+      <!-- only the marks put on some day of this month -->
+      <% markers.filter((marker) => markCounts[marker.id]).forEach((marker) => { %>
+      <span class="cal-legend-mark flex items-center gap-1.5" style="--mark: <%= marker.hex %>">
+        <span class="cal-legend-icon inline-flex"><%- include("partials/doodle-icon", { name: marker.icon }) %></span>
+        <%= marker.name.toLowerCase() %>
+        <span class="cal-legend-count" title="Days this month"><%= markCounts[marker.id] %></span>
+      </span>
+      <% }) %>
+      <!-- today sits apart, on the far right -->
+      <span class="ml-auto flex items-center gap-1.5">
+        <span class="cal-legend-today inline-block h-3 w-3"></span>
+        today
+      </span>
+    </div>
+  </div>
+
+  <!-- Day popup -->
+  <div
+    id="day-modal"
+    class="doodle-modal p-6"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="day-modal-title"
+  >
+    <div class="doodle-card day-modal-card flex max-h-[85vh] w-full max-w-2xl flex-col">
+      <div class="day-modal-head flex items-start justify-between gap-4">
+        <div class="flex items-end gap-3">
+          <%- include("partials/peep", { pose: "read", cls: "header-peep-fade day-modal-peep hidden h-16 sm:block" }) %>
+          <div>
+            <h2 id="day-modal-title" class="day-modal-title">
+              <span id="day-modal-weekday" class="day-modal-weekday"></span>
+              <span id="day-modal-date" class="day-modal-date"></span>
+            </h2>
+          </div>
+        </div>
+        <button
+          type="button"
+          onclick="closeDayModal()"
+          class="month-nav day-modal-close"
+          aria-label="Close"
+          title="Close"
+        >
+          <%- include("partials/doodle-icon", { name: "x" }) %>
+        </button>
+      </div>
+
+      <!-- notes: a head with the highlight dropdown (only when the day has
+           notes), then the list, which is the only part that scrolls -->
+      <section class="day-section day-notes flex min-h-0 flex-1 flex-col" aria-labelledby="day-notes-title">
+        <div class="day-section-head">
+          <h3 id="day-notes-title" class="day-section-title">Notes</h3>
+          <!-- highlight: a dropdown of which notes get the stabilo -->
+          <div id="kind-row" class="kind-row" hidden>
+            <button
+              type="button"
+              id="kind-toggle"
+              class="kind-toggle"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-controls="kind-menu"
+            >
+              <span class="kind-toggle-label">Highlight</span>
+              <span id="kind-current" class="kind-current" hidden></span>
+              <span class="kind-chevron"><%- include("partials/doodle-icon", { name: "chevron-right" }) %></span>
+            </button>
+            <div id="kind-menu" class="kind-menu" role="menu" aria-labelledby="kind-toggle">
+              <!-- one soft blob that glides to the option under the pointer -->
+              <span id="kind-glide" class="kind-glide" aria-hidden="true"></span>
+              <button type="button" class="kind-option" role="menuitemradio" data-kind="" aria-checked="true" style="--i: 0">
+                <%- include("partials/doodle-icon", { name: "minus" }) %>
+                None
+              </button>
+              <button type="button" class="kind-option" role="menuitemradio" data-kind="open" aria-checked="false" style="--i: 1">
+                <%- include("partials/doodle-icon", { name: "notebook" }) %>
+                Normal notes
+              </button>
+              <button type="button" class="kind-option" role="menuitemradio" data-kind="locked" aria-checked="false" style="--i: 2">
+                <%- include("partials/doodle-icon", { name: "lock" }) %>
+                Encrypted notes
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="day-modal-body" class="day-modal-body flex flex-1 flex-col overflow-y-auto"></div>
+      </section>
+
+      <!-- marks: what is on this day. New puts one on (made before, or a new
+           kind); Remove takes one off this day -->
+      <section class="day-section day-marks" aria-labelledby="day-marks-title">
+        <div class="day-section-head">
+          <h3 id="day-marks-title" class="day-section-title">Marks</h3>
+          <div class="day-marks-actions">
+            <button
+              type="button"
+              id="new-mark-toggle"
+              class="mark-action"
+              onclick="toggleNewMark()"
+              aria-expanded="false"
+              aria-controls="new-mark"
+            >
+              <!-- turns into Cancel while the new-mark panel is open -->
+              <span class="new-mark-plus"><%- include("partials/doodle-icon", { name: "plus" }) %></span>
+              <span class="new-mark-toggle-label">New</span>
+            </button>
+            <!-- remove: turns the chips below into buttons that take the mark
+                 off this day, until tapped again; shown when the day has any -->
+            <button
+              type="button"
+              id="remove-mark-toggle"
+              hidden
+              class="mark-action mark-action-remove"
+              onclick="toggleRemoveMarks()"
+              aria-pressed="false"
+            >
+              <%- include("partials/doodle-icon", { name: "trash" }) %>
+              <span class="remove-mark-label">Remove</span>
+            </button>
+          </div>
+        </div>
+
+        <form id="mark-form" action="/marks" method="post" class="day-marks-list" aria-label="Marks for this day">
+          <input type="hidden" name="date" id="mark-date" />
+          <% markers.forEach((marker) => { %>
+          <button
+            type="submit"
+            name="marker"
+            value="<%= marker.id %>"
+            class="mark-chip"
+            data-marker="<%= marker.id %>"
+            title="Remove <%= marker.name %> from this day"
+            style="--mark: <%= marker.hex %>"
+            hidden
+          >
+            <%- include("partials/doodle-icon", { name: marker.icon }) %>
+            <%= marker.name %>
+            <span class="mark-chip-x" aria-hidden="true"><%- include("partials/doodle-icon", { name: "x" }) %></span>
+          </button>
+          <% }) %>
+          <p id="day-marks-empty" class="day-marks-empty">No marks on this day. Add one with New.</p>
+        </form>
+
+        <form id="delete-marker-form" method="post" hidden>
+          <input type="hidden" name="redirect" value="/writing?month=<%= month %>" />
+        </form>
+
+        <!-- the panel folds open: its height grows so the popup eases up
+             instead of jumping -->
+        <div id="new-mark-wrap" class="new-mark-wrap" inert>
+        <form id="new-mark" action="/markers" method="post" class="new-mark">
+          <input type="hidden" name="date" id="new-mark-date" />
+          <div class="new-mark-row">
+            <input
+              type="text"
+              name="name"
+              id="new-mark-name"
+              maxlength="24"
+              required
+              placeholder="Name it"
+              aria-label="Mark name"
+              class="doodle-input new-mark-name"
+            />
+            <button type="submit" class="doodle-btn doodle-btn-sm doodle-btn-ink">Add</button>
+          </div>
+          <fieldset class="new-mark-row">
+            <legend class="sr-only">Icon</legend>
+            <span class="new-mark-label" aria-hidden="true">Icon</span>
+            <span class="new-mark-pick">
+              <% markIcons.forEach((icon, i) => { %>
+              <label class="new-mark-option" title="<%= icon %>">
+                <input type="radio" name="icon" value="<%= icon %>" <%= icon === "star" ? "checked" : "" %> class="sr-only" />
+                <%- include("partials/doodle-icon", { name: icon }) %>
+              </label>
+              <% }) %>
+            </span>
+          </fieldset>
+          <fieldset class="new-mark-row">
+            <legend class="sr-only">Color</legend>
+            <span class="new-mark-label" aria-hidden="true">Color</span>
+            <span class="new-mark-pick">
+              <% Object.entries(markColors).forEach(([name, hex]) => { %>
+              <label class="new-mark-option new-mark-swatch" title="<%= name %>" style="--mark: <%= hex %>">
+                <input type="radio" name="color" value="<%= name %>" <%= name === "blue" ? "checked" : "" %> class="sr-only" />
+                <span></span>
+              </label>
+              <% }) %>
+            </span>
+          </fieldset>
+          <% if (markers.length) { %>
+          <!-- marks made before that are not on this day yet: one tap puts
+               one on this day only -->
+          <div id="made-before" class="new-mark-before-row">
+            <span class="new-mark-label">Made before</span>
+            <span class="day-marks-list">
+              <% markers.forEach((marker) => { %>
+              <span class="made-before-item" data-made-before="<%= marker.id %>">
+                <button
+                  type="submit"
+                  form="mark-form"
+                  name="marker"
+                  value="<%= marker.id %>"
+                  formnovalidate
+                  class="mark-chip"
+                  style="--mark: <%= marker.hex %>"
+                  title="Add <%= marker.name %> to this day"
+                >
+                  <%- include("partials/doodle-icon", { name: marker.icon }) %>
+                  <%= marker.name %>
+                </button>
+                <!-- x: gone for good, with every day it is on -->
+                <button
+                  type="submit"
+                  form="delete-marker-form"
+                  formaction="/markers/<%= marker.id %>?_method=DELETE"
+                  formnovalidate
+                  class="made-before-x"
+                  title="Delete <%= marker.name %>"
+                  aria-label="Delete <%= marker.name %>"
+                >
+                  <%- include("partials/doodle-icon", { name: "x" }) %>
+                </button>
+              </span>
+              <% }) %>
+            </span>
+          </div>
+          <% } %>
+        </form>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Popup contents, one block per date -->
+  <div class="hidden">
+    <% weeks.forEach((week) => { %> <% week.forEach((cell) => { if (!cell)
+    return; %>
+    <div
+      id="day-notes-<%= cell.key %>"
+      data-label="<%= formatDay(cell.key) %>"
+      data-count="<%= cell.notes.length %>"
+      data-marks="<%= cell.marks.map((m) => m.id).join(',') %>"
+    >
+      <% if (!cell.notes.length) { %>
+      <div class="day-empty text-ink-soft flex flex-col items-center gap-1 py-6 text-center">
+        <%- include("partials/peep", { pose: "think", cls: "mb-1 h-24" }) %>
+        <span class="text-ink font-bold">A blank page</span>
+        <span>Nothing written on this date yet.</span>
+      </div>
+      <% } %> <% cell.notes.forEach((writing) => { %>
+      <% if (writing.isEncrypted) { %>
+      <button
+        type="button"
+        class="day-note is-locked"
+        data-kind="locked"
+        onclick="location.href = '/writing/<%= writing._id %>#open'"
+        aria-label="<%= writing.title %>, locked. Enter the key to open"
+      >
+      <% } else { %>
+      <a href="/writing/<%= writing._id %>" class="day-note" data-kind="open">
+      <% } %>
+        <span class="day-note-meta">
+          <span class="day-note-time"><%= formatTime(writing.date) %></span>
+        </span>
+        <span class="day-note-main">
+          <span class="day-note-title"><%= writing.title %></span>
+          <span class="day-note-text"><span class="day-note-ink"><%= writing.isEncrypted ? writing.content : writing.text %></span></span>
+        </span>
+        <% if (writing.isEncrypted) { %>
+        <span class="day-note-go day-note-lock" aria-hidden="true">
+          <%- include("partials/doodle-icon", { name: "lock" }) %>
+        </span>
+      </button>
+        <% } else { %>
+        <span class="day-note-go" aria-hidden="true">
+          <%- include("partials/doodle-icon", { name: "arrow-right" }) %>
+        </span>
+      </a>
+        <% } %>
+      <% }) %>
+    </div>
+    <% }) %> <% }) %>
+  </div>
+
+  <% } else { %>
+  <!-- Search results -->
+  <div class="w-full">
+    <% if (writings.length === 0) { %>
+    <div
+      class="doodle-card text-ink-soft flex flex-col items-center gap-2 p-8 text-center"
+    >
+      <%- include("partials/peep", { pose: "think", cls: "h-28" }) %>
+      <span class="text-ink font-bold">Hmm, nothing found</span>
+      <span>No note matches "<%= search %>".</span>
+    </div>
+    <% } %>
+
+    <% if (writings.length !== 0) { %>
+    <!-- the same rows as the day popup, in the calendar's card; the day
+         goes in the margin above the time, since results span many days -->
+    <div class="doodle-card calendar-card search-notes" data-stagger style="--i: 2">
+      <% writings.forEach((writing, i) => { const year = formatNoteYear(writing.date); %>
+      <% if (writing.isEncrypted) { %>
+      <button
+        type="button"
+        class="day-note is-locked"
+        data-kind="locked"
+        data-stagger
+        style="--i: <%= i + 3 %>"
+        onclick="location.href = '/writing/<%= writing._id %>#open'"
+        aria-label="<%= writing.title %>, locked. Enter the key to open"
+      >
+      <% } else { %>
+      <a href="/writing/<%= writing._id %>" class="day-note" data-kind="open" data-stagger style="--i: <%= i + 3 %>">
+      <% } %>
+        <span class="day-note-meta">
+          <span class="day-note-day"><%= formatNoteDay(writing.date) %><% if (year) { %> <span class="day-note-year"><%= year %></span><% } %></span>
+          <span class="day-note-time"><%= formatTime(writing.date) %></span>
+        </span>
+        <span class="day-note-main">
+          <span class="day-note-title"><%= writing.title %></span>
+          <span class="day-note-text"><span class="day-note-ink"><%= writing.isEncrypted ? writing.content : writing.text %></span></span>
+        </span>
+        <% if (writing.isEncrypted) { %>
+        <span class="day-note-go day-note-lock" aria-hidden="true">
+          <%- include("partials/doodle-icon", { name: "lock" }) %>
+        </span>
+      </button>
+        <% } else { %>
+        <span class="day-note-go" aria-hidden="true">
+          <%- include("partials/doodle-icon", { name: "arrow-right" }) %>
+        </span>
+      </a>
+        <% } %>
+      <% }) %>
+    </div>
+    <% } %>
+
+    <!-- Pagination -->
+
+    <% if (writings.length !== 0) { %>
+    <nav class="writing-pager mt-6 flex items-center justify-between" aria-label="Pagination">
+      <p class="text-ink-soft text-sm">
+        Showing <%= (currentPage - 1) * limit + 1 %> – <%= Math.min(currentPage
+        * limit, totalWritings) %> of <%= totalWritings %>
+      </p>
+
+      <div class="pager-buttons flex items-center gap-2">
+        <% if (currentPage > 1) { %>
+        <a
+          href="/writing?page=<%= currentPage - 1 %>&search=<%= encodeURIComponent(search) %>"
+          class="doodle-btn doodle-btn-sm"
+          aria-label="Previous page"
+        >
+          <span class="pager-arrow" aria-hidden="true"><%- include("partials/doodle-icon", { name: "chevron-left" }) %></span>
+          <span class="pager-word">Previous</span>
+        </a>
+        <% } else { %>
+        <button class="doodle-btn doodle-btn-sm" disabled aria-label="Previous page">
+          <span class="pager-arrow" aria-hidden="true"><%- include("partials/doodle-icon", { name: "chevron-left" }) %></span>
+          <span class="pager-word">Previous</span>
+        </button>
+        <% } %> <% for (let i = 1; i <= totalPages; i++) { %> <% if (i ===
+        currentPage) { %>
+        <span class="doodle-btn doodle-btn-sm doodle-btn-ink" aria-current="page">
+          <%= i %>
+        </span>
+        <% } else { %>
+        <a
+          href="/writing?page=<%= i %>&search=<%= encodeURIComponent(search) %>"
+          class="doodle-btn doodle-btn-sm"
+        >
+          <%= i %>
+        </a>
+        <% } %> <% } %> <% if (currentPage < totalPages) { %>
+        <a
+          href="/writing?page=<%= currentPage + 1 %>&search=<%= encodeURIComponent(search) %>"
+          class="doodle-btn doodle-btn-sm"
+          aria-label="Next page"
+        >
+          <span class="pager-word">Next</span>
+          <span class="pager-arrow" aria-hidden="true"><%- include("partials/doodle-icon", { name: "chevron-right" }) %></span>
+        </a>
+        <% } else { %>
+        <button class="doodle-btn doodle-btn-sm" disabled aria-label="Next page">
+          <span class="pager-word">Next</span>
+          <span class="pager-arrow" aria-hidden="true"><%- include("partials/doodle-icon", { name: "chevron-right" }) %></span>
+        </button>
+        <% } %>
+      </div>
+    </nav>
+    <% } %>
+  </div>
+  <% } %>
+</div>
+
+
+
+<script>
+  let timeout = null;
+
+  function searchWritings(value) {
+    clearTimeout(timeout);
+
+    timeout = setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+
+      if (value.trim() === "") {
+        params.delete("search");
+      } else {
+        params.set("search", value);
+      }
+
+      params.delete("page");
+      params.delete("month");
+
+      const query = params.toString();
+      window.location.href = "/writing" + (query ? "?" + query : "");
+    }, 400);
+  }
+
+  function clearSearch() {
+    const input = document.getElementById("search");
+    input.value = "";
+    searchWritings("");
+  }
+
+  const dayModal = document.getElementById("day-modal");
+
+  function openDayModal(key) {
+    const source = document.getElementById("day-notes-" + key);
+    if (!source) return;
+
+    // "Sunday, September 27, 2026" -> weekday jotted above, date below
+    const [weekday, ...rest] = source.dataset.label.split(", ");
+    document.getElementById("day-modal-weekday").textContent = weekday;
+    document.getElementById("day-modal-date").textContent = rest.join(", ");
+    // drop the last day's highlight before the notes go in, so they arrive
+    // plain instead of showing the stabilo for a moment while it fades
+    const body = document.getElementById("day-modal-body");
+    delete body.dataset.mark;
+    body.innerHTML = source.innerHTML;
+    // everything left over from the last date (New open, Remove on, a
+    // highlight picked, the menu out) resets with no motion, so nothing is
+    // seen fading back while the popup comes up
+    const card = dayModal.querySelector(".day-modal-card");
+    card.classList.add("is-resetting");
+    setupMarks(key, source);
+    setupKindSwitch();
+    card.offsetHeight; // apply the reset before motion is back on
+    card.classList.remove("is-resetting");
+
+    openModal(dayModal);
+  }
+
+  // Normal / encrypted switch: every note stays listed, the picked kind just
+  // gets a stabilo. Starts with nothing marked; picking the marked side
+  // again clears it
+  const kindRow = document.getElementById("kind-row");
+  const kindToggle = document.getElementById("kind-toggle");
+  const kindMenu = document.getElementById("kind-menu");
+  const kindCurrent = document.getElementById("kind-current");
+  const kindNames = { open: "Normal notes", locked: "Encrypted notes" };
+
+  function setupKindSwitch() {
+    const rows = document.querySelectorAll("#day-modal-body .day-note");
+    kindRow.hidden = rows.length === 0;
+    toggleKindMenu(false);
+    showKind("");
+  }
+
+  function showKind(kind) {
+    const body = document.getElementById("day-modal-body");
+    if (kind) body.dataset.mark = kind;
+    else delete body.dataset.mark;
+    kindCurrent.hidden = !kind;
+    kindCurrent.innerHTML = "";
+    kindMenu.querySelectorAll(".kind-option").forEach((option) => {
+      const picked = option.dataset.kind === kind;
+      option.setAttribute("aria-checked", String(picked));
+      // the trigger shows the picked option's icon, named for screen readers
+      if (picked && kind) kindCurrent.append(option.querySelector("svg").cloneNode(true));
+    });
+    kindToggle.setAttribute("aria-label", kind ? "Highlight: " + kindNames[kind] : "Highlight");
+  }
+
+  function toggleKindMenu(open) {
+    const show = open ?? !kindRow.classList.contains("is-open");
+    kindRow.classList.toggle("is-open", show);
+    if (!show) glideAway();
+    kindToggle.setAttribute("aria-expanded", String(show));
+    if (show) kindMenu.querySelector('[aria-checked="true"]')?.focus();
+  }
+
+  kindToggle.addEventListener("click", () => toggleKindMenu());
+
+  kindMenu.addEventListener("click", (e) => {
+    const option = e.target.closest(".kind-option");
+    if (!option) return;
+    showKind(option.dataset.kind);
+    toggleKindMenu(false);
+    kindToggle.focus();
+  });
+
+  // arrows walk the options; Escape closes only the menu, not the popup
+  kindMenu.addEventListener("keydown", (e) => {
+    const options = [...kindMenu.querySelectorAll(".kind-option")];
+    const at = options.indexOf(document.activeElement);
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const step = e.key === "ArrowDown" ? 1 : -1;
+      options[(at + step + options.length) % options.length].focus();
+    } else if (e.key === "Escape") {
+      e.stopPropagation();
+      toggleKindMenu(false);
+      kindToggle.focus();
+    }
+  });
+
+  document.addEventListener("mousedown", (e) => {
+    if (kindRow.classList.contains("is-open") && !kindRow.contains(e.target)) toggleKindMenu(false);
+  });
+
+  // the glide: follows the pointer (or keyboard focus) from option to option
+  const kindGlide = document.getElementById("kind-glide");
+
+  function glideTo(option) {
+    const fresh = !kindMenu.classList.contains("is-gliding");
+    kindMenu.classList.toggle("glide-jump", fresh);
+    kindGlide.style.setProperty("--glide-y", option.offsetTop + "px");
+    kindGlide.style.setProperty("--glide-h", option.offsetHeight + "px");
+    if (fresh) kindGlide.offsetHeight; // land before fading in
+    kindMenu.classList.add("is-gliding");
+    if (fresh) requestAnimationFrame(() => kindMenu.classList.remove("glide-jump"));
+  }
+
+  function glideAway() {
+    kindMenu.classList.remove("is-gliding");
+  }
+
+  kindMenu.addEventListener("pointerover", (e) => {
+    const option = e.target.closest(".kind-option");
+    if (option) glideTo(option);
+  });
+  // pointer gone: back to the keyboard-focused option, if any, else fade out
+  kindMenu.addEventListener("pointerleave", () => {
+    const focused = kindMenu.querySelector(".kind-option:focus-visible");
+    focused ? glideTo(focused) : glideAway();
+  });
+  kindMenu.addEventListener("focusin", (e) => {
+    if (e.target.matches(".kind-option:focus-visible")) glideTo(e.target);
+  });
+  kindMenu.addEventListener("focusout", (e) => {
+    if (!kindMenu.contains(e.relatedTarget)) glideAway();
+  });
+
+  // Marks lists only what is on the day; Made before (under New) the rest
+  function setupMarks(key, source) {
+    const marks = source.dataset.marks.split(",").filter(Boolean);
+    document.getElementById("mark-date").value = key;
+    document.getElementById("new-mark-date").value = key;
+    document.querySelectorAll("#mark-form [data-marker]").forEach((chip) => {
+      chip.hidden = !marks.includes(chip.dataset.marker);
+    });
+    let left = 0;
+    document.querySelectorAll("[data-made-before]").forEach((item) => {
+      item.hidden = marks.includes(item.dataset.madeBefore);
+      if (!item.hidden) left++;
+    });
+    const madeBefore = document.getElementById("made-before");
+    if (madeBefore) madeBefore.hidden = left === 0;
+    document.getElementById("day-marks-empty").hidden = marks.length > 0;
+    removeToggle.hidden = marks.length === 0;
+    // left open when the popup was closed: fold it without the animation,
+    // so the marks do not slide as the popup comes up
+    toggleNewMark(false, true);
+    toggleRemoveMarks(false);
+  }
+
+  function toggleNewMark(open, instant = false) {
+    const wrap = document.getElementById("new-mark-wrap");
+    const toggle = document.getElementById("new-mark-toggle");
+    const show = open ?? !wrap.classList.contains("is-open");
+    const still = instant || matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // the popup card moves with the fold. It is capped at 85vh, so left to
+    // itself it would sit still while the notes list gave way, then set off
+    // mid-speed once the cap let go; sizing it on the same curve keeps the
+    // whole popup gliding from the first frame to the last
+    const card = wrap.closest(".day-modal-card");
+
+    // where things are right now, even halfway through a previous fold
+    const fromHeight = wrap.getBoundingClientRect().height;
+    const fromMargin = getComputedStyle(wrap).marginTop;
+    const fromCard = card.getBoundingClientRect().height;
+    [wrap, card].forEach((el) => el.getAnimations().forEach((a) => a.id === "fold" && a.cancel()));
+
+    if (still) [wrap, toggle].forEach((el) => el.classList.add("no-motion"));
+    wrap.classList.toggle("is-open", show);
+    // phones hide the day's marks while New is open (see .is-adding)
+    wrap.closest(".day-marks").classList.toggle("is-adding", show);
+    toggle.setAttribute("aria-expanded", String(show));
+    if (still) {
+      wrap.offsetHeight; // apply the end state before motion is back on
+      [wrap, toggle].forEach((el) => el.classList.remove("no-motion"));
+    } else {
+      // glide from there to the new size in px: slow start, slow end
+      const timing = { duration: show ? 450 : 600, easing: "cubic-bezier(0.37, 0, 0.63, 1)" };
+      const toHeight = wrap.getBoundingClientRect().height;
+      const toMargin = getComputedStyle(wrap).marginTop;
+      const toCard = card.getBoundingClientRect().height;
+      wrap.animate(
+        [
+          { height: fromHeight + "px", marginTop: fromMargin },
+          { height: toHeight + "px", marginTop: toMargin },
+        ],
+        timing
+      ).id = "fold";
+      card.animate([{ height: fromCard + "px" }, { height: toCard + "px" }], timing).id = "fold";
+    }
+    // folded, nothing in it can be tabbed to
+    wrap.inert = !show;
+    toggle.querySelector(".new-mark-toggle-label").textContent = show ? "Cancel" : "New";
+    if (show) {
+      toggleRemoveMarks(false);
+      // no scroll jump while the panel is still folding open
+      document.getElementById("new-mark-name").focus({ preventScroll: true });
+    }
+  }
+
+  // Remove mode: only then can a chip be tapped, and it takes that mark off
+  // this day (the same toggle Made before puts it on with)
+  const markForm = document.getElementById("mark-form");
+  const removeToggle = document.getElementById("remove-mark-toggle");
+
+  function toggleRemoveMarks(on) {
+    const active = on ?? !markForm.classList.contains("is-removing");
+    markForm.classList.toggle("is-removing", active);
+    removeToggle.setAttribute("aria-pressed", String(active));
+    removeToggle.querySelector(".remove-mark-label").textContent = active ? "Done" : "Remove";
+    if (active) toggleNewMark(false);
+  }
+
+  markForm.addEventListener("submit", (e) => {
+    const chip = e.submitter;
+    if (chip?.dataset.marker && !markForm.classList.contains("is-removing")) e.preventDefault();
+  });
+
+  function closeDayModal() {
+    closeModal(dayModal);
+  }
+</script>
+<%- include("partials/list-search-script") %>

@@ -1,0 +1,615 @@
+<%# floating search + add buttons, search capsule and count row, shared by
+    the contacts and writing pages %>
+<style>
+  /* total count: a quiet caption so the eye goes to the contacts, not here */
+  .contact-count {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    font-family: var(--font-comic);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+  }
+
+  /* the number is a notch darker than its label, still well below the cards */
+  .contact-count-num {
+    color: color-mix(in srgb, var(--color-ink) 70%, var(--color-ink-soft));
+  }
+
+  /* search box outlined just like the contact cards: soft ink, full ink when active */
+  .search-input,
+  .search-input:hover,
+  .search-input:focus {
+    font-family: var(--font-comic);
+    /* same size as the total contacts caption */
+    font-size: 0.9rem;
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 50%, var(--color-line));
+    border-radius: 22px 18px 24px 16px / 16px 24px 18px 22px;
+    box-shadow: none;
+    transition:
+      border-color 0.5s var(--ease-soft),
+      box-shadow 0.5s var(--ease-soft);
+  }
+
+  .search-input:hover {
+    border-color: var(--color-ink);
+  }
+
+  .search-input:focus {
+    border-color: var(--color-ink);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-secondary) 45%, transparent);
+  }
+
+  /* count + layout switch row */
+  .toolbar-row {
+    position: relative;
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* phones: with no count in it the row only holds the (floating) search
+     box, so it takes no room in the page */
+  @media (max-width: 639px) {
+    .toolbar-row:not(:has(.contact-count)) {
+      display: contents;
+    }
+
+    /* the count a step down, like the line under the page title */
+    .contact-count {
+      font-size: 0.8rem;
+    }
+  }
+
+  /* floating search box: a capsule that grows out of the search button to
+     the left. The button sits on top of its right end, so the two read as one
+     piece; opening reveals it from the button outward. */
+  .search-box {
+    position: fixed;
+    right: 1.5rem; /* same edge as the button */
+    top: calc(50% - 3.375rem); /* same line as the search button */
+    z-index: 39; /* just under the button, which caps the capsule */
+    width: calc(100vw - 3rem);
+    height: 3rem;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    /* padded clip so the focus ring and shadow aren't cut off */
+    clip-path: inset(-24px -8px -24px calc(100% - 3rem) round 30px);
+    transition:
+      clip-path 0.45s var(--ease-smooth),
+      opacity 0.3s var(--ease-smooth),
+      visibility 0s linear 0.45s;
+  }
+
+  .search-box.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    clip-path: inset(-24px -8px -24px -8px round 30px);
+    transition:
+      clip-path 0.45s var(--ease-smooth),
+      opacity 0.2s var(--ease-smooth),
+      visibility 0s;
+  }
+
+  /* desktop: a short capsule, not a long bar */
+  @media (min-width: 640px) {
+    .search-box {
+      width: 16rem;
+    }
+  }
+
+  /* the input fills the capsule; right padding leaves room under the button */
+  /* same wobbly outline and focus state as the search box always had on the
+     left; the right end is shaped to join the button */
+  .search-box .search-input,
+  .search-box .search-input:hover,
+  .search-box .search-input:focus {
+    width: calc(100% - 1.5rem); /* ends under the middle of the button */
+    height: 100%;
+    padding: 0 2.3rem 0 1.15rem;
+    /* left end keeps the wobbly doodle corners; the right end has no border
+       or rounding, it tucks under the button so the two read as one piece */
+    border-right-width: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.35);
+  }
+
+  .search-box .search-input:focus {
+    border-color: var(--color-ink);
+    box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.35);
+  }
+
+  /* the focus ring wraps the whole capsule (input + button) so it stays one
+     piece: doodle corners on the left, rounded around the button on the right */
+  .search-box::before {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    z-index: -1;
+    background-color: color-mix(in srgb, var(--color-secondary) 45%, transparent);
+    /* right radii = half the ring height (54px); 999px would make the
+       browser shrink every corner, flattening the left ones */
+    border-radius: 25px 27px 27px 19px / 19px 27px 27px 25px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s var(--ease-smooth);
+  }
+
+  .search-box:focus-within::before {
+    opacity: 1;
+  }
+
+  .search-box:has(.search-clear) .search-input {
+    padding-right: 4.3rem;
+  }
+
+  .search-clear {
+    position: absolute;
+    top: 50%;
+    right: 3.9rem;
+    transform: translateY(-50%);
+  }
+
+  /* the button's two icons swap in place: search ↔ chevron (hide) */
+  .fab-search .fab-icon {
+    transition:
+      opacity 0.45s var(--ease-smooth),
+      transform 0.55s var(--ease-smooth);
+  }
+
+  .fab-search .fab-icon-close {
+    position: absolute;
+    opacity: 0;
+    transform: translateX(-6px) scale(0.6);
+  }
+
+  .fab-search[aria-expanded="true"] .fab-icon-open {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  .fab-search[aria-expanded="true"] .fab-icon-close {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* active-search badge: a small paper disc on the button's top-right corner
+     holding the first letter of the query; pops in when the box is hidden */
+  .search-badge {
+    position: absolute;
+    top: -0.3rem;
+    right: -0.3rem;
+    display: inline-flex;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.3rem;
+    font-family: var(--font-comic);
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-ink);
+    background-color: var(--color-card);
+    border: 1.5px solid var(--color-ink);
+    border-radius: 55% 45% 52% 48% / 48% 55% 45% 52%;
+    box-shadow: 2px 2px 0 -1px color-mix(in srgb, var(--color-marker) 70%, transparent);
+    opacity: 0;
+    transform: scale(0.4);
+    pointer-events: none;
+    transition:
+      opacity 0.3s var(--ease-smooth),
+      transform 0.35s var(--ease-smooth);
+  }
+
+  .fab-search.has-query .search-badge {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* the + reads heavier than the search glyph at the same size; trim it a bit */
+  .fab .fab-icon {
+    width: 1.05em;
+    height: 1.05em;
+  }
+
+  /* search open: the button that caps the capsule gets the ink line */
+  .fab-search[aria-expanded="true"] {
+    color: var(--color-ink);
+    background-color: var(--color-card);
+    border-color: var(--color-ink);
+  }
+
+  /* search + add buttons: a pair centred on the right edge, search on top,
+     3rem each and 0.75rem apart (the menu button keeps the bottom corner) */
+  .fab-search {
+    top: calc(50% - 3.375rem);
+  }
+
+  .fab {
+    top: calc(50% + 0.375rem);
+  }
+
+  /* phones + tablets: while the search box is open, a paper scrim rises from
+     the bottom of the screen to just above the input, fading out at its top
+     edge, so the floating controls never sit on top of busy content */
+  .search-scrim {
+    display: none;
+  }
+
+  @media (max-width: 959px) {
+    .search-scrim {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 38; /* under the search box (39) and the buttons (40) */
+      display: block;
+      /* tablet: the search button sits at 50% - 3.375rem, 3rem tall */
+      height: calc(50% + 3.375rem + 2.5rem);
+      background: linear-gradient(
+        to top,
+        var(--color-paper) calc(100% - 2.5rem),
+        color-mix(in srgb, var(--color-paper) 0%, transparent)
+      );
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity 0.4s var(--ease-smooth),
+        visibility 0s linear 0.4s;
+    }
+
+    body:has(.search-box.is-open) .search-scrim {
+      opacity: 1;
+      visibility: visible;
+      transition:
+        opacity 0.4s var(--ease-smooth),
+        visibility 0s;
+    }
+  }
+
+  @media (max-width: 639px) {
+    .search-scrim {
+      /* phone: the search button sits at bottom 7.2rem, 2.5rem tall */
+      height: calc(7.2rem + 2.5rem + 2.5rem);
+    }
+  }
+
+  /* tablets: the buttons keep their desktop size (3rem, 1.5rem from the
+     edge), so the content gets equal side gutters that clear them
+     (1.5rem edge + 3rem button + 0.75rem air = 5.25rem) */
+  @media (min-width: 640px) and (max-width: 959px) {
+    .list-page {
+      padding-right: 5.25rem;
+      padding-left: 5.25rem;
+    }
+  }
+
+  /* phones: the floating buttons shrink a little (3rem → 2.5rem), hug the
+     edge and stack in the bottom corner; the content gets equal side gutters
+     that also clear them, so nothing is ever hidden behind the buttons */
+  @media (max-width: 639px) {
+    /* even gutters on both sides, wide enough on the right to clear the
+       buttons (1.75rem tabs on the edge + a little air) */
+    .list-page {
+      padding-right: 2.5rem;
+      padding-left: 2.5rem;
+    }
+
+    /* room at the end so the last of the page (the pagination) scrolls
+       clear of the search box and its fade: 5.35rem + 1.75rem + 2.5rem,
+       and a little air */
+    .list-page {
+      padding-bottom: 10.5rem;
+    }
+
+    .fab-search,
+    .fab {
+      right: 0.75rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 1.05rem;
+    }
+
+    /* stacked in the bottom corner above the menu button (bottom 1rem):
+       menu → + → search, 2.5rem each, 0.6rem apart */
+    .fab {
+      top: auto;
+      bottom: 4.1rem;
+    }
+
+    .fab-search {
+      top: auto;
+      bottom: 7.2rem;
+    }
+
+    .search-box {
+      top: auto;
+      bottom: 7.2rem;
+      right: 0.75rem;
+      /* left edge lines up with the content gutter (3.5rem) */
+      width: calc(100vw - 3.5rem - 0.75rem);
+      height: 2.5rem;
+    }
+
+    .search-box .search-input,
+    .search-box .search-input:hover,
+    .search-box .search-input:focus {
+      width: calc(100% - 1.25rem);
+      padding-right: 1.9rem;
+    }
+
+    .search-box:has(.search-clear) .search-input {
+      padding-right: 3.6rem;
+    }
+
+    .search-clear {
+      right: 3.1rem;
+    }
+
+    .search-box::before {
+      border-radius: 25px 23px 23px 19px / 19px 23px 23px 25px;
+    }
+
+    .search-box {
+      clip-path: inset(-24px -8px -24px calc(100% - 2.5rem) round 30px);
+    }
+
+    .search-box.is-open {
+      clip-path: inset(-24px -8px -24px -8px round 30px);
+    }
+  }
+
+  /* compact search + add buttons: 2.5rem (phones 2.25rem), stacked above the
+     3rem (phones 2.5rem) menu button on the same vertical line. The search
+     capsule, its focus ring and the phone/tablet scrim follow the new size. */
+  .fab-search,
+  .fab {
+    right: 1.75rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.05rem;
+  }
+
+  /* stacked in the bottom corner above the menu button (bottom 1.5rem,
+     2.5rem tall): search and + sit close together as a pair (0.4rem), with a
+     little more air (1.1rem) before the menu */
+  /* + is a tab on the right edge, like back and the menu under it: round
+     on its left, flat where it meets the screen's edge, also when pointed
+     at or pressed */
+  .fab {
+    top: auto;
+    right: 0;
+    bottom: 5.1rem; /* 1.5rem + 2.5rem menu + 1.1rem */
+  }
+
+  .fab,
+  .fab:hover,
+  .fab:focus-visible,
+  .fab:active {
+    border-right-width: 0;
+    border-radius: 999px 0 0 999px;
+  }
+
+  .fab-search {
+    top: auto;
+    bottom: 8rem; /* 5.1rem + 2.5rem + 0.4rem */
+  }
+
+  .search-box {
+    top: auto;
+    bottom: 8rem;
+    right: 1.75rem;
+    height: 2.5rem;
+    clip-path: inset(-24px -8px -24px calc(100% - 2.5rem) round 30px);
+  }
+
+  .search-box.is-open {
+    clip-path: inset(-24px -8px -24px -8px round 30px);
+  }
+
+  .search-box .search-input,
+  .search-box .search-input:hover,
+  .search-box .search-input:focus {
+    width: calc(100% - 1.25rem);
+    padding-right: 1.9rem;
+  }
+
+  .search-box:has(.search-clear) .search-input {
+    padding-right: 3.6rem;
+  }
+
+  .search-clear {
+    right: 3.1rem;
+  }
+
+  .search-box::before {
+    border-radius: 25px 23px 23px 19px / 19px 23px 23px 25px;
+  }
+
+  @media (max-width: 959px) {
+    .search-scrim {
+      /* search button: bottom 8rem, 2.5rem tall, + 2.5rem fade */
+      height: calc(8rem + 2.5rem + 2.5rem);
+    }
+  }
+
+  @media (max-width: 639px) {
+    /* 1.75rem, the icon with them (0.9rem); tabs on the right edge like
+       back and the menu: round on the left, flat where they meet the
+       screen's edge, also when pointed at, pressed or open */
+    .fab-search,
+    .fab {
+      right: 0;
+      width: 1.75rem;
+      height: 1.75rem;
+      font-size: 0.75rem;
+    }
+
+    .fab-search,
+    .fab-search:hover,
+    .fab-search:focus-visible,
+    .fab-search:active,
+    .fab,
+    .fab:hover,
+    .fab:focus-visible,
+    .fab:active {
+      border-right-width: 0;
+      border-radius: 999px 0 0 999px;
+    }
+
+    .fab {
+      top: auto;
+      bottom: 3.25rem; /* menu: bottom 0.75rem + 1.75rem + 0.75rem */
+    }
+
+    .fab-search {
+      top: auto;
+      bottom: 5.35rem; /* + button: 3.25rem + 1.75rem + 0.35rem */
+    }
+
+    /* a capsule of a fair length (15rem, never past the content gutter)
+       running to the screen's edge, where the search tab caps it */
+    .search-box {
+      top: auto;
+      bottom: 5.35rem;
+      right: 0;
+      width: min(15rem, calc(100vw - 2.5rem));
+      height: 1.75rem;
+      clip-path: inset(-24px -8px -24px calc(100% - 1.75rem) round 30px);
+    }
+
+    .search-box.is-open {
+      clip-path: inset(-24px -8px -24px -8px round 30px);
+    }
+
+    .search-box .search-input,
+    .search-box .search-input:hover,
+    .search-box .search-input:focus {
+      width: calc(100% - 0.875rem); /* under the middle of the 1.75rem button */
+      padding-right: 1.8rem;
+    }
+
+    /* the x sits close to the search tab (about 6px off it), the typing
+       stops just before the x */
+    .search-box:has(.search-clear) .search-input {
+      padding-right: 2.6rem;
+    }
+
+    .search-clear {
+      right: 2.1rem;
+    }
+
+    /* the search is a tab on the screen's edge here, so the active-search
+       badge moves to its top-left corner (the top-right one is off-screen),
+       a step smaller with the button */
+    .search-badge {
+      top: -0.35rem;
+      right: auto;
+      left: -0.35rem;
+      min-width: 1.1rem;
+      height: 1.1rem;
+      padding: 0 0.2rem;
+      font-size: 0.65rem;
+    }
+
+    .search-box::before {
+      border-radius: 25px 21px 21px 19px / 19px 21px 21px 25px;
+    }
+
+    .search-scrim {
+      height: calc(5.35rem + 1.75rem + 2.5rem);
+    }
+  }
+
+  /* tablet + desktop: the search sits inline in the count row, just left of
+     the list/card switch, always visible; the floating search button and the
+     phone scrim aren't needed there */
+  .search-inline-icon {
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .fab-search,
+    .search-scrim {
+      display: none;
+    }
+
+    .search-box,
+    .search-box.is-open {
+      position: relative;
+      top: auto;
+      right: auto;
+      bottom: auto;
+      z-index: auto;
+      width: 15rem;
+      height: 2.2rem;
+      margin: 0 0.75rem 0 auto;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      clip-path: none;
+      transform: none;
+      transition: none;
+    }
+
+    .search-box::before {
+      display: none;
+    }
+
+    /* nothing to its right (no list/card switch): sit flush with the edge */
+    .search-box:last-child {
+      margin-right: 0;
+    }
+
+    .search-inline-icon {
+      position: absolute;
+      top: 50%;
+      left: 0.8rem;
+      z-index: 1;
+      display: inline-flex;
+      font-size: 0.95rem;
+      color: color-mix(in srgb, var(--color-ink-soft) 70%, var(--color-paper));
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    /* same quiet paper + pale pen line as the list/card switch next to it */
+    .search-box .search-input,
+    .search-box .search-input:hover,
+    .search-box .search-input:focus {
+      width: 100%;
+      height: 100%;
+      padding: 0 1rem 0 2.2rem;
+      background-color: color-mix(in srgb, var(--color-paper-deep) 55%, var(--color-paper));
+      border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+      border-radius: 22px 18px 24px 16px / 16px 24px 18px 22px;
+      box-shadow: none;
+    }
+
+    .search-box .search-input:hover {
+      border-color: color-mix(in srgb, var(--color-ink) 28%, var(--color-line));
+    }
+
+    .search-box .search-input:focus {
+      background-color: var(--color-card);
+      border-color: color-mix(in srgb, var(--color-ink) 40%, var(--color-line));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-secondary) 35%, transparent);
+    }
+
+    .search-box:has(.search-clear) .search-input {
+      padding-right: 2.4rem;
+    }
+
+    .search-clear {
+      right: 0.85rem;
+    }
+  }
+</style>

@@ -1,188 +1,726 @@
-<div class="grid w-full grid-cols-1 gap-6 p-6">
-  <div class="flex items-center justify-between">
-    <div>
-      <h2 class="mb-2 text-3xl font-bold">Contacts</h2>
-      <p class="text-neutral-500">Manage your contact list with ease</p>
+<%
+  const keep = search ? "&search=" + encodeURIComponent(search) : "";
+  const pageLink = (p) => "/contacts?page=" + p + keep;
+  const viewAllLink = "/contacts?all=1" + keep;
+  const initials = (name) =>
+    name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  // group contacts by the first letter of their name (A–Z, anything else
+  // under "#"), letters in order and names A–Z inside each group. Done here
+  // too, so the grouping holds whatever order the list arrives in.
+  const byName = (a, b) =>
+    (a.name || "").localeCompare(b.name || "", "en", { sensitivity: "base" });
+  const buckets = {};
+  students.forEach((contact) => {
+    const first = (contact.name || "").trim().charAt(0).toUpperCase();
+    const key = /[A-Z]/.test(first) ? first : "#";
+    (buckets[key] = buckets[key] || []).push(contact);
+  });
+  const groups = Object.keys(buckets)
+    .sort((a, b) => (a === "#") - (b === "#") || a.localeCompare(b))
+    .map((letter) => ({ letter, items: buckets[letter].sort(byName) }));
+  let cardIndex = 0;
+  // the search box starts open for an active search, unless it found nothing:
+  // then it's already tucked away (query kept, badge on the button) before the
+  // empty state shows
+  const searchOpen = !!search && students.length > 0;
+%>
+<style>
+  /* page styles come before the markup so cards never paint unstyled first
+     (an unstyled → styled switch would animate the card border on refresh) */
+
+  /* list / card switch (right end of the count row): a small doodle segmented control so it reads as "pick one".
+     A paper-white thumb slides behind the active icon; everything stays pale
+     so it never competes with the contacts. */
+  .view-switch {
+    /* short, slightly wide segments so the control sits low in the row */
+    --seg-w: 1.9rem;
+    --seg-h: 1.4rem;
+    --pad: 0.12rem;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: var(--pad);
+    background-color: color-mix(in srgb, var(--color-paper-deep) 55%, var(--color-paper));
+    /* pen-drawn outline: wobbly corners like the search box and cards */
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 16px 12px 17px 11px / 11px 17px 12px 16px;
+    overflow: hidden; /* keeps the thumb's marker offset inside the outline */
+  }
+
+  .view-switch::before {
+    content: "";
+    position: absolute;
+    top: var(--pad);
+    left: var(--pad);
+    width: var(--seg-w);
+    height: var(--seg-h);
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 22%, var(--color-line));
+    border-radius: 12px 9px 13px 8px / 8px 13px 9px 12px;
+    /* faint marker fill printed off the line, like the avatars */
+    box-shadow: 2px 2px 0 -1px color-mix(in srgb, var(--color-marker) 35%, transparent);
+    transition: transform 0.4s var(--ease-smooth);
+  }
+
+  .view-switch:has(.view-btn[data-view="cards"][aria-pressed="true"])::before {
+    transform: translateX(var(--seg-w));
+  }
+
+  .view-btn {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    width: var(--seg-w);
+    height: var(--seg-h);
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    color: color-mix(in srgb, var(--color-ink-soft) 45%, var(--color-paper));
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 0.35s var(--ease-smooth);
+  }
+
+  .view-btn:hover {
+    color: var(--color-ink-soft);
+  }
+
+  .view-btn[aria-pressed="true"] {
+    color: var(--color-ink-soft);
+    cursor: default;
+  }
+
+  .view-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+    outline-offset: 1px;
+  }
+
+  /* list layout: plain text rows, no card box and no avatar; name on the
+     left, number (still the stabilo focal point) on the right */
+  .contact-groups.is-list ul {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+
+  .contact-groups.is-list .contact-card {
+    /* rows never show a border, so there's nothing to animate there */
+    transition-property: transform, box-shadow, background-color;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 1rem;
+    align-items: center;
+    padding: 0.55rem 0.35rem;
+    text-align: left;
+    background-color: transparent;
+    border-color: transparent;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  .contact-groups.is-list .contact-avatar-wrap {
+    display: none;
+  }
+
+  .contact-groups.is-list .contact-name {
+    font-size: 1rem;
+    /* softer than the number, so the number still leads the row */
+    color: var(--color-ink-soft);
+  }
+
+  .contact-groups.is-list .contact-phone {
+    justify-self: end;
+    margin-top: 0;
+  }
+
+  /* hover in the list: no lift or frame, the text just firms up */
+  @media (hover: hover) {
+    .contact-groups.is-list .contact-card:hover {
+      background-color: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      transform: none;
+    }
+  }
+
+  .contact-groups.is-list .contact-card:active {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .contact-groups.is-list .contact-card:focus-visible {
+    border-color: transparent;
+  }
+
+  /* layout switch (View Transitions): each card glides and resizes into its
+     new spot. The old snapshot leaves out the border (and shadow) so it isn't
+     seen stretching; the new card brings its border in as it lands. */
+  html.vt-switch .contact-card {
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  /* border changes are instant during a switch, never a lagging fade */
+  html.vt-instant .contact-card {
+    transition: none;
+  }
+
+  ::view-transition-group(*.contact) {
+    animation-duration: 0.45s;
+    animation-timing-function: var(--ease-smooth);
+  }
+
+  /* the new card (with its border) shows up over the second half, when it's
+     close to its final size, so the border is barely scaled when seen */
+  ::view-transition-new(*.contact) {
+    animation-name: card-new-in;
+  }
+
+  @keyframes card-new-in {
+    0%,
+    40% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  /* empty state framed exactly like a contact card */
+  .empty-card {
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 50%, var(--color-line));
+    border-radius: 34px 28px 36px 26px / 26px 36px 28px 34px;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 4px 12px -8px rgba(0, 0, 0, 0.18);
+  }
+
+  /* A, B, C... sections: a big hand-lettered initial with a stabilo swipe
+     and a soft rule running out to the right, cards underneath */
+  .contact-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  .group-letter {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--color-ink);
+  }
+
+  .group-letter span {
+    position: relative;
+    isolation: isolate;
+    padding: 0 0.35rem;
+  }
+
+  .group-letter span::before {
+    content: "";
+    position: absolute;
+    inset: auto 0 0.05em 0;
+    z-index: -1;
+    height: 0.5em;
+    background: color-mix(in srgb, var(--color-marker) 40%, transparent);
+    border-radius: 3px 8px 4px 10px;
+  }
+
+  /* quiet rule: a thin line in the page's line colour that fades out to the right */
+  .group-letter::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-line) 80%, transparent),
+      transparent 85%
+    );
+    border-radius: 1px;
+  }
+
+  /* clean card with comic touches: thin pen outline and a marker-offset
+     avatar. Each card cycles colors. */
+  .contact-card {
+    --avatar: var(--color-blush);
+    --accent: var(--color-marker);
+    position: relative;
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1.6rem 1.1rem 1.4rem;
+    text-align: center;
+    font-family: var(--font-comic);
+    color: var(--color-ink);
+    background-color: var(--color-card);
+    /* softer ink so the frame sits with the quiet avatar/name and lets the
+       number lead; it firms up to full ink on hover */
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 50%, var(--color-line));
+    /* same wobbly capsule feel as the search box, scaled up for a tall card */
+    border-radius: 34px 28px 36px 26px / 26px 36px 28px 34px;
+    /* two-layer shadow (contact + ambient) so the lift reads as depth, not blur */
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 4px 12px -8px rgba(0, 0, 0, 0.18);
+    /* hover motion: one even curve, one duration for every piece, a small
+       cascade inside (frame → avatar → name → number) */
+    --hover-time: 0.5s;
+    transition-property: transform, box-shadow, border-color, background-color;
+    transition-duration: var(--hover-time);
+    transition-timing-function: var(--ease-smooth);
+  }
+
+  li:nth-child(3n + 2) .contact-card {
+    --avatar: var(--color-sky);
+    --accent: var(--color-crayon);
+  }
+
+  li:nth-child(3n + 3) .contact-card {
+    --avatar: var(--color-mint);
+    --accent: color-mix(in srgb, var(--color-berry) 55%, var(--color-marker));
+  }
+
+  .contact-card > * {
+    position: relative;
+  }
+
+  /* marker fill printed slightly off the line, kept faint so it doesn't pull focus */
+  .contact-avatar {
+    display: inline-flex;
+    width: 3.25rem;
+    height: 3.25rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    color: var(--color-ink-soft);
+    background-color: var(--avatar);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 35%, var(--color-line));
+    border-radius: 52% 48% 50% 50% / 48% 52% 48% 52%;
+    box-shadow: 3px 2px 0 -1px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  .contact-avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    margin-bottom: 0.25rem;
+  }
+
+  /* reading order inside a card: number first, then name, then the avatar */
+  .contact-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+  }
+
+  .contact-phone {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.1rem;
+    color: var(--color-ink);
+  }
+
+  .contact-phone-num {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 0.3rem;
+    font-family: var(--font-comic);
+    /* same size as the name; it still leads through ink colour + stabilo */
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  /* stabilo swipe as its own layer, so hover can thicken it on the GPU */
+  .contact-phone-num::before {
+    content: "";
+    position: absolute;
+    inset: auto 0 0.1em 0;
+    z-index: -1;
+    height: 0.55em;
+    background: linear-gradient(
+      100deg,
+      transparent 1%,
+      color-mix(in srgb, var(--accent) 50%, transparent) 4%,
+      color-mix(in srgb, var(--accent) 40%, transparent) 95%,
+      transparent 99%
+    );
+    border-radius: 3px 8px 4px 10px;
+    transform-origin: left bottom;
+    opacity: 0.65;
+  }
+
+  /* the icon stays a step lighter so the number itself leads */
+  .contact-phone .doodle-i {
+    font-size: 0.95rem;
+    color: var(--color-ink-soft);
+  }
+
+  /* every moving piece shares the card's timing */
+  .contact-avatar,
+  .contact-name,
+  .contact-phone .doodle-i,
+  .contact-phone-num::before {
+    transition-duration: var(--hover-time);
+    transition-timing-function: var(--ease-smooth);
+  }
+
+  .contact-avatar {
+    transition-property: transform, box-shadow, border-color, color;
+  }
+
+  .contact-name {
+    transition-property: color;
+  }
+
+  .contact-phone .doodle-i {
+    transition-property: color, transform;
+  }
+
+  .contact-phone-num::before {
+    transition-property: transform, opacity;
+  }
+
+  /* hover pose (mouse only, so a tap on touch screens doesn't leave it stuck)
+     and the same pose for keyboard focus */
+  @media (hover: hover) {
+    .contact-card:hover {
+      border-color: var(--color-ink);
+      background-color: color-mix(in srgb, var(--accent) 9%, var(--color-card));
+      transform: translateY(-4px);
+      box-shadow:
+        0 0 0 1px var(--color-ink),
+        0 2px 4px rgba(0, 0, 0, 0.06),
+        0 18px 30px -16px rgba(0, 0, 0, 0.35);
+    }
+
+    .contact-card:hover .contact-avatar {
+      transform: scale(1.05);
+      color: var(--color-ink);
+      border-color: var(--color-ink);
+      box-shadow: 4px 3px 0 -1px color-mix(in srgb, var(--accent) 75%, transparent);
+      transition-delay: 30ms;
+    }
+
+    .contact-card:hover .contact-name {
+      color: var(--color-ink);
+      transition-delay: 60ms;
+    }
+
+    .contact-card:hover .contact-phone .doodle-i {
+      color: var(--accent);
+      transform: translateX(-2px);
+      transition-delay: 90ms;
+    }
+
+    .contact-card:hover .contact-phone-num::before {
+      opacity: 1;
+      transform: scaleY(1.7);
+      transition-delay: 90ms;
+    }
+  }
+
+  .contact-card:focus-visible {
+    border-color: var(--color-ink);
+    outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+    outline-offset: 4px;
+  }
+
+  .contact-card:focus-visible .contact-phone-num::before {
+    opacity: 1;
+    transform: scaleY(1.7);
+  }
+
+  /* press: settle back down quickly, like pushing a card into the table */
+  .contact-card:active {
+    transform: translateY(-1px) scale(0.985);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.05),
+      0 6px 14px -10px rgba(0, 0, 0, 0.25);
+    transition-duration: 0.12s;
+  }
+
+
+  .page-dot {
+    display: inline-flex;
+    min-width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    border-radius: 999px;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .page-dot:hover {
+    color: var(--color-ink);
+    background-color: var(--color-paper-deep);
+  }
+
+  .page-dot.is-current {
+    color: var(--color-on-primary);
+    background-color: var(--color-primary);
+  }
+
+  /* phones: laid out like the writing page, the page title and its line a
+     size down, and the count close under the header. The contact cards
+     stay slim here (4rem gutters), narrower than the calendar and the
+     detail pages */
+  @media (max-width: 639px) {
+    /* (.contacts-page: the shared list styles load after this block) */
+    .contacts-page.list-page {
+      padding-right: 4rem;
+      padding-left: 4rem;
+    }
+
+    .contacts-page .toolbar-row {
+      min-height: 0;
+      margin-top: -0.9rem;
+    }
+
+    .header .header-title {
+      font-size: 1.75rem;
+    }
+
+    .header .header-title + p {
+      font-size: 0.8rem;
+    }
+
+    /* the rest of the page's text a step smaller with it: the group
+       letters, the cards, the pages row and the empty note */
+    .group-letter {
+      font-size: 1.3rem;
+    }
+
+    .contact-name,
+    .contact-phone-num,
+    .contact-phone .doodle-i {
+      font-size: 0.85rem;
+    }
+
+    .contact-groups.is-list .contact-name {
+      font-size: 0.9rem;
+    }
+
+    .contact-avatar {
+      font-size: 0.8rem;
+    }
+
+    .page-dot,
+    .contacts-page .doodle-btn-sm {
+      font-size: 0.78rem;
+    }
+
+    .empty-card {
+      font-size: 0.85rem;
+    }
+  }
+</style>
+<%- include("partials/list-toolbar-styles") %>
+<div class="contacts-page list-page mx-auto grid w-full max-w-3xl grid-cols-1 gap-6 p-6 pt-14 pb-28">
+  <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
+    <div class="flex items-end gap-4">
+      <%- include("partials/peep", { pose: "call", cls: "header-peep-fade -mb-1 hidden h-24 sm:block" }) %>
+      <div class="pb-1">
+        <h2 class="header-title mb-1 text-4xl">
+          <span class="header-title-mark">Contacts</span>
+        </h2>
+        <p class="text-ink-soft font-comic font-bold">Manage your contact list with ease</p>
+      </div>
     </div>
-    <button
-      class="cursor-pointer rounded-md bg-neutral-950 px-3.5 py-1.5 text-sm text-white transition duration-200 ease-in-out hover:bg-neutral-800"
-      onclick="window.location.href = '/contact/new'"
-    >
-      <i class="bi bi-plus"></i> New Contact
-    </button>
   </div>
-  <div class="relative">
-    <div class="absolute inset-y-0 left-3 flex h-full items-center">
-      <i class="bi bi-search text-base text-neutral-500"></i>
-    </div>
+
+  <!-- floating add button, right edge (vertically centred with the search button) -->
+  <a
+    href="/contact/new"
+    aria-label="New contact"
+    title="New contact"
+    class="fab fab-simple doodle-btn fixed right-6 z-40 h-12 w-12 p-0 text-xl"
+  >
+    <%- include("partials/doodle-icon", { name: "plus", cls: "fab-icon" }) %>
+  </a>
+
+  <!-- floating search button, above the add button: jumps to the search box -->
+  <button
+    type="button"
+    onclick="toggleSearch()"
+    aria-controls="search-box"
+    aria-expanded="<%= searchOpen ? 'true' : 'false' %>"
+    aria-label="Search contacts"
+    data-label="Search contacts"
+    title="Search contacts"
+    class="fab-search fab-simple doodle-btn fixed right-6 z-40 h-12 w-12 p-0 text-xl"
+  >
+    <!-- search icon while closed; a "tuck away" chevron while the box is open -->
+    <%- include("partials/doodle-icon", { name: "search", cls: "fab-icon fab-icon-open" }) %>
+    <%- include("partials/doodle-icon", { name: "chevron-right", cls: "fab-icon fab-icon-close" }) %>
+    <!-- shows the first letter of an active search while the box is hidden -->
+    <span class="search-badge" aria-hidden="true"></span>
+  </button>
+
+  <!-- paper scrim behind the open search box on phones/tablets, so the
+       content underneath doesn't show through around the input -->
+  <div class="search-scrim" aria-hidden="true"></div>
+
+
+  <div class="toolbar-row" data-stagger style="--i: 1">
+  <span class="contact-count">
+    <span class="contact-count-num"><%= totalContacts %></span>
+    <span class="contact-count-label"><%= totalContacts === 1 ? "contact" : "contacts" %></span>
+  </span>
+
+  <!-- search: inline in this row on tablet/desktop; on phones it becomes the
+       floating capsule that grows out of the search button (hidden until
+       opened, kept open while a search with results is active) -->
+  <div id="search-box" class="search-box <%= searchOpen ? 'is-open' : '' %>">
+    <span class="search-inline-icon" aria-hidden="true"><%- include("partials/doodle-icon", { name: "search" }) %></span>
     <input
       type="text"
       id="search"
       name="search"
       value="<%= search %>"
-      placeholder="Search by name, email, phone or company"
+      placeholder="Search contacts..."
+      title="Search by name, email, phone or company"
       oninput="searchContacts(this.value)"
-      class="w-full rounded-lg border border-neutral-300 py-1.5 pr-3 pl-10 text-sm shadow-2xs outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-800/20"
+      onkeydown="if (event.key === 'Escape') closeSearch()"
+      class="doodle-input search-input"
     />
     <% if (search) { %>
     <button
       type="button"
       onclick="clearSearch()"
-      class="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-neutral-500 transition duration-200 ease-in-out hover:text-neutral-800"
+      aria-label="Clear search"
+      class="search-clear text-ink-soft hover:text-ink cursor-pointer transition duration-200 ease-in-out"
     >
-      <i class="bi bi-x text-xl"></i>
+      <%- include("partials/doodle-icon", { name: "x" }) %>
     </button>
     <% } %>
   </div>
-  <div>
-    <div class="w-full">
-      <!-- Table Container -->
-      <div
-        class="overflow-x-auto rounded-lg border border-neutral-200 shadow-sm"
-      >
-        <table class="w-full text-sm">
-          <thead class="border-b border-neutral-200 bg-neutral-100">
-            <tr>
-              <th class="px-4 py-2 text-left font-medium text-neutral-700">
-                #
-              </th>
-              <th class="px-4 py-2 text-left font-medium text-neutral-700">
-                Avatar
-              </th>
-              <th class="px-4 py-2 text-left font-medium text-neutral-700">
-                Name
-              </th>
-              <th class="px-4 py-2 text-left font-medium text-neutral-700">
-                Email
-              </th>
-              <th class="px-4 py-2 text-left font-medium text-neutral-700">
-                Phone
-              </th>
-              <th class="px-4 py-2 text-left font-medium text-neutral-700">
-                Company
-              </th>
-              <th class="px-4 py-2 text-left font-medium text-neutral-700">
-                Actions
-              </th>
-            </tr>
-          </thead>
 
-          <tbody class="divide-y divide-neutral-200">
-            <% if (students.length === 0) { %>
-            <tr>
-              <td colspan="7" class="p-4">
-                <div class="text-center">The contact data is empty.</div>
-              </td>
-            </tr>
-            <% } %> <% students.forEach((contact, i) => { %>
-            <tr class="hover:bg-neutral-50">
-              <td class="px-4 py-2">
-                <%= (currentPage - 1) * limit + (i + 1) %>
-              </td>
-              <td class="px-4 py-2">
-                <% if (contact.image) { %>
-                <img
-                  src="<%= contact.image %>"
-                  alt="Avatar"
-                  class="h-10 w-10 rounded-xl"
-                />
-                <% } else { %>
-                <i
-                  id="default-avatar"
-                  class="bi bi-person-fill mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-300/50 text-2xl text-neutral-600/50"
-                ></i>
-                <% } %>
-              </td>
-              <td class="px-4 py-2"><%= contact.name %></td>
-              <td class="px-4 py-2"><%= contact.email %></td>
-              <td class="px-4 py-2"><%= contact.phone %></td>
-              <td class="px-4 py-2">
-                <%= contact.company ? contact.company : '-' %>
-              </td>
-              <td class="px-4 py-2">
-                <button
-                  class="cursor-pointer rounded-md bg-neutral-950 px-2 py-1 text-sm text-white transition duration-200 ease-in-out hover:bg-neutral-800"
-                  onclick="window.location.href = '/contact/<%= contact._id %>'"
-                >
-                  <i class="bi bi-eye mr-1"></i>
-                  View Detail
-                </button>
-              </td>
-            </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-
-      <% if (students.length !== 0) { %>
-      <div class="mt-4 flex items-center justify-between">
-        <p class="text-sm text-neutral-600">
-          Showing <%= (currentPage - 1) * limit + 1 %> – <%=
-          Math.min(currentPage * limit, totalContacts) %> of <%= totalContacts
-          %>
-        </p>
-
-        <div class="flex items-center space-x-2">
-          <!-- Previous -->
-          <% if (currentPage > 1) { %>
-          <a
-            href="/contacts?page=<%= currentPage - 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>"
-            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100"
-          >
-            Previous
-          </a>
-          <% } else { %>
-          <button
-            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-400"
-            disabled
-          >
-            Previous
-          </button>
-          <% } %>
-
-          <!-- Page numbers -->
-
-          <% for (let i = 1; i <= totalPages; i++) { %> <% if (i ===
-          currentPage) { %>
-          <span
-            class="rounded-md bg-neutral-900 px-3 py-1.5 text-sm text-white"
-          >
-            <%= i %>
-          </span>
-          <% } else { %>
-          <a
-            href="/contacts?page=<%= i %><%= search ? '&search=' + encodeURIComponent(search) : '' %>"
-            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100"
-          >
-            <%= i %>
-          </a>
-          <% } %> <% } %>
-
-          <!-- Next -->
-
-          <% if (currentPage < totalPages) { %>
-          <a
-            href="/contacts?page=<%= currentPage + 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>"
-            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100"
-          >
-            Next
-          </a>
-          <% } else { %>
-          <button
-            class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-400"
-            disabled
-          >
-            Next
-          </button>
-          <% } %>
-        </div>
-      </div>
-      <% } %>
-    </div>
+  <!-- view switch: list rows or cards -->
+  <div class="view-switch" role="group" aria-label="Layout">
+    <button type="button" class="view-btn" data-view="list" aria-pressed="false" title="List view" aria-label="List view">
+      <%- include("partials/doodle-icon", { name: "list" }) %>
+    </button>
+    <button type="button" class="view-btn" data-view="cards" aria-pressed="true" title="Card view" aria-label="Card view">
+      <%- include("partials/doodle-icon", { name: "cards" }) %>
+    </button>
   </div>
+
+  </div>
+
+  <% if (students.length === 0) { %>
+  <div class="doodle-card empty-card text-ink-soft flex flex-col items-center gap-2 p-10 text-center">
+    <%- include("partials/peep", { pose: "think", cls: "h-28" }) %>
+    <span class="text-ink font-bold">
+      <%= search ? "Hmm, nothing found" : "No contacts here yet" %>
+    </span>
+    <span class="font-comic font-bold">
+      <%= search ? `No contact matches "${search}".` : "Add your first one to get started." %>
+    </span>
+  </div>
+  <% } else { %>
+  <div class="contact-groups" id="contact-groups">
+    <script>
+      // apply the remembered layout before first paint, so there's no flash
+      try {
+        // remembered separately for phones and for tablet/desktop, so a list
+        // picked on a phone never makes the desktop open as a list; both
+        // default to cards
+        const key = matchMedia("(min-width: 640px)").matches ? "contacts-view-wide" : "contacts-view-phone";
+        if (localStorage.getItem(key) === "list") {
+          document.currentScript.parentElement.classList.add("is-list");
+        }
+      } catch (e) {}
+    </script>
+<%- include("partials/list-search-script") %>
+    <% groups.forEach((group) => { %>
+    <section class="contact-group" aria-labelledby="group-<%= group.letter %>">
+      <h3 id="group-<%= group.letter %>" class="group-letter" data-stagger style="--i: <%= cardIndex + 2 %>">
+        <span><%= group.letter %></span>
+      </h3>
+      <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        <% group.items.forEach((contact) => { %>
+        <li data-stagger style="--i: <%= ++cardIndex + 2 %>">
+          <a href="/contact/<%= contact._id %>" class="contact-card" style="view-transition-name: c-<%= contact._id %>; view-transition-class: contact">
+            <span class="contact-avatar-wrap">
+              <% if (contact.image) { %>
+              <img src="<%= contact.image %>" alt="" class="contact-avatar object-cover" />
+              <% } else { %>
+              <span class="contact-avatar text-sm font-bold"><%= initials(contact.name) %></span>
+              <% } %>
+            </span>
+
+            <span class="contact-name w-full truncate"><%= contact.name %></span>
+
+            <span class="contact-phone">
+              <%- include("partials/doodle-icon", { name: "phone" }) %>
+              <span class="contact-phone-num"><%= contact.phone %></span>
+            </span>
+
+          </a>
+        </li>
+        <% }) %>
+      </ul>
+    </section>
+    <% }) %>
+  </div>
+
+  <% if (totalPages > 1 && !search) { %>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <% if (viewAll) { %>
+    <a href="<%= pageLink(1) %>" class="doodle-btn doodle-btn-sm">
+      <%- include("partials/doodle-icon", { name: "collapse" }) %> Show less
+    </a>
+    <% } else { %>
+    <a href="<%= viewAllLink %>" class="doodle-btn doodle-btn-sm">
+      View all <%- include("partials/doodle-icon", { name: "arrow-right" }) %>
+    </a>
+    <% } %>
+
+    <% if (!viewAll) { %>
+    <nav class="flex items-center gap-1" aria-label="Pagination">
+      <% if (currentPage > 1) { %>
+      <a href="<%= pageLink(currentPage - 1) %>" class="page-dot" aria-label="Previous page">
+        <%- include("partials/doodle-icon", { name: "chevron-left" }) %>
+      </a>
+      <% } %>
+      <% for (let p = 1; p <= totalPages; p++) { %>
+      <a
+        href="<%= pageLink(p) %>"
+        class="page-dot <%= p === currentPage ? 'is-current' : '' %>"
+        <%- p === currentPage ? 'aria-current="page"' : '' %>
+      ><%= p %></a>
+      <% } %>
+      <% if (currentPage < totalPages) { %>
+      <a href="<%= pageLink(currentPage + 1) %>" class="page-dot" aria-label="Next page">
+        <%- include("partials/doodle-icon", { name: "chevron-right" }) %>
+      </a>
+      <% } %>
+    </nav>
+    <% } %>
+  </div>
+  <% } %>
+  <% } %>
 </div>
+
 
 <script>
   let timeout = null;
@@ -199,11 +737,59 @@
         params.set("search", value);
       }
 
-      params.set("page", 1);
+      // a search shows every match on one list, so it carries no page;
+      // clearing it goes back to the first page
+      params.delete("page");
+      params.delete("all");
 
       window.location.href = "/contacts?" + params.toString();
     }, 400);
   }
+
+  // list / card switch; remembered per browser, morphs smoothly where the
+  // View Transitions API is available
+  (function () {
+    const groups = document.getElementById("contact-groups");
+    const buttons = document.querySelectorAll(".view-btn");
+    if (!buttons.length) return;
+    const sync = () => {
+      const view = groups && groups.classList.contains("is-list") ? "list" : "cards";
+      buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+    };
+    sync();
+    buttons.forEach((btn) =>
+      btn.addEventListener("click", () => {
+        if (!groups) return;
+        const toList = btn.dataset.view === "list";
+        if (groups.classList.contains("is-list") === toList) return;
+        const root = document.documentElement;
+        const apply = () => {
+          groups.classList.toggle("is-list", toList);
+          sync();
+          // the new layout is captured with its border back in place
+          root.classList.remove("vt-switch");
+        };
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (document.startViewTransition && !reduce) {
+          // the old layout is captured without the card border (that's the
+          // snapshot that stretches most); vt-instant keeps the border from
+          // fading, so it's simply there in the new layout and after
+          root.classList.add("vt-switch", "vt-instant");
+          document
+            .startViewTransition(apply)
+            .finished.finally(() => root.classList.remove("vt-switch", "vt-instant"));
+        } else {
+          apply();
+        }
+        try {
+          const key = matchMedia("(min-width: 640px)").matches ? "contacts-view-wide" : "contacts-view-phone";
+          localStorage.setItem(key, toList ? "list" : "cards");
+        } catch (e) {}
+      })
+    );
+  })();
+
+
 
   function clearSearch() {
     const input = document.getElementById("search");
@@ -211,3 +797,4 @@
     searchContacts("");
   }
 </script>
+<%- include("partials/list-search-script") %>

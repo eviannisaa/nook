@@ -1,0 +1,31 @@
+# dependencies (installed again with npm install)
+node_modules/
+
+# files people upload through the app
+public/uploads/*
+!public/uploads/.gitkeep
+
+# environment and secrets
+.env
+.env.*
+!.env.example
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# backups
+*.bak
+src/bak/
+
+# screenshots and scratch images in the project root
+/*.png
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,109 @@
+<%# mood: a row of faces to pick from, shared by new-writing and edit-writing.
+    Each face is a radio (the value stays the mood's name); a hidden empty
+    one stands for "no mood", so picking the current face again clears it %>
+<%
+  const picked = moods.includes(mood) ? mood : "";
+%>
+<div class="field mood-field sm:col-span-2">
+  <span id="mood-label" class="field-label"><span>Mood</span></span>
+  <div class="mood-picker" id="mood-picker" role="radiogroup" aria-labelledby="mood-label">
+    <input type="radio" name="mood" value="" hidden <%= picked ? "" : "checked" %> />
+    <% moods.forEach((name) => { %>
+    <label class="mood-opt" title="<%= name %>">
+      <input type="radio" name="mood" value="<%= name %>" class="sr-only" <%= picked === name ? "checked" : "" %> />
+      <span class="mood-face" aria-hidden="true"><%= moodFaces[name] || "🙂" %></span>
+      <span class="mood-name"><%= name %></span>
+    </label>
+    <% }) %>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const picker = document.getElementById("mood-picker");
+    const none = picker.querySelector('input[value=""]');
+    let wasChecked = null;
+
+    // the faces: a picked one springs up to its size with a small lift and
+    // a wobble that dies out; the one let go springs gently back down. Each
+    // spring starts from wherever the face is at that moment, so quick
+    // re-picks turn around smoothly instead of jumping
+    const PICKED = 1.18;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const faceOf = (input) => input?.closest(".mood-opt")?.querySelector(".mood-face");
+    let pickedFace = faceOf(picker.querySelector(".mood-opt input:checked"));
+
+    // a damped spring from `from` to `to`, sampled every frame until it
+    // rests (closer than `rest`, in its own unit); `kick` is its starting
+    // speed (used for the wobble and lift)
+    function spring({ from = 0, to = 0, kick = 0, stiffness = 170, damping = 12, rest = 0.001 }) {
+      const dt = 1 / 60;
+      let x = from, v = kick;
+      const values = [x];
+      for (let i = 0; i < 180; i++) {
+        v += (-stiffness * (x - to) - damping * v) * dt;
+        x += v * dt;
+        values.push(x);
+        if (Math.abs(x - to) < rest && Math.abs(v) < rest * 10) break;
+      }
+      values[values.length - 1] = to;
+      return { values, duration: (values.length - 1) * dt * 1000 };
+    }
+
+    function play(face, prop, s, unit = "", composite = "replace") {
+      return face.animate(
+        s.values.map((x) => ({ [prop]: prop === "translate" ? `0 ${x}${unit}` : `${x}${unit}` })),
+        { duration: s.duration, easing: "linear", composite }
+      );
+    }
+
+    // only the springs played here (the face's CSS fades keep running)
+    const springsOn = (face) => face.getAnimations().filter((a) => !(a instanceof CSSTransition));
+
+    function currentScale(face, fallback) {
+      if (!springsOn(face).length) return fallback;
+      const v = parseFloat(getComputedStyle(face).scale);
+      return Number.isFinite(v) ? v : 1;
+    }
+
+    function animateFaces(newFace) {
+      if (reduceMotion.matches) return;
+      const oldFace = pickedFace;
+      if (oldFace && oldFace !== newFace) {
+        const from = currentScale(oldFace, PICKED);
+        springsOn(oldFace).forEach((a) => a.cancel());
+        play(oldFace, "scale", spring({ from, to: 1, stiffness: 80, damping: 12.4 }));
+      }
+      if (newFace) {
+        const from = currentScale(newFace, 1);
+        springsOn(newFace).forEach((a) => a.cancel());
+        play(newFace, "scale", spring({ from, to: PICKED, kick: 2.3, stiffness: 100, damping: 8 }));
+        // the wobble and lift ride on top of the hover lean (composite add)
+        play(newFace, "rotate", spring({ kick: -137, stiffness: 110, damping: 6.5, rest: 0.1 }), "deg", "add");
+        play(newFace, "translate", spring({ kick: -80, stiffness: 120, damping: 10.7, rest: 0.05 }), "px", "add");
+      }
+    }
+
+    picker.addEventListener("change", () => {
+      const newFace = faceOf(picker.querySelector(".mood-opt input:checked"));
+      animateFaces(newFace);
+      pickedFace = newFace;
+    });
+
+    // pressing the face that's already picked lets go of it
+    picker.addEventListener("pointerdown", (e) => {
+      const input = e.target.closest(".mood-opt")?.querySelector("input");
+      wasChecked = input?.checked ? input : null;
+    });
+
+    picker.addEventListener("click", (e) => {
+      const input = e.target.closest(".mood-opt")?.querySelector("input");
+      if (!input || e.target !== input) return;
+      if (wasChecked === input) {
+        none.checked = true;
+        none.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      wasChecked = null;
+    });
+  })();
+</script>

@@ -1,0 +1,196 @@
+<%# how a written note reads: on the detail page and inside the editor, so
+    what you type looks the way it will be shown %>
+<style>
+  /* written in the comic hand, like the headings and the rest of the
+     page's handwriting */
+  .note-body,
+  .note-editor .ql-editor {
+    font-family: var(--font-comic);
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .note-body p,
+  .note-editor .ql-editor p {
+    margin: 0;
+  }
+
+  /* an empty line in the editor stays an empty line when shown */
+  .note-body p:empty {
+    min-height: 1.7em;
+  }
+
+  .note-body h2,
+  .note-editor .ql-editor h2 {
+    margin: 0.6em 0 0.2em;
+    font-family: var(--font-comic);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .note-body h3,
+  .note-editor .ql-editor h3 {
+    margin: 0.5em 0 0.15em;
+    font-family: var(--font-comic);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .note-body > :first-child,
+  .note-editor .ql-editor > :first-child {
+    margin-top: 0;
+  }
+
+  .note-body blockquote,
+  .note-editor .ql-editor blockquote {
+    margin: 0.4em 0;
+    padding: 0.1em 0 0.1em 1rem;
+    color: var(--color-ink-soft);
+    border-left: 3px solid color-mix(in srgb, var(--color-marker) 55%, transparent);
+  }
+
+  /* the editor draws its own list markers; the shown note uses real lists */
+  .note-body ul,
+  .note-body ol {
+    margin: 0.2em 0;
+    padding-left: 1.6em;
+  }
+
+  .note-body ul {
+    list-style: disc;
+  }
+
+  .note-body ol {
+    list-style: decimal;
+  }
+
+  /* checklist: a round pen-drawn box; ticked ones fill sage with a white
+     tick and their text is crossed off */
+  .note-body li[data-list="checked"],
+  .note-body li[data-list="unchecked"] {
+    position: relative;
+    list-style: none;
+  }
+
+  .note-body li[data-list="checked"]::before,
+  .note-body li[data-list="unchecked"]::before,
+  .note-editor .ql-editor li[data-list="checked"] > .ql-ui::before,
+  .note-editor .ql-editor li[data-list="unchecked"] > .ql-ui::before {
+    content: "";
+    display: inline-block;
+    width: 1.05em;
+    height: 1.05em;
+    background-color: var(--color-card);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 70%;
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 35%, var(--color-line));
+    border-radius: 52% 48% 50% 50% / 48% 52% 48% 52%;
+    transition:
+      background-color 0.25s var(--ease-smooth),
+      border-color 0.25s var(--ease-smooth);
+  }
+
+  .note-body li[data-list="checked"]::before,
+  .note-body li[data-list="unchecked"]::before {
+    position: absolute;
+    top: 0.33em;
+    left: -1.5em;
+  }
+
+  .note-body li[data-list="checked"]::before,
+  .note-editor .ql-editor li[data-list="checked"] > .ql-ui::before {
+    background-color: var(--color-crayon);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5.5 12.8c1.6 1.4 3 2.9 4.3 4.5 2.6-3.9 5.4-7.5 8.7-10.6'/%3E%3C/svg%3E");
+    border-color: var(--color-crayon);
+  }
+
+  .note-body li[data-list="checked"],
+  .note-editor .ql-editor li[data-list="checked"] {
+    color: var(--color-ink-soft);
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--color-ink-soft) 70%, transparent);
+  }
+
+  /* the editor's round box sits where its list markers go */
+  .note-editor .ql-editor li[data-list="checked"] > .ql-ui,
+  .note-editor .ql-editor li[data-list="unchecked"] > .ql-ui {
+    cursor: pointer;
+  }
+
+  .note-editor .ql-editor li[data-list="checked"] > .ql-ui::before,
+  .note-editor .ql-editor li[data-list="unchecked"] > .ql-ui::before {
+    vertical-align: -0.2em;
+  }
+
+  /* alignment picked in the editor; a picture follows its line */
+  .note-body .ql-align-center,
+  .note-editor .ql-editor .ql-align-center {
+    text-align: center;
+  }
+
+  .note-body .ql-align-right,
+  .note-editor .ql-editor .ql-align-right {
+    text-align: right;
+  }
+
+  .note-body .ql-align-center img,
+  .note-editor .ql-editor .ql-align-center img {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .note-body .ql-align-right img,
+  .note-editor .ql-editor .ql-align-right img {
+    margin-left: auto;
+  }
+
+  /* lined paper: every block (paragraph, heading, list, quote) draws its
+     own rules, one per line at its own line height, so the rules always
+     sit under the text, headings included. Each rule lands a breath under
+     the foot of the letters: the text (1.15em tall in Comic Neue) is
+     centred in its line, so its foot is at (1lh + 1.15em) / 2; in a tight
+     line (a heading) the rule stops at the bottom of the line */
+  .note-body.is-lined > *,
+  .note-editor.is-lined .ql-editor > *,
+  .note-editor.is-lined .ql-editor::after {
+    /* the rules' ink; a page can set its own (the note detail does) */
+    --rule-color: var(--note-rule-color, color-mix(in srgb, var(--color-line) 75%, transparent));
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(min((1lh + 1.15em) / 2 + 0.125em, 1lh) - 1px),
+      var(--rule-color) calc(min((1lh + 1.15em) / 2 + 0.125em, 1lh) - 1px),
+      var(--rule-color) min((1lh + 1.15em) / 2 + 0.125em, 1lh),
+      transparent min((1lh + 1.15em) / 2 + 0.125em, 1lh),
+      transparent 1lh
+    );
+  }
+
+  /* a picture isn't text: no rules through or around it */
+  .note-body.is-lined > p:has(img),
+  .note-editor.is-lined .ql-editor > p:has(img) {
+    background-image: none;
+  }
+
+  .note-body a,
+  .note-editor .ql-editor a {
+    color: var(--color-crayon);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .note-body img,
+  .note-editor .ql-editor img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0.6em 0;
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 18px 14px 20px 12px / 12px 20px 14px 18px;
+  }
+</style>

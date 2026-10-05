@@ -1,0 +1,180 @@
+<%
+  // re-rendered after a failed validation: keep what was typed, show why
+  const values = typeof writing !== "undefined" && writing ? writing : {};
+  const errorList = typeof errors !== "undefined" && errors ? errors : [];
+  const fieldError = (field) => {
+    const hit = errorList.find((e) => e.path === field || e.param === field);
+    return hit ? hit.msg : "";
+  };
+%>
+<%- include("partials/contact-form-styles") %>
+<%- include("partials/note-form-styles") %>
+
+<div class="form-page mx-auto grid w-full max-w-2xl grid-cols-1 gap-6 p-6 pt-14">
+  <!-- floating back button, stacked above the menu button -->
+  <a
+    href="/writing"
+    aria-label="Back to writing"
+    title="Back to writing"
+    class="fab-back fab-simple doodle-btn fixed right-6 z-40 h-12 w-12 p-0 text-xl"
+  >
+    <%- include("partials/doodle-icon", { name: "arrow-left", cls: "fab-icon" }) %>
+  </a>
+
+  <!-- header, same pattern as the writing page -->
+  <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
+    <div class="flex items-end gap-4">
+      <%- include("partials/peep", { pose: "write", cls: "header-peep-fade -mb-1 hidden h-24 sm:block" }) %>
+      <div class="pb-1">
+        <h2 class="header-title mb-1 text-4xl">
+          <span class="header-title-mark">New Note</span>
+        </h2>
+        <p class="text-ink-soft font-comic font-bold">
+          <% if (values.date) { %>
+          For <%= formatDay(values.date) %>
+          <% } else { %>
+          Write down what happened today
+          <% } %>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <form
+    method="post"
+    action="/writing"
+    class="form-card grid grid-cols-1 gap-6 p-6 sm:p-8"
+    data-stagger
+    style="--i: 1"
+    novalidate
+  >
+    <% if (values.date) { %>
+    <!-- carried over from the date clicked on the calendar -->
+    <input type="hidden" name="date" value="<%= values.date %>" />
+    <% } %>
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div class="field sm:col-span-2 <%= fieldError('title') ? 'has-error' : '' %>">
+        <label for="title" class="field-label"><span>Title</span><span class="req" aria-hidden="true"></span></label>
+        <input type="text" id="title" name="title" value="<%= values.title || '' %>" placeholder="Give it a title" required class="doodle-input field-input" />
+        <% if (fieldError("title")) { %><span class="field-error"><%= fieldError("title") %></span><% } %>
+      </div>
+
+      <%- include("partials/mood-picker", { mood: values.mood }) %>
+
+      <%- include("partials/note-editor", { content: values.content, paper: values.paper, error: fieldError("content") }) %>
+
+      <div class="field sm:col-span-2" id="key-box">
+        <div class="encrypt-box" id="encrypt-box" data-encrypt="<%= values.encrypt ? '1' : '' %>">
+          <label class="encrypt-toggle">
+            <input type="checkbox" id="encrypt" name="encrypt" />
+            <%- include("partials/doodle-icon", { name: "lock" }) %>
+            Encrypt this note
+          </label>
+          <div id="key-field" class="field" hidden>
+            <label for="key" class="field-label"><span>Key</span><span class="req" aria-hidden="true"></span></label>
+            <div class="key-wrap">
+              <!-- no name: the key stays in the browser, only the locked note
+                   is sent -->
+              <input type="password" id="key" placeholder="Enter the encryption key" autocomplete="off" class="doodle-input field-input" />
+              <button type="button" id="toggle-key" class="key-toggle" aria-label="Show key">
+                <i id="toggle-key-icon" class="bi bi-eye"></i>
+              </button>
+            </div>
+            <span class="field-error" id="key-error" hidden></span>
+            <span class="encrypt-hint">Keep this key safe. The note can't be read back without it.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- a locked note's salt and iv, beside its ciphertext in content -->
+    <input type="hidden" name="salt" id="note-salt" />
+    <input type="hidden" name="iv" id="note-iv" />
+
+    <div class="form-actions">
+      <a href="/writing" class="cancel-link">Cancel</a>
+      <button id="submit-form" class="doodle-btn doodle-btn-ink px-6" type="button">
+        <%- include("partials/doodle-icon", { name: "plus" }) %>
+        Save note
+      </button>
+    </div>
+  </form>
+</div>
+
+<script src="/js/note-crypto.js"></script>
+<script>
+  const submitBtn = document.getElementById("submit-form");
+  const form = submitBtn.closest("form");
+
+  const encryptBox = document.getElementById("encrypt-box");
+  const encryptCheck = document.getElementById("encrypt");
+  const keyField = document.getElementById("key-field");
+  const keyInput = document.getElementById("key");
+
+  function toggleKeyField() {
+    keyField.hidden = !encryptCheck.checked;
+    keyInput.required = encryptCheck.checked;
+    if (!encryptCheck.checked) keyInput.value = "";
+  }
+
+  encryptCheck.checked = Boolean(encryptBox.dataset.encrypt);
+  toggleKeyField();
+  encryptCheck.addEventListener("change", toggleKeyField);
+
+  const toggleKeyBtn = document.getElementById("toggle-key");
+  const toggleKeyIcon = document.getElementById("toggle-key-icon");
+
+  toggleKeyBtn.addEventListener("click", () => {
+    const shown = keyInput.type === "text";
+
+    keyInput.type = shown ? "password" : "text";
+    toggleKeyIcon.classList.toggle("bi-eye", shown);
+    toggleKeyIcon.classList.toggle("bi-eye-slash", !shown);
+    toggleKeyBtn.setAttribute("aria-label", shown ? "Show key" : "Hide key");
+    keyInput.focus();
+  });
+
+  const keyBox = document.getElementById("key-box");
+  const keyError = document.getElementById("key-error");
+
+  function showKeyError(message) {
+    keyError.textContent = message;
+    keyError.hidden = !message;
+    keyBox.classList.toggle("has-error", Boolean(message));
+  }
+
+  keyInput.addEventListener("input", () => showKeyError(""));
+
+  submitBtn.addEventListener("click", async () => {
+    if (!form.reportValidity()) return;
+
+    const locking = encryptCheck.checked;
+    if (locking) {
+      const problem = noteCrypto.keyProblem(keyInput.value);
+      if (problem) {
+        showKeyError(problem);
+        keyInput.focus();
+        return;
+      }
+    }
+    if (!window.noteEditor.sync()) return;
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add("opacity-70", "cursor-wait");
+    submitBtn.textContent = "Saving…";
+
+    // the note leaves the browser locked: content becomes its ciphertext
+    if (locking) {
+      const content = document.getElementById("content");
+      const locked = await noteCrypto.encrypt(content.value, keyInput.value);
+      content.value = locked.content;
+      document.getElementById("note-salt").value = locked.salt;
+      document.getElementById("note-iv").value = locked.iv;
+    }
+
+    setTimeout(() => {
+      form.submit();
+    }, 1000);
+  });
+</script>

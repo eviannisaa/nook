@@ -1,0 +1,52 @@
+<%# the floating search button + capsule on list pages (contacts, writing).
+    The button carries its label in data-label. %>
+<script>
+  // floating search button: open the hidden search box and focus it; a
+  // second press (or Esc) hides it again. Hiding never clears the search:
+  // while it's hidden with a query, the button wears the query's first letter.
+  function syncSearchBadge() {
+    const btn = document.querySelector(".fab-search");
+    const box = document.getElementById("search-box");
+    const query = document.getElementById("search").value.trim();
+    const label = btn.dataset.label || "Search";
+    const hiddenWithQuery = !!query && !box.classList.contains("is-open");
+    btn.querySelector(".search-badge").textContent = query ? query.charAt(0).toUpperCase() : "";
+    btn.classList.toggle("has-query", hiddenWithQuery);
+    btn.setAttribute(
+      "aria-label",
+      box.classList.contains("is-open")
+        ? "Hide search"
+        : hiddenWithQuery
+          ? `${label} (active search: "${query}")`
+          : label
+    );
+    btn.title = box.classList.contains("is-open") ? "Hide search" : label;
+  }
+
+  function openSearch() {
+    const box = document.getElementById("search-box");
+    const input = document.getElementById("search");
+    box.classList.add("is-open");
+    document.querySelector(".fab-search").setAttribute("aria-expanded", "true");
+    syncSearchBadge();
+    // it floats beside the button, so no scrolling and nothing moves
+    input.focus({ preventScroll: true });
+  }
+
+  function closeSearch({ focusButton = true } = {}) {
+    document.getElementById("search-box").classList.remove("is-open");
+    const btn = document.querySelector(".fab-search");
+    btn.setAttribute("aria-expanded", "false");
+    syncSearchBadge();
+    if (focusButton) btn.focus({ preventScroll: true });
+  }
+
+  syncSearchBadge();
+
+  // open ↔ closed; an open box with a search in it just gets focused again
+  function toggleSearch() {
+    const box = document.getElementById("search-box");
+    if (box.classList.contains("is-open")) closeSearch();
+    else openSearch();
+  }
+</script>

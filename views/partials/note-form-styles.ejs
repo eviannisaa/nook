@@ -1,0 +1,233 @@
+<%# shared by new-writing and edit-writing, on top of contact-form-styles %>
+<style>
+  /* mood: a row of faces with their names under them, each a small pale
+     field like the inputs. Resting faces are a little faded. The picked
+     field fades onto a marker wash where it is (the last one fades back
+     at the same time, nothing slides between them), and its face pops up
+     with a little wobble */
+  .mood-picker {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .mood-opt {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 0.25rem 0.5rem;
+    cursor: pointer;
+    background-color: color-mix(in srgb, var(--color-paper-deep) 55%, var(--color-paper));
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 16px 12px 17px 11px / 11px 17px 12px 16px;
+    transition:
+      background-color 0.8s var(--ease-smooth),
+      border-color 0.8s var(--ease-smooth),
+      box-shadow 0.8s var(--ease-smooth);
+  }
+
+  /* every other face leans the other way, like doodles on a page */
+  .mood-opt:nth-of-type(even) {
+    border-radius: 12px 16px 11px 17px / 17px 11px 16px 12px;
+  }
+
+  /* the face moves with the separate scale / rotate / translate
+     properties: the pick's pop and settle are played by the script as
+     springs (so a pick never jumps, whatever the face was doing), while
+     the hover lean eases on its own */
+  .mood-face {
+    font-size: 1.3rem;
+    line-height: 1;
+    filter: grayscale(0.55);
+    opacity: 0.7;
+    will-change: scale, rotate;
+    transition:
+      filter 0.9s var(--ease-smooth),
+      opacity 0.9s var(--ease-smooth),
+      rotate 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+      translate 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .mood-name {
+    max-width: 100%;
+    overflow: hidden;
+    font-family: var(--font-comic);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-ink-soft);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.9s var(--ease-smooth);
+  }
+
+  .mood-opt:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 30%, var(--color-line));
+  }
+
+  .mood-opt:hover .mood-name,
+  .mood-opt:has(input:checked) .mood-name {
+    color: var(--color-ink);
+  }
+
+  .mood-opt:hover .mood-face {
+    filter: none;
+    opacity: 1;
+    rotate: -8deg;
+    translate: 0 -1px;
+  }
+
+  .mood-opt:has(input:checked) {
+    background-color: color-mix(in srgb, var(--color-marker) 24%, var(--color-card));
+    border-color: color-mix(in srgb, var(--color-ink) 40%, var(--color-line));
+    box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.35);
+  }
+
+  /* picked: the face lights up and sits a touch bigger */
+  .mood-opt:has(input:checked) .mood-face {
+    filter: none;
+    opacity: 1;
+    scale: 1.18;
+  }
+
+  .mood-opt:has(input:checked):hover .mood-face {
+    rotate: -6deg;
+  }
+
+  .mood-opt:has(input:focus-visible) {
+    border-color: var(--color-ink);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-secondary) 45%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mood-opt,
+    .mood-face,
+    .mood-name {
+      transition: none;
+    }
+  }
+
+  /* encrypt: a quiet dashed box under the note, the key field opens inside */
+  .encrypt-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 1rem 1.1rem;
+    border: 1.5px dashed color-mix(in srgb, var(--color-ink) 16%, var(--color-line));
+    border-radius: 22px 18px 24px 16px / 16px 24px 18px 22px;
+    transition:
+      border-color 0.4s var(--ease-smooth),
+      background-color 0.4s var(--ease-smooth);
+  }
+
+  .encrypt-box:has(#encrypt:checked) {
+    background-color: color-mix(in srgb, var(--color-blush) 35%, var(--color-card));
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--color-berry) 35%, var(--color-line));
+  }
+
+  .encrypt-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-comic);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--color-ink);
+    cursor: pointer;
+  }
+
+  .encrypt-toggle input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--color-berry);
+    cursor: pointer;
+  }
+
+  .encrypt-toggle .doodle-i {
+    color: var(--color-berry);
+  }
+
+  .encrypt-hint {
+    font-family: var(--font-comic);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+  }
+
+  .encrypt-box .field[hidden] {
+    display: none;
+  }
+
+  .key-wrap {
+    position: relative;
+  }
+
+  .key-wrap .field-input {
+    width: 100%;
+    padding-right: 3rem;
+  }
+
+  .key-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.9rem;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: color 0.3s var(--ease-smooth);
+  }
+
+  .key-toggle:hover {
+    color: var(--color-ink);
+  }
+
+  /* phones: the note form's own bits a step smaller too, with the rest of
+     the form (the shared sizes and spacing live in contact-form-styles) */
+  @media (max-width: 639px) {
+    .form-page .encrypt-toggle {
+      font-size: 0.85rem;
+    }
+
+    .form-page .encrypt-hint,
+    .form-page .note-hint {
+      font-size: 0.75rem;
+    }
+
+    /* the typed note scales with it, whichever size is picked */
+    .form-page .note-editor .ql-editor {
+      font-size: calc(var(--note-size, 0.95rem) * 0.9);
+    }
+
+    /* three to a row, so every name fits, and a size down */
+    .form-page .mood-picker {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.4rem;
+    }
+
+    .form-page .mood-opt {
+      gap: 0.2rem;
+      padding: 0.45rem 0.25rem 0.4rem;
+    }
+
+    .form-page .mood-face {
+      font-size: 1.15rem;
+    }
+
+    .form-page .mood-name {
+      font-size: 0.72rem;
+    }
+
+    .form-page .key-wrap .field-input {
+      padding-right: 2.5rem;
+    }
+
+    .form-page .encrypt-box {
+      gap: 0.65rem;
+      padding: 0.75rem 0.8rem;
+    }
+  }
+</style>

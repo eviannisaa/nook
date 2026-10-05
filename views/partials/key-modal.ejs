@@ -1,0 +1,232 @@
+<!-- Encrypt / Decrypt Key Modal -->
+<style>
+  /* Cancel as a quiet text button, as in the delete popups (this modal also
+     opens on the edit page, where detail-styles isn't loaded) */
+  .key-cancel {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.8rem;
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    transition: color 0.3s var(--ease-smooth);
+  }
+
+  .key-cancel:hover,
+  .key-cancel:focus-visible {
+    color: var(--color-berry);
+    outline: none;
+  }
+
+  .key-error {
+    display: block;
+    margin-top: 0.5rem;
+    font-family: var(--font-comic);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-berry);
+  }
+
+  .key-error[hidden] {
+    display: none;
+  }
+
+  /* never wider than the screen, with room at its sides */
+  .key-dialog {
+    width: min(21.875rem, calc(100vw - 2rem));
+  }
+
+  /* on a phone a step smaller all through, as the delete popup */
+  @media (max-width: 639px) {
+    /* as wide as the page's content, inside its 2.5rem gutters */
+    .key-dialog {
+      width: calc(100vw - 5rem);
+      padding: 1.4rem;
+    }
+
+    .key-dialog h2 {
+      font-size: 1.25rem;
+    }
+
+    .key-dialog p,
+    .key-dialog .doodle-input {
+      font-size: 0.85rem;
+    }
+
+    .key-dialog .doodle-btn,
+    .key-dialog .key-cancel {
+      font-size: 0.8rem;
+    }
+
+    .key-error {
+      font-size: 0.75rem;
+    }
+  }
+</style>
+<!-- The key is only used here in the browser (public/js/note-crypto.js):
+     the form never posts it. Each page says what its actions do with it in
+     window.keyModalActions: action(key, id) resolves when done, or throws
+     with the message to show under the field -->
+<script src="/js/note-crypto.js"></script>
+<div id="key-modal" class="doodle-modal">
+  <div class="doodle-card key-dialog">
+    <h2 class="mb-1 text-2xl">
+      <i class="bi bi-key text-crayon mr-1"></i>
+      <span id="key-modal-title">Lock Note</span>
+    </h2>
+    <p id="key-modal-desc" class="text-ink-soft">
+      Enter a key to lock this note.
+    </p>
+
+    <form id="key-form" novalidate>
+      <div class="relative mt-4 w-full">
+        <input
+          type="password"
+          id="key-input"
+          placeholder="Enter the key"
+          autocomplete="off"
+          aria-describedby="key-error"
+          class="doodle-input pr-12"
+        />
+        <button
+          type="button"
+          id="toggle-key-input"
+          aria-label="Show key"
+          class="text-ink-soft hover:text-crayon absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer transition duration-200 ease-in-out"
+        >
+          <i id="toggle-key-input-icon" class="bi bi-eye text-base"></i>
+        </button>
+      </div>
+      <span id="key-error" class="key-error" role="alert" hidden></span>
+
+      <div class="mt-6 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeKeyModal()" class="key-cancel">
+          Cancel
+        </button>
+        <button type="submit" id="key-submit" class="doodle-btn doodle-btn-sm doodle-btn-ink">
+          Lock
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const keyModal = document.getElementById("key-modal");
+  const keyForm = document.getElementById("key-form");
+  const keyInput = document.getElementById("key-input");
+  const keyError = document.getElementById("key-error");
+  const keySubmit = document.getElementById("key-submit");
+
+  const keyActions = {
+    // lock: encrypt the note with a key
+    encrypt: {
+      title: "Lock Note",
+      desc: "Enter a key to lock this note. You will need the same key to read it again.",
+      submit: "Lock",
+      busy: "Locking…",
+    },
+    // remove the lock for good: the note is saved without encryption
+    decrypt: {
+      title: "Remove Lock",
+      desc: "Enter the note's key to remove its lock. It will be saved without encryption.",
+      submit: "Remove lock",
+      busy: "Removing…",
+    },
+    // read the note once; it stays encrypted
+    unlock: {
+      title: "Locked Note",
+      desc: "This note is encrypted. Enter its key to decrypt it.",
+      submit: "Decrypt",
+      busy: "Decrypting…",
+    },
+    // open it in the editor; it's locked again with the same key on save
+    edit: {
+      title: "Locked Note",
+      desc: "Enter the note's key to edit it. It stays locked when you save.",
+      submit: "Open",
+      busy: "Opening…",
+    },
+  };
+
+  let keyAction = null;
+  let keyNoteId = null;
+
+  function showKeyError(message) {
+    keyError.textContent = message;
+    keyError.hidden = !message;
+  }
+
+  function openKeyModal(event, action, id) {
+    event?.stopPropagation();
+    event?.preventDefault();
+
+    const copy = keyActions[action];
+    keyAction = action;
+    keyNoteId = id;
+
+    document.getElementById("key-modal-title").innerText = copy.title;
+    document.getElementById("key-modal-desc").innerText = copy.desc;
+    keySubmit.innerText = copy.submit;
+    keySubmit.disabled = false;
+    keyInput.value = "";
+    showKeyError("");
+    hideKeyInput();
+
+    openModal(keyModal);
+    keyInput.focus();
+  }
+
+  function closeKeyModal() {
+    keyInput.value = "";
+    showKeyError("");
+    hideKeyInput();
+    closeModal(keyModal);
+  }
+
+  keyForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (keySubmit.disabled) return;
+
+    const key = keyInput.value;
+    if (!key) {
+      showKeyError("Enter the key.");
+      keyInput.focus();
+      return;
+    }
+
+    const copy = keyActions[keyAction];
+    keySubmit.disabled = true;
+    keySubmit.innerText = copy.busy;
+    showKeyError("");
+    try {
+      await window.keyModalActions[keyAction](key, keyNoteId);
+    } catch (err) {
+      showKeyError(err.message || "Something went wrong. Try again.");
+      keySubmit.disabled = false;
+      keySubmit.innerText = copy.submit;
+      keyInput.select();
+    }
+  });
+
+  const toggleKeyBtn = document.getElementById("toggle-key-input");
+  const toggleKeyIcon = document.getElementById("toggle-key-input-icon");
+
+  function setKeyInputShown(shown) {
+    keyInput.type = shown ? "text" : "password";
+    toggleKeyIcon.classList.toggle("bi-eye", !shown);
+    toggleKeyIcon.classList.toggle("bi-eye-slash", shown);
+    toggleKeyBtn.setAttribute("aria-label", shown ? "Hide key" : "Show key");
+  }
+
+  function hideKeyInput() {
+    setKeyInputShown(false);
+  }
+
+  toggleKeyBtn.addEventListener("click", () => {
+    setKeyInputShown(keyInput.type === "password");
+    keyInput.focus();
+  });
+</script>

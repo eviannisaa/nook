@@ -1,0 +1,320 @@
+<%# shared by new-contact and edit-contact %>
+<style>
+  /* wobbly capsule corners like the contact cards, with the same pale pen
+     line as the quiet controls on /contacts (search, list/card switch) */
+  .form-card {
+    position: relative;
+    background-color: var(--color-card);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 34px 28px 36px 26px / 26px 36px 28px 34px;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 4px 12px -8px rgba(0, 0, 0, 0.18);
+  }
+
+  /* second, lighter pencil pass around the card, a touch off the main line,
+     like the card on the home page */
+  .form-card::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border: 1px solid color-mix(in srgb, var(--color-ink) 22%, var(--color-line));
+    border-radius: 28px 38px 26px 36px / 36px 26px 38px 28px;
+    transform: rotate(-0.5deg) translate(3px, 2px);
+    pointer-events: none;
+  }
+
+  /* avatar picker: the avatar itself is the button; a small camera badge
+     says "tap to change". Same pastel + marker-offset look as the cards. */
+  .avatar-pick {
+    position: relative;
+    display: inline-flex;
+    width: 5.5rem;
+    height: 5.5rem;
+    cursor: pointer;
+  }
+
+  .avatar-pick-face {
+    display: inline-flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 2.2rem;
+    color: var(--color-ink-soft);
+    background-color: var(--color-blush);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 35%, var(--color-line));
+    border-radius: 52% 48% 50% 50% / 48% 52% 48% 52%;
+    box-shadow: 4px 3px 0 -1px color-mix(in srgb, var(--color-marker) 40%, transparent);
+    transition:
+      transform 0.5s var(--ease-smooth),
+      box-shadow 0.5s var(--ease-smooth),
+      border-color 0.5s var(--ease-smooth);
+  }
+
+  .avatar-pick-face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .avatar-pick-badge {
+    position: absolute;
+    right: -0.15rem;
+    bottom: -0.15rem;
+    display: inline-flex;
+    width: 1.9rem;
+    height: 1.9rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: var(--color-on-primary);
+    background-color: var(--color-primary);
+    border: 2px solid var(--color-card);
+    border-radius: 999px;
+  }
+
+  .avatar-pick:hover .avatar-pick-face,
+  .avatar-pick:focus-within .avatar-pick-face {
+    transform: scale(1.04);
+    border-color: var(--color-ink);
+    box-shadow: 5px 4px 0 -1px color-mix(in srgb, var(--color-marker) 65%, transparent);
+  }
+
+  .avatar-pick input:focus-visible + .avatar-pick-face {
+    outline: 2px solid color-mix(in srgb, var(--color-primary) 60%, transparent);
+    outline-offset: 4px;
+  }
+
+  .remove-photo {
+    font-family: var(--font-comic);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    transition: color 0.3s var(--ease-smooth);
+  }
+
+  .remove-photo:hover {
+    color: var(--color-berry);
+  }
+
+  /* fields: Comic Neue labels */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .field-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-comic);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--color-ink);
+  }
+
+  .field-label .req {
+    width: 0.4rem;
+    height: 0.4rem;
+    background-color: var(--color-berry);
+    border-radius: 999px;
+  }
+
+  /* inputs outlined exactly like the search box on /contacts: quiet paper
+     fill and a pale pen line, firming up on hover and focus */
+  .field-input,
+  .field-input:hover,
+  .field-input:focus {
+    font-family: var(--font-comic);
+    font-size: 0.95rem;
+    background-color: color-mix(in srgb, var(--color-paper-deep) 55%, var(--color-paper));
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
+    border-radius: 22px 18px 24px 16px / 16px 24px 18px 22px;
+    box-shadow: none;
+    transition:
+      border-color 0.5s var(--ease-smooth),
+      background-color 0.5s var(--ease-smooth),
+      box-shadow 0.5s var(--ease-smooth);
+  }
+
+  .field-input:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 28%, var(--color-line));
+  }
+
+  .field-input:focus {
+    background-color: var(--color-card);
+    border-color: color-mix(in srgb, var(--color-ink) 40%, var(--color-line));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-secondary) 35%, transparent);
+  }
+
+  textarea.field-input {
+    min-height: 6.5rem;
+    resize: vertical;
+    border-radius: 20px 16px 22px 14px / 14px 22px 16px 20px;
+  }
+
+  .field.has-error .field-input {
+    border-color: var(--color-berry);
+  }
+
+  .field-error {
+    font-family: var(--font-comic);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--color-berry);
+  }
+
+  /* phone is the field the list leads with, so it gets the stabilo accent */
+  .field-phone .field-label span:first-child {
+    position: relative;
+    isolation: isolate;
+    padding: 0 0.2rem;
+    margin-left: -0.2rem;
+  }
+
+  .field-phone .field-label span:first-child::before {
+    content: "";
+    position: absolute;
+    inset: auto 0 0.1em 0;
+    z-index: -1;
+    height: 0.55em;
+    background: color-mix(in srgb, var(--color-marker) 38%, transparent);
+    border-radius: 3px 8px 4px 10px;
+  }
+
+  .form-actions {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .form-actions {
+      flex-direction: row;
+      justify-content: flex-end;
+      align-items: center;
+    }
+  }
+
+  .cancel-link {
+    display: inline-flex;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    font-family: var(--font-comic);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--color-ink-soft);
+    transition: color 0.3s var(--ease-smooth);
+  }
+
+  .cancel-link:hover {
+    color: var(--color-ink);
+  }
+
+  .form-page {
+    padding-bottom: 7rem;
+  }
+
+  /* back button: same 2.5rem as the menu, on its vertical line, above it
+     (menu: bottom 1.5rem, 2.5rem tall, plus a 1.1rem gap) */
+  /* a tab on the right edge, like the menu under it: round on its left,
+     flat where it meets the screen's edge */
+  .fab-back,
+  .fab-back:hover,
+  .fab-back:focus-visible,
+  .fab-back:active {
+    border-right-width: 0;
+    /* stays a tab when pointed at or pressed (the shared round buttons
+       change to another wobbly circle then) */
+    border-radius: 999px 0 0 999px;
+  }
+
+  .fab-back {
+    right: 0;
+    bottom: 5.1rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.05rem;
+  }
+
+  /* tablets: equal side gutters that clear the floating buttons, as on the
+     contacts page */
+  @media (min-width: 640px) and (max-width: 959px) {
+    .form-page {
+      padding-right: 5.25rem;
+      padding-left: 5.25rem;
+    }
+  }
+
+  /* phones: smaller buttons hugging the edge (menu at bottom 1rem, 2.25rem);
+     the page title and its line a size down and every bit of form text a
+     step smaller with it; spacing as on the writing calendar: the same
+     wider gutters, the card close under the title, and its padding and
+     gaps pulled in to match */
+  @media (max-width: 639px) {
+    .header .header-title {
+      font-size: 1.75rem;
+    }
+
+    .header .header-title + p {
+      font-size: 0.8rem;
+    }
+
+    .form-page .field-label,
+    .form-page .field-input,
+    .form-page .field-input:hover,
+    .form-page .field-input:focus,
+    .form-page .cancel-link,
+    .form-page .form-actions .doodle-btn {
+      font-size: 0.85rem;
+    }
+
+    .form-page .field-error,
+    .form-page .remove-photo {
+      font-size: 0.75rem;
+    }
+
+    .form-page {
+      padding-right: 2.5rem;
+      padding-left: 2.5rem;
+    }
+
+    .form-page .form-card {
+      gap: 0.9rem;
+      margin-top: -0.6rem;
+      padding: 1.1rem 0.8rem 1rem;
+    }
+
+    .form-page .form-card > .grid {
+      gap: 0.9rem;
+    }
+
+    .form-page .field {
+      gap: 0.3rem;
+    }
+
+    .form-page .field-input {
+      padding: 0.5rem 0.8rem;
+    }
+
+    .form-page .form-actions {
+      gap: 0.4rem;
+    }
+
+    .form-page .cancel-link {
+      padding: 0.35rem 0.8rem;
+    }
+
+    .fab-back {
+      right: 0;
+      bottom: 3.25rem; /* menu: 0.75rem + 1.75rem + 0.75rem */
+      width: 1.75rem;
+      height: 1.75rem;
+      font-size: 0.75rem;
+    }
+  }
+</style>

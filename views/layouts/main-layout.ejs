@@ -10,6 +10,14 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
     />
 
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Comic+Neue:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- css -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
@@ -18,28 +26,591 @@
 
     <title><%= title %></title>
 
+    <!-- lets the browser cross-fade whole page navigations where supported -->
+    <style>
+      @view-transition {
+        navigation: auto;
+      }
+
+      /* the page scrolls (trackpad, wheel, keys, touch) without a scrollbar:
+         on macOS it is drawn over the page's right edge and wakes as the
+         pointer nears, catching clicks meant for the edge tabs (menu, +,
+         back). Scrolling boxes inside the page keep theirs */
+      html {
+        scrollbar-width: none;
+      }
+
+      html::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* the secondary floating round buttons (search, +, back) share one quiet
+         look: paper, soft ink line, ink icon, so the green menu button stays
+         the main one. Plain CSS so it wins over the Tailwind button styles. */
+      .fab-simple {
+        /* low-contrast at rest: paper-tinted fill, pale line, faint icon */
+        color: color-mix(in srgb, var(--color-ink-soft) 55%, var(--color-paper));
+        /* same paper fill + pale pen line as the list/card switch, drawn as a
+           wobbly hand-made circle with a faint marker fill printed off the line */
+        background-color: color-mix(in srgb, var(--color-paper-deep) 55%, var(--color-paper));
+        border: 1.5px solid color-mix(in srgb, var(--color-ink) 18%, var(--color-line));
+        border-radius: 56% 44% 53% 47% / 46% 55% 45% 54%;
+        box-shadow: 2px 2px 0 -1px color-mix(in srgb, var(--color-marker) 30%, transparent);
+        transition:
+          border-color 0.45s var(--ease-smooth),
+          background-color 0.45s var(--ease-smooth),
+          color 0.45s var(--ease-smooth),
+          box-shadow 0.45s var(--ease-smooth),
+          border-radius 0.55s var(--ease-smooth),
+          transform 0.5s var(--ease-smooth);
+      }
+
+      .fab-simple:hover,
+      .fab-simple:focus-visible {
+        color: var(--color-ink-soft);
+        border-color: color-mix(in srgb, var(--color-ink) 30%, var(--color-line));
+        background-color: var(--color-card);
+        border-radius: 47% 53% 45% 55% / 54% 46% 54% 46%;
+        box-shadow: 3px 3px 0 -1px color-mix(in srgb, var(--color-marker) 45%, transparent);
+      }
+
+      /* page header (contacts, new contact): the peep's shirt fades into the
+         page, and a stabilo covers the lower part of the title, slightly
+         tilted and stopping short like a real marker pass, drawn in once */
+      .header {
+        margin-bottom: 0.5rem;
+      }
+
+      .header-peep-fade {
+        -webkit-mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
+      }
+
+      .header-title {
+        position: relative;
+        display: inline-flex;
+        align-items: flex-start;
+        letter-spacing: -0.02em;
+      }
+
+      .header-title-mark {
+        position: relative;
+        isolation: isolate;
+      }
+
+      .header-title-mark::before {
+        content: "";
+        position: absolute;
+        left: 0.15em;
+        right: 0.35em;
+        bottom: 0.1em;
+        z-index: -1;
+        height: 0.34em;
+        background: linear-gradient(
+          100deg,
+          transparent 1%,
+          color-mix(in srgb, var(--color-marker) 36%, transparent) 5%,
+          color-mix(in srgb, var(--color-marker) 26%, transparent) 94%,
+          transparent 99%
+        );
+        border-radius: 3px 10px 4px 12px;
+        transform: rotate(-1.2deg);
+        transform-origin: left center;
+        animation: header-swipe 0.7s var(--ease-soft) 0.45s backwards;
+      }
+
+      @keyframes header-swipe {
+        from {
+          transform: rotate(-1.2deg) scaleX(0);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .header-title-mark::before {
+          animation: none;
+        }
+      }
+
+      .fab-simple .fab-icon {
+        stroke-width: 1.8;
+      }
+
+      /* page to page: the old page fades out quickly, the new one fades in.
+         No movement, so the fixed floating buttons stay put. */
+      ::view-transition-old(root) {
+        animation: page-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+      }
+
+      ::view-transition-new(root) {
+        animation: page-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
+      }
+
+      @keyframes page-out {
+        to {
+          opacity: 0;
+        }
+      }
+
+      @keyframes page-in {
+        from {
+          opacity: 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+          animation: none;
+        }
+      }
+
+      /* phones: the toast a size down. Outside the Tailwind layers so it
+         wins over the utility classes on the toast itself */
+      @media (max-width: 639px) {
+        .toast {
+          right: 0.75rem;
+          bottom: 0.75rem;
+          max-width: calc(100vw - 1.5rem);
+          gap: 0.5rem;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.78rem;
+        }
+
+        .toast .doodle-icon {
+          width: 1.5rem;
+          height: 1.5rem;
+          font-size: 0.8rem;
+        }
+      }
+    </style>
+
     <style type="text/tailwindcss">
-      @theme {
-        --color-clifford: #da373d;
+      @theme static {
+        --color-paper: #faf8f3;
+        --color-paper-deep: #f1eee6;
+        --color-card: #ffffff;
+        --color-line: #e5e2da;
+        --color-ink: #30332f;
+        --color-ink-soft: #8d928c;
+        --color-marker: #d99a7a;
+        --color-crayon: #5b6f63;
+        --color-mint: #dde4de;
+        --color-lilac: #ece7dd;
+        --color-sky: #e3e9e4;
+        --color-blush: #f4ddd1;
+        --color-berry: #c8574b;
+        --color-primary: #5b6f63;
+        --color-primary-hover: #4a5c51;
+        --color-secondary: #a9b8ac;
+        --color-on-primary: #ffffff;
+        --color-on-accent: #30332f;
+        --color-disabled: #c9c6be;
+
+        --font-sans: "Nunito", ui-rounded, system-ui, sans-serif;
+        --font-display: "Nunito", ui-rounded, system-ui, sans-serif;
+        --font-hand: "Caveat", "Nunito", cursive;
+        --font-comic: "Comic Neue", "Comic Sans MS", "Nunito", cursive;
+
+        /* shared motion: one soft settle curve, no overshoot */
+        --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+        /* even ease-in-out for hover poses: starts and lands gently, no snap */
+        --ease-smooth: cubic-bezier(0.45, 0, 0.25, 1);
+      }
+
+      /* Clean line-art frames: one thin even stroke, softly rounded */
+      @utility sketch {
+        border: 1.5px solid var(--color-line);
+        border-radius: 1rem;
+      }
+
+      @utility sketch-alt {
+        border: 1.5px solid var(--color-line);
+        border-radius: 1rem;
+      }
+
+      @utility sketch-soft {
+        border: 1.5px solid var(--color-ink);
+        border-radius: 0.85rem;
+      }
+
+      @layer base {
+        html {
+          color-scheme: light;
+          font-family: var(--font-sans);
+          font-size: 16px;
+        }
+
+        body {
+          color: var(--color-ink);
+          background-color: var(--color-paper);
+          /* faint dot grid, like a sketchbook page */
+          background-image: radial-gradient(
+            circle at 1px 1px,
+            rgba(48, 51, 47, 0.06) 1px,
+            transparent 0
+          );
+          background-size: 26px 26px;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        body > * {
+          position: relative;
+          z-index: 1;
+        }
+
+        h1,
+        h2,
+        h3 {
+          font-family: var(--font-display);
+          font-weight: 800;
+          letter-spacing: -0.015em;
+        }
+
+        ::placeholder {
+          color: color-mix(in srgb, var(--color-ink-soft) 70%, transparent);
+        }
+
+        ::selection {
+          background: var(--color-marker);
+          color: var(--color-on-accent);
+        }
+
+        :focus-visible {
+          outline: 2px solid var(--color-ink);
+          outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+          html {
+            scroll-behavior: smooth;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          *,
+          *::before,
+          *::after {
+            animation-duration: 0.01ms !important;
+            animation-delay: 0ms !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+      }
+
+      @layer components {
+        .doodle-card {
+          background-color: var(--color-card);
+          padding: 1.75rem;
+          border: 1.5px solid var(--color-line);
+          border-radius: 1.5rem;
+          box-shadow: 0 12px 32px -20px rgba(0, 0, 0, 0.18);
+        }
+
+        .doodle-panel {
+          background-color: var(--color-paper);
+          border: 1.5px solid var(--color-line);
+          border-radius: 1rem;
+        }
+
+        .doodle-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
+          cursor: pointer;
+          padding: 0.5rem 1.15rem;
+          font-family: var(--font-sans);
+          font-weight: 700;
+          font-size: 0.95rem;
+          line-height: 1.4;
+          white-space: nowrap;
+          border: 1.5px solid var(--color-ink);
+          border-radius: 999px;
+          background-color: var(--color-card);
+          color: var(--color-ink);
+          transition:
+            transform 0.15s ease-out,
+            box-shadow 0.15s ease-out,
+            background-color 0.2s ease-in-out;
+        }
+
+        .doodle-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.45);
+        }
+
+        .doodle-btn:active {
+          transform: translateY(0);
+          box-shadow: none;
+        }
+
+        .doodle-btn:disabled {
+          cursor: not-allowed;
+          color: var(--color-disabled);
+          border-color: var(--color-disabled);
+          transform: none;
+          box-shadow: none;
+        }
+
+        .doodle-btn-ink {
+          background-color: var(--color-primary);
+          border-color: var(--color-primary);
+          color: var(--color-on-primary);
+        }
+
+        .doodle-btn-ink:hover {
+          background-color: var(--color-primary-hover);
+          border-color: var(--color-primary-hover);
+        }
+
+        .doodle-btn-ink:disabled {
+          background-color: var(--color-disabled);
+          border-color: var(--color-disabled);
+        }
+
+        .doodle-btn-marker {
+          background-color: var(--color-marker);
+          border-color: var(--color-marker);
+          color: var(--color-on-accent);
+        }
+
+        .doodle-btn-marker:hover {
+          background-color: color-mix(in srgb, var(--color-marker) 85%, var(--color-ink));
+        }
+
+        .doodle-btn-danger {
+          background-color: var(--color-card);
+          border-color: var(--color-berry);
+          color: var(--color-berry);
+          transition:
+            transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+            background-color 0.3s ease,
+            border-color 0.3s ease,
+            color 0.3s ease;
+        }
+
+        .doodle-btn-danger:hover {
+          background-color: var(--color-berry);
+          color: var(--color-on-primary);
+        }
+
+        .doodle-btn-sm {
+          padding: 0.3rem 0.8rem;
+          font-size: 0.85rem;
+        }
+
+        .doodle-input {
+          width: 100%;
+          padding: 0.65rem 0.95rem;
+          font-family: var(--font-sans);
+          font-size: 0.95rem;
+          color: var(--color-ink);
+          background-color: var(--color-card);
+          border: 1.5px solid var(--color-line);
+          border-radius: 0.85rem;
+          outline: none;
+          transition:
+            box-shadow 0.15s ease-in-out,
+            border-color 0.15s ease-in-out;
+        }
+
+        .doodle-input:hover {
+          border-color: color-mix(in srgb, var(--color-ink) 30%, var(--color-line));
+        }
+
+        .doodle-input:focus {
+          border-color: var(--color-ink);
+          box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-secondary) 55%, transparent);
+        }
+
+        .doodle-tag {
+          display: inline-block;
+          padding: 0.05rem 0.65rem;
+          font-size: 0.8rem;
+          font-weight: 700;
+          line-height: 1.6;
+          background-color: color-mix(in srgb, var(--color-marker) 25%, var(--color-card));
+          border-radius: 999px;
+        }
+
+        /* one gentle pen squiggle instead of a flat <hr> */
+        .doodle-divider {
+          height: 8px;
+          background-repeat: repeat-x;
+          background-size: 80px 8px;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='8'%3E%3Cpath d='M0 4 Q 10 1 20 4 T 40 4 T 60 4 T 80 4' fill='none' stroke='%231f1d1a' stroke-width='1.5' stroke-linecap='round' opacity='0.18'/%3E%3C/svg%3E");
+        }
+
+        .doodle-label {
+          font-weight: 700;
+          font-size: 0.9rem;
+        }
+
+        /* round pastel badge that holds an icon */
+        .doodle-icon {
+          display: inline-flex;
+          flex-shrink: 0;
+          align-items: center;
+          justify-content: center;
+          width: 2.75rem;
+          height: 2.75rem;
+          font-size: 1.1rem;
+          border: 1.5px solid var(--color-ink);
+          border-radius: 999px;
+        }
+
+        /* fixed backdrop layer behind every page */
+        body > .bg-doodles {
+          position: fixed;
+          inset: 0;
+          z-index: 0;
+          overflow: hidden;
+          pointer-events: none;
+        }
+
+        .bg-doodles svg {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0.55;
+        }
+
+        @media (max-width: 640px) {
+          .bg-doodles svg {
+            opacity: 0.3;
+          }
+        }
+
+        .peep {
+          flex-shrink: 0;
+          width: auto;
+          color: var(--color-ink);
+        }
+
+        .doodle-i {
+          display: inline-block;
+          flex-shrink: 0;
+          vertical-align: -0.125em;
+        }
+
+        /* icons on the round floating buttons: a bit larger, heavier pen */
+        .fab-icon {
+          width: 1.2em;
+          height: 1.2em;
+          stroke-width: 2.3;
+        }
+
+        /* Every popup shares one backdrop + box animation */
+        .doodle-modal {
+          position: fixed;
+          inset: 0;
+          z-index: 50;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: color-mix(
+            in srgb,
+            var(--color-ink) 35%,
+            transparent
+          );
+          backdrop-filter: blur(3px);
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+          transition:
+            opacity 0.25s ease,
+            visibility 0.25s linear;
+        }
+
+        .doodle-modal.is-open {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+        }
+
+        .doodle-modal > * {
+          transform: scale(0.96) translateY(10px);
+          transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* none rather than scale(1): a transform left on the box over the
+           blurred backdrop makes hover effects inside it flicker */
+        .doodle-modal.is-open > * {
+          transform: none;
+        }
+
+        .toast {
+          opacity: 0;
+          transform: translateY(12px);
+          transition:
+            opacity 0.3s ease,
+            transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .toast.is-shown {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* content fades in on every navigation. Opacity only: a transform here
+           would make fixed children (the floating buttons) position against
+           this wrapper instead of the viewport, so they'd jump when it ends. */
+        .page-enter {
+          animation: page-fade 0.4s var(--ease-soft) backwards;
+        }
+
+        @keyframes page-fade {
+          from {
+            opacity: 0;
+          }
+        }
+
+        /* rows and cards follow one another instead of all at once */
+        [data-stagger] {
+          animation: doodle-rise 0.5s var(--ease-soft) backwards;
+          /* capped so long lists (View all) do not keep cards waiting */
+          animation-delay: calc(min(var(--i, 0), 12) * 35ms);
+        }
+
+        @keyframes doodle-rise {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
       }
     </style>
   </head>
   <body>
-    <div><%- body %></div>
+    <% if (typeof showDoodles != "undefined" && showDoodles) { %>
+    <%- include("../partials/bg-doodles") %>
+    <% } %>
+    <%- include("../partials/home-nav") %>
+    <div class="page-enter"><%- body %></div>
     <% if (msg) { %>
     <div
       id="toast-success"
-      class="fixed right-5 bottom-5 z-50 flex items-center gap-3 rounded-lg border border-green-600 bg-green-600/20 px-3 py-2 text-sm text-green-700 opacity-0 shadow-lg backdrop-blur-md transition-opacity duration-300"
+      class="toast sketch bg-card text-ink fixed right-5 bottom-5 z-50 flex items-center gap-3 px-4 py-3 font-semibold shadow-[0_16px_36px_-18px_rgba(0,0,0,0.35)]"
     >
-      <i class="bi bi-check-circle text-xl"></i>
+      <span class="doodle-icon bg-mint h-8 w-8 text-base">
+        <i class="bi bi-check-lg"></i>
+      </span>
       <span><%= msg %></span>
     </div>
     <% } %> <% if (typeof errors != "undefined" && errors.length > 0) { %>
     <div
       id="toast-error"
-      class="fixed right-5 bottom-5 z-50 flex items-center gap-3 rounded-lg border border-red-600 bg-red-600/20 px-3 py-2 text-sm text-red-700 opacity-0 shadow-lg backdrop-blur-md transition-opacity duration-300"
+      class="toast sketch-alt bg-card text-ink fixed right-5 bottom-5 z-50 flex items-center gap-3 px-4 py-3 font-semibold shadow-[0_16px_36px_-18px_rgba(0,0,0,0.35)]"
     >
-      <i class="bi bi-x-circle text-xl"></i>
+      <span class="doodle-icon bg-blush h-8 w-8 text-base">
+        <i class="bi bi-x-lg"></i>
+      </span>
 
       <div class="flex flex-col gap-1">
         <% errors.forEach(err => { %>
@@ -54,21 +625,43 @@
         const el = document.getElementById(id);
         if (!el) return;
 
-        setTimeout(() => {
-          el.style.opacity = "1";
-        }, 100);
+        requestAnimationFrame(() => el.classList.add("is-shown"));
 
-        setTimeout(() => {
-          el.style.opacity = "0";
-        }, 3000);
-
-        setTimeout(() => {
-          el.remove();
-        }, 3500);
+        setTimeout(() => el.classList.remove("is-shown"), 3000);
+        setTimeout(() => el.remove(), 3600);
       }
 
       showToast("toast-success");
       showToast("toast-error");
+
+      // Shared popup behaviour: every .doodle-modal fades its backdrop and
+      // springs its box, closes on the backdrop or Escape, and holds the page
+      // still while it is open
+      function openModal(el) {
+        if (!el) return;
+        el.classList.add("is-open");
+        document.body.style.overflow = "hidden";
+        el.querySelector("input, button, a")?.focus({ preventScroll: true });
+      }
+
+      function closeModal(el) {
+        if (!el) return;
+        el.classList.remove("is-open");
+        if (!document.querySelector(".doodle-modal.is-open")) {
+          document.body.style.overflow = "";
+        }
+      }
+
+      document.addEventListener("mousedown", (e) => {
+        if (e.target.classList?.contains("doodle-modal")) closeModal(e.target);
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        document
+          .querySelectorAll(".doodle-modal.is-open")
+          .forEach((el) => closeModal(el));
+      });
     </script>
   </body>
 </html>

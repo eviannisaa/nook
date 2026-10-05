@@ -1,0 +1,181 @@
+<%
+  // re-rendered after a failed validation: keep what was typed, show why
+  const values = typeof writing !== "undefined" && writing ? writing : {};
+  const errorList = typeof errors !== "undefined" && errors ? errors : [];
+  const fieldError = (field) => {
+    const hit = errorList.find((e) => e.path === field || e.param === field);
+    return hit ? hit.msg : "";
+  };
+  // a locked note comes still encrypted: its key is asked here, it's opened
+  // into the editor in the browser and locked again before it's saved
+  const lockedNote = Boolean(values.isEncrypted);
+  const jsValue = (v) => JSON.stringify(v).replace(/</g, "\\u003c");
+  const lockedPayload = lockedNote
+    ? values.encVersion
+      ? { id: String(values._id), content: values.content, salt: values.salt, iv: values.iv }
+      : { id: String(values._id), legacy: true }
+    : null;
+%>
+<style>
+  /* the line spread across: the words on the left, Enter key on the right */
+  .locked-edit-note {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem 0.75rem;
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+  }
+
+  .locked-edit-note[hidden] {
+    display: none;
+  }
+
+  .locked-edit-note > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  /* Enter key reads like the note page's Decrypt: sage words with the
+     open lock and the marker stroke drawn in under them; on the right even
+     when it has to drop under the words (narrow screens) */
+  .locked-edit-note .header-link {
+    margin-left: auto;
+  }
+</style>
+<%- include("partials/contact-form-styles") %>
+<%- include("partials/note-form-styles") %>
+<%- include("partials/actions-menu-styles") %>
+
+<div class="form-page mx-auto grid w-full max-w-2xl grid-cols-1 gap-6 p-6 pt-14">
+  <!-- floating back button, stacked above the menu button -->
+  <a
+    href="/writing/<%= values._id %>"
+    aria-label="Back to note"
+    title="Back to note"
+    class="fab-back fab-simple doodle-btn fixed right-6 z-40 h-12 w-12 p-0 text-xl"
+  >
+    <%- include("partials/doodle-icon", { name: "arrow-left", cls: "fab-icon" }) %>
+  </a>
+
+  <!-- header, same pattern as the writing page -->
+  <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
+    <div class="flex items-end gap-4">
+      <%- include("partials/peep", { pose: "edit", cls: "header-peep-fade -mb-1 hidden h-24 sm:block" }) %>
+      <div class="pb-1">
+        <h2 class="header-title mb-1 text-4xl">
+          <span class="header-title-mark">Edit Note</span>
+        </h2>
+        <p class="text-ink-soft font-comic font-bold">
+          <%= lockedNote ? "Change what you wrote. It stays locked." : "Change what you wrote" %>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <form
+    method="post"
+    action="/writing?_method=PUT"
+    class="form-card grid grid-cols-1 gap-6 p-6 sm:p-8"
+    data-stagger
+    style="--i: 1"
+    novalidate
+  >
+    <input type="hidden" name="_id" value="<%= values._id %>" />
+    <% if (lockedNote) { %>
+    <!-- sent locked: content holds the ciphertext, beside its salt and iv -->
+    <input type="hidden" name="encrypt" value="1" />
+    <input type="hidden" name="salt" id="note-salt" />
+    <input type="hidden" name="iv" id="note-iv" />
+
+    <p class="locked-edit-note" id="locked-edit-note">
+      <span><i class="bi bi-lock"></i> This note is locked. Enter its key to edit it.</span>
+      <button type="button" class="header-link is-primary" onclick="openKeyModal(event, 'edit', '<%= values._id %>')">
+        <%- include("partials/doodle-icon", { name: "unlock" }) %>
+        Enter key
+      </button>
+    </p>
+    <% } %>
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div class="field sm:col-span-2 <%= fieldError('title') ? 'has-error' : '' %>">
+        <label for="title" class="field-label"><span>Title</span><span class="req" aria-hidden="true"></span></label>
+        <input type="text" id="title" name="title" value="<%= values.title || '' %>" placeholder="Give it a title" required class="doodle-input field-input" />
+        <% if (fieldError("title")) { %><span class="field-error"><%= fieldError("title") %></span><% } %>
+      </div>
+
+      <%- include("partials/mood-picker", { mood: values.mood }) %>
+
+      <%- include("partials/note-editor", { content: lockedNote ? "" : values.content, paper: values.paper, error: fieldError("content") }) %>
+    </div>
+
+    <div class="form-actions">
+      <a href="/writing/<%= values._id %>" class="cancel-link">Cancel</a>
+      <button id="submit-form" class="doodle-btn doodle-btn-ink px-6" type="button">
+        <%- include("partials/doodle-icon", { name: "pencil" }) %>
+        Save changes
+      </button>
+    </div>
+  </form>
+
+  <% if (lockedNote) { %>
+  <%- include("partials/key-modal") %>
+  <% } %>
+</div>
+
+<% if (lockedNote) { %>
+<script type="application/json" id="note-cipher"><%- jsValue(lockedPayload) %></script>
+<% } %>
+
+<script>
+  const submitBtn = document.getElementById("submit-form");
+  const form = submitBtn.closest("form");
+
+  // a locked note: the key, once given, is kept only in this page to lock
+  // the note again on save
+  const cipherEl = document.getElementById("note-cipher");
+  const lockedNote = cipherEl ? JSON.parse(cipherEl.textContent) : null;
+  let noteKey = null;
+
+  if (lockedNote) {
+    window.keyModalActions = {
+      async edit(key) {
+        window.noteEditor.load(await noteCrypto.open(lockedNote, key));
+        noteKey = key;
+        document.getElementById("locked-edit-note").hidden = true;
+        closeKeyModal();
+      },
+    };
+    // once the layout's popup helpers below are in
+    document.addEventListener("DOMContentLoaded", () => openKeyModal(null, "edit", lockedNote.id));
+  }
+
+  submitBtn.addEventListener("click", async () => {
+    if (lockedNote && !noteKey) {
+      openKeyModal(null, "edit", lockedNote.id);
+      return;
+    }
+    if (!form.reportValidity() || !window.noteEditor.sync()) return;
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add("opacity-70", "cursor-wait");
+    submitBtn.textContent = "Saving…";
+
+    // locked again with the same key: content becomes its ciphertext
+    if (lockedNote) {
+      const content = document.getElementById("content");
+      const locked = await noteCrypto.encrypt(content.value, noteKey);
+      content.value = locked.content;
+      document.getElementById("note-salt").value = locked.salt;
+      document.getElementById("note-iv").value = locked.iv;
+    }
+
+    setTimeout(() => {
+      form.submit();
+    }, 1000);
+  });
+</script>
