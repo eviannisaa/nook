@@ -1513,5 +1513,5 @@ app.use((err, req, res, next) => {
 // network)
 const host = process.env.HOST || "127.0.0.1";
 app.listen(port, host, () => {
-  console.log(`Mongo Contact App | listening at http://localhost:${port}`);
+  console.log(`Nook | listening at http://localhost:${port}`);
 });
