@@ -1,23 +1,23 @@
 <%
-  // sign in and sign up share one page; mode says which
+  // sign in dan sign up memakai halaman yang sama; mode menentukan yang mana
   const isLogin = mode === "login";
   const errorList = typeof formErrors !== "undefined" && formErrors ? formErrors : [];
   const fieldError = (field) => {
     const hit = errorList.find((e) => e.path === field);
     return hit ? hit.msg : "";
   };
-  // a sign-in error isn't about one field: it shows above the fields
+  // error sign in tidak terkait satu field tertentu, jadi tampil di atas semua field
   const formError = errorList.filter((e) => !e.path).map((e) => e.msg)[0] || "";
   const SPARK = "M14 1.5 Q16.6 11.4 26.5 14 Q16.6 16.6 14 26.5 Q11.4 16.6 1.5 14 Q11.4 11.4 14 1.5 Z";
 %>
 <style>
-  /* Sign in / sign up as a scrapbook page: things laid down by hand,
-     a little crooked and overlapping. The name on a torn scrap of mint
-     paper under its roof; the line written on a sticky note; two
-     stickers of the app; the form on a sheet of lined paper, taped down;
-     a dashed pen arrow from the note to the form. Coral is the one
-     accent; the stickers and tape carry the colour. */
-  /* the palette, shared by the page and the desk around it */
+  /* Halaman sign in / sign up bergaya scrapbook: semua elemen seperti
+     ditempel dengan tangan, sedikit miring dan saling menumpuk. Nama
+     aplikasi ada di sobekan kertas mint di bawah atapnya, tagline ditulis di
+     sticky note, ada dua stiker aplikasi, form di atas kertas bergaris yang
+     ditempel selotip, dan jejak bintang dari note ke form. Coral jadi
+     satu-satunya warna aksen; warna lain datang dari stiker dan selotip. */
+  /* palet warna, dipakai bersama oleh halaman dan meja di sekitarnya */
   .zine,
   .zine-desk {
     --accent: #e58a74;
@@ -50,7 +50,7 @@
     }
   }
 
-  /* ---- backdrop: a mint wash that thins around the pointer ---- */
+  /* ---- latar: warna mint yang memudar di sekitar pointer ---- */
   .auth-wash {
     --mx: -9999px;
     --my: -9999px;
@@ -72,8 +72,9 @@
     mask-image: var(--fade);
   }
 
-  /* ---- the desk around the page: a few scraps near the edges, soft and
-     still, some running off it; a fine paper grain over all ---- */
+  /* ---- meja di sekitar halaman: beberapa potongan kertas di dekat tepi,
+     lembut dan diam, sebagian keluar layar; tekstur kertas halus menutupi
+     semuanya ---- */
   .zine-desk {
     position: fixed;
     inset: 0;
@@ -94,7 +95,7 @@
     position: absolute;
   }
 
-  /* a torn scrap of mint paper, taped, top right */
+  /* sobekan kertas mint yang ditempel selotip, kanan atas */
   .desk-scrap {
     top: -1.2rem;
     right: 6%;
@@ -126,7 +127,7 @@
     background: color-mix(in srgb, var(--note) 95%, transparent);
   }
 
-  /* a postage stamp with a little house, bottom left */
+  /* perangko bergambar rumah kecil, kiri bawah */
   .desk-stamp {
     bottom: 7%;
     left: 4.5%;
@@ -135,7 +136,7 @@
     width: 4.6rem;
     height: 5.4rem;
     background: #fff;
-    /* the perforated edge: dots of the desk's colour round a white card */
+    /* tepi perangko yang berlubang: titik-titik warna meja di sekeliling kartu putih */
     border: 0.32rem dotted #f4f1e9;
     rotate: -8deg;
     box-shadow: 0 8px 16px -10px rgba(30, 60, 42, 0.35);
@@ -159,7 +160,7 @@
     stroke-linejoin: round;
   }
 
-  /* a polaroid frame running off the bottom right */
+  /* bingkai polaroid yang terpotong keluar layar di kanan bawah */
   .desk-polaroid {
     right: -2.5rem;
     bottom: -3rem;
@@ -180,7 +181,7 @@
       #f3efe4;
   }
 
-  /* a pressed leaf, left edge */
+  /* daun kering yang dipres, tepi kiri */
   .desk-leaf {
     top: 18%;
     left: 2.5%;
@@ -199,8 +200,8 @@
     }
   }
 
-  /* phones and tablets: only the scrap at the top and the tape on the
-     edge, so the stacked page has room */
+  /* ponsel dan tablet: hanya sobekan kertas di atas beserta selotipnya
+     yang tampil, supaya halaman yang bertumpuk punya ruang */
   @media (max-width: 999px) {
     .desk-stamp,
     .desk-polaroid,
@@ -221,7 +222,7 @@
     }
   }
 
-  /* phones: the scrap alone, its tape would sit on the name's spark */
+  /* ponsel: hanya sobekan kertasnya, karena selotipnya akan menutupi kilau di nama */
   @media (max-width: 639px) {
     .desk-tape.is-scrap {
       display: none;
@@ -229,7 +230,7 @@
 
   }
 
-  /* a paperclip on the form's top right corner */
+  /* penjepit kertas di sudut kanan atas form */
   .zine-clip {
     position: absolute;
     top: -1.4rem;
@@ -244,7 +245,7 @@
     overflow: visible;
   }
 
-  /* ---- the brand cluster ---- */
+  /* ---- kumpulan elemen brand ---- */
   .zine-brand {
     position: relative;
     display: grid;
@@ -252,7 +253,7 @@
     gap: 0.5rem;
   }
 
-  /* the name, on a torn scrap of mint paper */
+  /* nama aplikasi di atas sobekan kertas mint */
   .zine-name {
     position: relative;
     isolation: isolate;
@@ -273,7 +274,7 @@
     inset: 0.9rem -0.2rem 0 -0.4rem;
     z-index: -1;
     background: #cfe9d6;
-    /* a torn edge all round */
+    /* tepi sobek di semua sisi */
     clip-path: polygon(0% 6%, 7% 0%, 15% 5%, 24% 1%, 33% 6%, 44% 0%, 55% 4%, 66% 0%, 77% 5%, 88% 1%, 100% 7%, 98% 30%, 100% 55%, 97% 80%, 100% 100%, 88% 95%, 76% 100%, 63% 96%, 51% 100%, 38% 95%, 25% 100%, 13% 96%, 0% 100%, 3% 75%, 0% 50%, 2% 25%);
     box-shadow: 0 6px 14px -8px rgba(30, 60, 42, 0.4);
   }
@@ -306,7 +307,7 @@
     rotate: 14deg;
   }
 
-  /* the line, handwritten on a sticky note, taped at the top */
+  /* tagline, ditulis tangan di sticky note yang ditempel selotip di bagian atas */
   .zine-sticky {
     position: relative;
     max-width: 19rem;
@@ -337,7 +338,7 @@
     clip-path: polygon(4% 0, 96% 6%, 100% 50%, 95% 100%, 3% 94%, 0 50%);
   }
 
-  /* the two words that matter: circled and underlined by pen */
+  /* dua kata utama: dilingkari dan digarisbawahi dengan pena */
   .zine-word {
     position: relative;
     font-style: normal;
@@ -367,7 +368,7 @@
     }
   }
 
-  /* stickers of the app: white-edged, a little crooked */
+  /* stiker aplikasi: bertepi putih dan sedikit miring */
   .zine-stickers {
     position: relative;
     width: 21rem;
@@ -441,7 +442,7 @@
     border-radius: 50%;
   }
 
-  /* laid down first, then bobbing gently */
+  /* ditempel lebih dulu, lalu bergoyang pelan */
   .sticker.auth-reveal {
     animation:
       zine-drop 0.8s cubic-bezier(0.34, 1.35, 0.64, 1) var(--d, 0s) backwards,
@@ -458,7 +459,7 @@
     }
   }
 
-  /* skeleton bars, a slow light passing over */
+  /* skeleton bar dengan kilau cahaya yang lewat perlahan */
   .sk {
     display: block;
     height: 0.55rem;
@@ -493,7 +494,7 @@
     }
   }
 
-  /* little pen marks scattered round the cluster */
+  /* coretan pena kecil yang tersebar di sekitar elemen brand */
   .zine-doodle {
     position: absolute;
     pointer-events: none;
@@ -552,16 +553,16 @@
     }
   }
 
-  /* ---- the form, on a sheet of lined paper, taped down ---- */
+  /* ---- form di atas selembar kertas bergaris yang ditempel selotip ---- */
   .zine-paper {
     position: relative;
     display: grid;
     gap: 1.05rem;
     padding: 2.1rem 1.75rem 1.6rem 2.6rem;
     background:
-      /* the red margin line */
+      /* garis margin merah */
       linear-gradient(90deg, transparent 1.6rem, rgba(229, 138, 116, 0.35) 1.6rem, rgba(229, 138, 116, 0.35) calc(1.6rem + 1.5px), transparent calc(1.6rem + 1.5px)),
-      /* the ruled lines */
+      /* garis-garis kertas */
       repeating-linear-gradient(180deg, transparent 0, transparent 1.9rem, rgba(159, 211, 176, 0.32) 1.9rem, rgba(159, 211, 176, 0.32) calc(1.9rem + 1px)),
       #fffefb;
     border-radius: 6px 6px 18px 6px;
@@ -591,15 +592,16 @@
     background: color-mix(in srgb, var(--mint) 55%, transparent);
   }
 
-  /* the form keeps its own lines straight */
+  /* isi form diputar sedikit berlawanan arah supaya tidak ikut terlalu miring */
   .zine-paper > * {
     rotate: -0.4deg;
   }
 
-  /* a trail of twinkling stars from the sticky note to the paper, like
-     the pointer's comet: along a wave with one loop, small at the tail and
-     growing toward the form; laid in from the tail on opening, then each
-     twinkles in its own time (stars placed by the script, wide screens) */
+  /* jejak bintang berkelip dari sticky note ke kertas, seperti komet di
+     pointer: mengikuti gelombang dengan satu putaran, kecil di ekor dan makin
+     besar ke arah form. Saat halaman dibuka, bintang muncul berurutan dari
+     ekor, lalu masing-masing berkelip dengan iramanya sendiri (posisi bintang
+     diatur oleh script, hanya di layar lebar) */
   .zine-trail {
     position: absolute;
     top: 2.4rem;
@@ -669,7 +671,7 @@
     color: var(--color-ink);
   }
 
-  /* a quick pen loop under the title */
+  /* coretan pena melingkar di bawah judul */
   .auth-title::after {
     content: "";
     position: absolute;
@@ -689,7 +691,7 @@
     color: var(--color-ink-soft);
   }
 
-  /* a message about the whole form (wrong password, too many tries) */
+  /* pesan untuk seluruh form (password salah, terlalu banyak percobaan) */
   .auth-alert {
     display: flex;
     gap: 0.55rem;
@@ -712,7 +714,7 @@
     margin-top: 0.05rem;
   }
 
-  /* ---- fields ---- */
+  /* ---- field ---- */
   .auth-field {
     display: grid;
     gap: 0.35rem;
@@ -745,7 +747,7 @@
     color: var(--color-ink);
     background-color: rgba(255, 255, 255, 0.9);
     border: 1.5px solid color-mix(in srgb, var(--color-ink) 22%, transparent);
-    /* a hand-cut box */
+    /* kotak yang seperti digunting tangan */
     border-radius: 14px 10px 15px 9px / 10px 15px 9px 14px;
     outline: none;
     transition:
@@ -843,7 +845,7 @@
     display: block;
   }
 
-  /* ---- the button: an ink-edged block with a hard offset shadow ---- */
+  /* ---- tombol: blok bertepi tinta dengan shadow offset yang tegas ---- */
   .auth-submit {
     position: relative;
     overflow: hidden;
@@ -865,8 +867,9 @@
       4px 4px 0 var(--color-ink),
       0 8px 14px -12px rgba(30, 40, 35, 0);
     cursor: pointer;
-    /* a soft straight lift on hover (the same two shadow layers in every
-       state, so it glides); the press stays quick */
+    /* saat hover, tombol terangkat lurus dengan halus (dua lapis shadow yang
+       sama dipakai di setiap state, supaya transisinya mulus); saat ditekan,
+       gerakannya tetap cepat */
     transition:
       transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
       box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1),
@@ -996,7 +999,7 @@
     border-radius: 3px;
   }
 
-  /* ---- the pointer's comet ---- */
+  /* ---- komet di pointer ---- */
   .auth-sparkles {
     position: fixed;
     inset: 0;
@@ -1040,7 +1043,7 @@
     }
   }
 
-  /* ---- opening: each piece is laid down in turn (--d) ---- */
+  /* ---- animasi pembuka: setiap elemen muncul bergantian (--d) ---- */
   .auth-reveal {
     animation: zine-drop 0.8s cubic-bezier(0.34, 1.35, 0.64, 1) var(--d, 0s) backwards;
   }
@@ -1123,7 +1126,7 @@
 <div class="auth-wash" id="auth-wash" aria-hidden="true"></div>
 <div class="auth-sparkles" id="auth-sparkles" aria-hidden="true"></div>
 
-<!-- the desk around the page -->
+<!-- meja di sekitar halaman -->
 <div class="zine-desk" aria-hidden="true">
   <span class="desk-scrap"></span>
   <span class="desk-tape is-scrap"></span>
@@ -1134,8 +1137,8 @@
 </div>
 
 <main class="zine">
-  <!-- the brand cluster: the name on a scrap, the line on a sticky note,
-       two stickers of the app, a few pen marks -->
+  <!-- elemen brand: nama di sobekan kertas, tagline di sticky note, dua
+       stiker aplikasi, dan beberapa coretan pena -->
   <section class="zine-brand" aria-label="Nook">
     <h1 class="zine-name auth-reveal" style="--d: 0.1s">
       <svg class="auth-roof" viewBox="0 0 48 26" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1171,7 +1174,7 @@
     <svg class="zine-doodle is-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2c-3.9-2.9-8.1-6.3-8.3-10.2-.2-2.7 1.7-5 4.3-5.1 1.7 0 3.1 1 4 2.4.9-1.5 2.4-2.5 4.1-2.4 2.6.2 4.3 2.5 4.1 5.2-.4 3.9-4.4 7.2-8.2 10.1z" /></svg>
   </section>
 
-  <!-- the form, on lined paper -->
+  <!-- form di atas kertas bergaris -->
   <form
     method="post"
     action="<%= isLogin ? '/login' : '/signup' %>"
@@ -1183,8 +1186,8 @@
     <span class="tape is-left" aria-hidden="true"></span>
     <svg class="zine-clip" viewBox="0 0 20 52" aria-hidden="true"><path d="M6 40 V10 C6 4.5 14 4.5 14 10 V44 C14 51 3 51 3 44 V16" /></svg>
 
-    <!-- a trail of twinkling stars from the note, wavy with one loop; the
-         stars are set along the guide by the script -->
+    <!-- jejak bintang berkelip dari note, bergelombang dengan satu putaran.
+         Bintangnya dipasang di sepanjang garis panduan oleh script -->
     <svg class="zine-trail" id="zine-trail" viewBox="0 0 120 84" aria-hidden="true">
       <path class="guide" d="M3 64 C12 52 20 70 31 58 C40 48 40 28 58 24 C76 20 84 44 68 52 C52 60 46 36 62 30 C80 23 92 40 105 32 C109 29 112 26 115 22" />
     </svg>
@@ -1314,7 +1317,7 @@
 </main>
 
 <script>
-  // show / hide a password, and a sending state that stops a double submit
+  // tombol show / hide password, dan state saat form dikirim untuk mencegah double submit
   (function () {
     document.querySelectorAll("[data-peek]").forEach((btn) => {
       const input = document.getElementById(btn.dataset.peek);
@@ -1333,7 +1336,7 @@
     const submit = document.getElementById("auth-submit");
     const label = submit.querySelector(".auth-submit-label");
     form.addEventListener("submit", (e) => {
-      // the browser's own check first (empty fields, too short)
+      // browser mengecek form lebih dulu (field kosong, terlalu pendek)
       if (!form.checkValidity()) {
         e.preventDefault();
         form.reportValidity();
@@ -1342,15 +1345,15 @@
       submit.disabled = true;
       label.textContent = <%- JSON.stringify(isLogin ? "Signing in" : "Making it") %>;
     });
-    // back to the page from history: ready to send again
+    // saat halaman dibuka lagi dari history, form bisa dikirim kembali
     addEventListener("pageshow", () => {
       submit.disabled = false;
       label.textContent = <%- JSON.stringify(isLogin ? "Sign in" : "Create account") %>;
     });
   })();
 
-  // the star trail: little stars and specks set along the guide path,
-  // growing from tail to head, each with its own twinkle
+  // jejak bintang: bintang dan titik kecil dipasang di sepanjang garis panduan,
+  // makin besar dari ekor ke kepala, masing-masing dengan kelipnya sendiri
   (function () {
     const svg = document.getElementById("zine-trail");
     const guide = svg?.querySelector(".guide");
@@ -1369,7 +1372,7 @@
       const t = i / (COUNT - 1);
       const p = guide.getPointAtLength(total * t);
       const [fill, line] = LOOKS[i % LOOKS.length];
-      // every third one a round speck, the rest stars; the last a big star
+      // satu dari tiap tiga elemen berupa titik bulat, sisanya bintang; yang terakhir bintang besar
       const speck = i % 3 === 1 && i < COUNT - 1;
       const size = speck ? 1.8 + t * 1.4 : 3.5 + t * 4.5 + (i === COUNT - 1 ? 1.5 : 0);
       const at = document.createElementNS(NS, "g");
@@ -1396,9 +1399,9 @@
     }
   })();
 
-  // the wash thins in a pool that follows the pointer, easing after it;
-  // a comet of tiny sparkles trails the pointer. None
-  // of this on touch screens, and no sparkles with reduced motion
+  // warna latar memudar di area yang mengikuti pointer dan bergerak pelan
+  // menyusulnya, dengan komet kilau kecil di belakang pointer. Semua ini tidak
+  // aktif di layar sentuh, dan kilau tidak muncul jika reduced motion aktif
   (function () {
     const wash = document.getElementById("auth-wash");
     if (!wash || !matchMedia("(hover: hover)").matches) return;
@@ -1415,8 +1418,8 @@
       frame = Math.abs(tx - x) + Math.abs(ty - y) > 0.5 ? requestAnimationFrame(draw) : 0;
     };
 
-    // tiny sparkles dropped along the pointer's path (one every ~5px), each
-    // drifting gently back the way it came and fading slowly; at most 260
+    // kilau kecil ditaburkan di sepanjang jalur pointer (satu tiap ~5px). Tiap
+    // kilau bergeser pelan ke arah datangnya pointer lalu memudar; maksimal 260
     const layer = document.getElementById("auth-sparkles");
     const STAR_LOOKS = [
       ["#f4a582", "#c9714d"],
@@ -1424,7 +1427,7 @@
       ["#7fc79a", "#3f8a5c"],
       ["#f7b6c8", "#cf7491"],
     ];
-    // the round specks never take the yellows
+    // titik bulat tidak pernah memakai warna kuning
     const SPECK_LOOKS = [
       ["#f4a582", "#c9714d"],
       ["#7fc79a", "#3f8a5c"],
@@ -1468,8 +1471,8 @@
       if (dist < 5) return;
       const ux = (cx - lastX) / dist;
       const uy = (cy - lastY) / dist;
-      // fill in the path since the last move, so a quick flick still
-      // leaves an unbroken tail
+      // isi jalur sejak gerakan terakhir, supaya gerakan cepat tetap
+      // meninggalkan ekor yang tidak terputus
       const steps = Math.min(Math.floor(dist / 5), 12);
       for (let i = 1; i <= steps; i++) {
         const t = i / steps;
@@ -1483,7 +1486,7 @@
       tx = e.clientX;
       ty = e.clientY;
       comet(tx, ty);
-      // the first move places it at once; after that it eases
+      // gerakan pertama langsung menentukan posisi; setelah itu bergerak pelan menyusul
       if (x === null || still) {
         x = tx;
         y = ty;
@@ -1492,7 +1495,7 @@
       }
       if (!frame) frame = requestAnimationFrame(draw);
     });
-    // off the page: the colour evens out again
+    // saat pointer keluar halaman, warna latar kembali merata
     document.documentElement.addEventListener("pointerleave", () => {
       cancelAnimationFrame(frame);
       frame = 0;

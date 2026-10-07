@@ -22,7 +22,8 @@ const { hashPassword, verifyPassword, needsRehash, DUMMY_HASH } = require("./uti
 const { decryptText, isLegacyLock, readCipher } = require("./utils/crypto");
 const { noteHtml, noteText, hasNoteContent } = require("./utils/note-html");
 
-// Notes saved before the editor have no text field yet
+// Catatan yang dibuat sebelum ada editor belum punya field text, jadi field
+// itu diisi saat aplikasi dijalankan
 Writing.find({ isEncrypted: { $ne: true }, text: { $exists: false } })
   .then((writings) =>
     Promise.all(
@@ -36,12 +37,9 @@ Writing.find({ isEncrypted: { $ne: true }, text: { $exists: false } })
   )
   .catch((err) => console.log(err));
 
-// Looks a day mark can take. The colors are earthy tones from the same
-// family as the sage and terracotta of the app: close in lightness and
-// softness, so any mix of marks sits calmly together, and each keeps 4.5:1
-// with the white text of a picked chip
+// Pilihan ikon untuk tanda hari. Warnanya ada di MARK_COLORS
 const MARK_ICONS = ["drop", "moon", "star", "heart", "pill", "dot"];
-// Tailwind's 600 shades: bright, but still dark enough to read on paper
+// Shade 600 dari Tailwind: cukup cerah, tapi tetap terbaca di latar kertas
 const MARK_COLORS = {
   red: "#dc2626",
   orange: "#ea580c",
@@ -52,15 +50,15 @@ const MARK_COLORS = {
   violet: "#7c3aed",
   pink: "#db2777",
 };
-// how many marks one day can hold
+// jumlah tanda maksimal dalam satu hari
 const MAX_MARKS_PER_DAY = 20;
 const dayIsFull = async (owner, day) =>
   (await DayMark.countDocuments({ owner, day })) >= MAX_MARKS_PER_DAY;
 
-// Marks with the same name (in any case), icon and color are twins: shown
-// and treated as one mark
+// Tanda dengan nama (tanpa membedakan huruf besar/kecil), ikon, dan warna
+// yang sama dianggap kembar, jadi diperlakukan sebagai satu tanda
 const markerLook = (marker) => [marker.name.trim().toLowerCase(), marker.icon, marker.color].join("|");
-// the ids of a mark and its twins
+// id sebuah tanda beserta semua kembarannya
 const twinIds = async (marker) =>
   (
     await Marker.find(
@@ -77,16 +75,17 @@ const twinIds = async (marker) =>
 const app = express();
 const port = 3000;
 
-// Behind a reverse proxy, TRUST_PROXY says which one to believe for the
-// visitor's address and https (a hop count like "1", or "loopback"); unset,
-// no forwarded header is trusted
+// Di belakang reverse proxy, TRUST_PROXY menentukan proxy yang dipercaya
+// untuk alamat pengunjung dan https (jumlah hop seperti "1", atau
+// "loopback"). Jika kosong, semua header forwarded diabaikan
 if (process.env.TRUST_PROXY) {
   const trust = process.env.TRUST_PROXY;
   app.set("trust proxy", /^\d+$/.test(trust) ? Number(trust) : trust);
 }
 
-// No page here may be framed by another site (clickjacking), sniffed as
-// another type, or leak its address to other sites
+// Halaman aplikasi ini tidak boleh dimuat dalam frame situs lain
+// (clickjacking), ditebak tipenya oleh browser, atau membocorkan alamatnya
+// ke situs lain
 app.disable("x-powered-by");
 app.use((req, res, next) => {
   res.set({
@@ -98,11 +97,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// A form or request that changes something must come from this app's own
-// pages. SameSite=Lax keeps the cookie off other sites' posts, but not off
-// the sign-in form, where another site could sign someone into its account.
-// Browsers say where a request came from in Sec-Fetch-Site; older ones only
-// in Origin or Referer. With none of them, it's refused
+// Request yang mengubah data hanya diterima dari halaman aplikasi ini.
+// SameSite=Lax menahan cookie pada POST dari situs lain, tapi tidak
+// melindungi form login: situs lain tetap bisa membuat seseorang login ke
+// akun milik penyerang. Asal request dibaca dari Sec-Fetch-Site, atau dari
+// Origin/Referer di browser lama. Jika semuanya kosong, request ditolak
 const SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
 const ownOrigin = (req) => process.env.APP_ORIGIN || `${req.protocol}://${req.get("host")}`;
 const originOf = (value) => {
@@ -122,29 +121,29 @@ app.use((req, res, next) => {
   res.status(403).send("Forbidden");
 });
 
-// Setup Method Override
+// Form bisa mengirim PUT dan DELETE lewat field _method
 app.use(methodOverride("_method"));
 
-// Setup EJS. Folders are found from this file, not from where the app was
-// started, so a host that runs it from elsewhere (like Vercel) finds them
+// Setup EJS. Folder dicari dari lokasi file ini, bukan dari tempat aplikasi
+// dijalankan, jadi tetap ditemukan di host seperti Vercel
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(expressLayouts);
-// public/ is served as it is, except uploaded photos: those go only to who
-// may see their contact (GET /uploads/:file, below)
+// Isi public/ disajikan apa adanya, kecuali foto upload. Foto hanya dikirim
+// ke akun yang boleh melihat kontaknya (GET /uploads/:file, di bawah)
 const servePublic = express.static(path.join(__dirname, "public"));
 app.use((req, res, next) =>
   req.path.startsWith("/uploads/") ? next() : servePublic(req, res, next)
 );
-// Notes carry their images inline, so the form body can be a few MB
+// Gambar disimpan langsung di isi catatan, jadi body form bisa beberapa MB
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
-// an older locked note, locked again in the browser, comes back as JSON
+// catatan lama yang dikunci ulang di browser dikirim kembali sebagai JSON
 app.use(express.json({ limit: "15mb" }));
 
-// Session configuration. The secret signs the session cookie: from
-// SESSION_SECRET (e.g. `node --env-file=.env app.js`), or else one made on
-// the first start and kept in .session-secret (never committed), so a
-// restart doesn't sign everyone out
+// Konfigurasi session. Secret untuk sign cookie session diambil dari
+// SESSION_SECRET (misalnya `node --env-file=.env app.js`). Jika kosong,
+// secret dibuat saat start pertama dan disimpan di .session-secret (tidak
+// di-commit), jadi restart tidak membuat semua user logout
 const SECRET_FILE = ".session-secret";
 const sessionSecret = () => {
   if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
@@ -158,9 +157,9 @@ const sessionSecret = () => {
 };
 const SESSION_SECRET = sessionSecret();
 app.use(cookieParser(SESSION_SECRET));
-// Signed in for a week, kept in MongoDB so a restart doesn't sign anyone
-// out. SameSite=Lax keeps the cookie off forms posted from other sites, so
-// another page can't act as the person signed in here
+// Login berlaku seminggu dan session disimpan di MongoDB, jadi restart tidak
+// membuat user logout. SameSite=Lax menahan cookie pada form dari situs lain,
+// sehingga halaman lain tidak bisa bertindak atas nama user
 app.use(
   session({
     name: "sid",
@@ -168,8 +167,8 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      // SESSION_COOKIE_SECURE=1 when served over https, so the cookie never
-      // goes over plain http (behind a proxy, set TRUST_PROXY too)
+      // Isi SESSION_COOKIE_SECURE=1 untuk https agar cookie tidak terkirim
+      // lewat http biasa (di belakang proxy, isi juga TRUST_PROXY)
       secure: process.env.SESSION_COOKIE_SECURE === "1",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
@@ -181,20 +180,20 @@ app.use(
 );
 app.use(flash());
 app.use((req, res, next) => {
-  // read only when one is waiting: req.flash() on its own starts a session,
-  // which would store one for every visit before signing in
+  // flash hanya dibaca jika memang ada. Memanggil req.flash() saja sudah
+  // membuat session, sehingga setiap kunjungan sebelum login ikut tersimpan
   const waiting = Boolean(req.session.flash);
   const message = waiting ? req.flash("msg") : [];
   res.locals.msg = message.length > 0 ? message[0] : null;
-  // Feeds the same red toast the validation errors use
+  // Ditampilkan di toast merah yang sama dengan error validasi
   res.locals.errors = waiting ? req.flash("error").map((msg) => ({ msg })) : [];
   next();
 });
-// A redirect goes out only once the session is saved: express-session sends
-// the headers before its save is done, so the next page could be read from
-// the old session, and a message ("… added successfully") would turn up a
-// page late. Only a session with something in it is saved, so a visit before
-// signing in still stores none
+// Redirect baru dikirim setelah session selesai disimpan. express-session
+// mengirim header sebelum save selesai, sehingga halaman berikutnya bisa
+// membaca session lama dan pesan seperti "… added successfully" baru muncul
+// satu halaman kemudian. Hanya session yang berisi data yang disimpan, jadi
+// kunjungan sebelum login tetap tidak membuat session
 app.use((req, res, next) => {
   const redirect = res.redirect.bind(res);
   res.redirect = (...args) => {
@@ -208,28 +207,29 @@ app.use((req, res, next) => {
   next();
 });
 
-// Active menu for the navbar
+// Path saat ini, untuk menandai menu aktif di navbar
 app.use((req, res, next) => {
   res.locals.path = req.path;
   next();
 });
 
-// ---- Accounts ----
+// ---- Akun ----
 
-// pages that open without signing in
+// halaman yang bisa dibuka tanpa login
 const PUBLIC_PATHS = ["/login", "/signup"];
 
-// Each visit keeps a session going for another week, but never past 30 days
-// from signing in: then it's time to sign in again
+// Setiap kunjungan memperpanjang session seminggu lagi, tapi paling lama 30
+// hari sejak login. Setelah itu user harus login ulang
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
 const sessionTooOld = (session) => {
-  // sessions from before this limit start counting now, not sign out at once
+  // session lama tanpa signedInAt mulai dihitung sekarang, tidak langsung logout
   if (!session.signedInAt) session.signedInAt = Date.now();
   return Date.now() - session.signedInAt > SESSION_MAX_AGE;
 };
 
-// The signed-in account, as req.user and (for the views) user; anyone else
-// is sent to the sign-in page, and comes back where they were going after
+// Akun yang sedang login disimpan di req.user (dan user untuk view).
+// Pengunjung yang belum login diarahkan ke halaman login, lalu dikembalikan
+// ke halaman tujuannya
 app.use(async (req, res, next) => {
   res.locals.user = null;
   if (req.session.userId && sessionTooOld(req.session)) {
@@ -256,10 +256,10 @@ app.use(async (req, res, next) => {
 
 const TIME_ZONE = "Asia/Jakarta";
 
-// View Helpers
+// Helper untuk view
 app.locals.noteHtml = noteHtml;
 app.locals.moods = ["Happy", "Grateful", "Excited", "Calm", "Tired", "Sad"];
-// the face shown for each mood (the mood picker, the note detail)
+// emoji untuk setiap mood (di pilihan mood dan detail catatan)
 app.locals.moodFaces = { Happy: "😊", Grateful: "🥰", Excited: "🤩", Calm: "😌", Tired: "😴", Sad: "😢" };
 app.locals.formatDate = (date) =>
   date
@@ -276,8 +276,8 @@ app.locals.formatDate = (date) =>
       }).format(new Date(date))
     : "-";
 
-// Jakarta has no daylight saving, so a fixed offset is enough to map a calendar
-// day onto the instant it starts at
+// Jakarta tidak memakai daylight saving, jadi offset tetap sudah cukup untuk
+// menentukan waktu mulai sebuah tanggal
 const TZ_OFFSET = "+07:00";
 
 const dayKeyFormat = new Intl.DateTimeFormat("en-CA", {
@@ -287,7 +287,7 @@ const dayKeyFormat = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 });
 
-// "2026-09-22" for whichever day the instant falls on in Jakarta
+// Tanggal di Jakarta untuk waktu tersebut, dalam format "2026-09-22"
 const dayKey = (date) => dayKeyFormat.format(new Date(date));
 
 const isDayKey = (value) =>
@@ -296,7 +296,8 @@ const isDayKey = (value) =>
 const isMonthKey = (value) =>
   typeof value === "string" && /^\d{4}-\d{2}$/.test(value);
 
-// Midday keeps the stored instant on the intended day whichever way it is read
+// Jam 12 siang dipakai agar tanggalnya tetap sama, baik dibaca dalam UTC
+// maupun waktu Jakarta
 const dayToDate = (key) => new Date(`${key}T12:00:00${TZ_OFFSET}`);
 
 const shiftMonth = (monthKey, step) => {
@@ -305,7 +306,8 @@ const shiftMonth = (monthKey, step) => {
   return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}`;
 };
 
-// Calendar days read in English: "Sep 28", "Monday, September 28, 2026"
+// Format tanggal kalender dalam bahasa Inggris: "Sep 28",
+// "Monday, September 28, 2026"
 app.locals.formatShortDay = (key) =>
   new Intl.DateTimeFormat("en-US", {
     day: "numeric",
@@ -322,8 +324,8 @@ app.locals.formatDay = (key) =>
     timeZone: TIME_ZONE,
   }).format(dayToDate(key));
 
-// a note's day for the search list's margin: "Sep 28", and its year apart,
-// only when it isn't this year ("" otherwise)
+// tanggal catatan di margin hasil search ("Sep 28"). Tahunnya terpisah dan
+// hanya diisi jika bukan tahun ini (selain itu "")
 app.locals.formatNoteDay = (date) => app.locals.formatShortDay(dayKey(date));
 app.locals.formatNoteYear = (date) => {
   const year = dayKey(date).slice(0, 4);
@@ -340,10 +342,10 @@ app.locals.formatTime = (date) =>
       }).format(new Date(date))
     : "-";
 
-// Keeps the "go back where you came from" field from turning into an open
-// redirect: only a path on this app is followed. Browsers read "/\evil.com"
-// as "//evil.com", so backslashes and control characters are refused before
-// the path is resolved, and anything that lands on another host falls back
+// Mencegah field "kembali ke halaman sebelumnya" menjadi open redirect: hanya
+// path di aplikasi ini yang diikuti. Browser membaca "/\evil.com" sebagai
+// "//evil.com", jadi backslash dan karakter kontrol ditolak sebelum path
+// di-resolve, dan hasil yang mengarah ke host lain diganti fallback
 const LOCAL_BASE = "http://app.invalid";
 const safeRedirect = (target, fallback) => {
   // eslint-disable-next-line no-control-regex
@@ -358,17 +360,17 @@ const safeRedirect = (target, fallback) => {
   }
 };
 
-// a Mongo ObjectId, as it comes in a path or a form
+// cek apakah nilai dari path atau form berupa ObjectId Mongo
 const isId = (id) => /^[0-9a-f]{24}$/i.test(String(id || ""));
 
-// search words matched as they are typed, not as a regular expression
+// kata search dicocokkan apa adanya, bukan sebagai regular expression
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const searchOf = (value) => (typeof value === "string" ? value.trim().slice(0, 100) : "");
 
-// What an account may see: its own, and what was shared with it
+// Yang boleh dilihat akun: miliknya sendiri dan yang dibagikan kepadanya
 const visibleTo = (user) => ({ $or: [{ owner: user._id }, { "shares.user": user._id }] });
 
-// "owner", "edit" (shared with editing), "view" (shared to read), or null
+// "owner", "edit" (dibagikan, boleh edit), "view" (hanya baca), atau null
 const accessOf = (doc, user) => {
   if (!doc || !user) return null;
   if (String(doc.owner?._id || doc.owner) === String(user._id)) return "owner";
@@ -378,8 +380,9 @@ const accessOf = (doc, user) => {
 };
 const ACCESS_RANK = { view: 1, edit: 2, owner: 3 };
 
-// A contact or note by id, when this account may at least `need` it:
-// { doc, access }, or null (missing and not allowed look the same)
+// Kontak atau catatan dengan id ini, jika akun punya akses minimal `need`.
+// Hasilnya { doc, access }, atau null jika data tidak ada maupun tidak boleh
+// diakses (keduanya sengaja dibuat sama)
 const findFor = async (Model, id, user, need = "view") => {
   if (!isId(id)) return null;
   const doc = await Model.findById(id).populate("owner", "username");
@@ -388,10 +391,10 @@ const findFor = async (Model, id, user, need = "view") => {
   return { doc, access };
 };
 
-// Setup Multer for upload file: photos only, up to 2MB, under a random
-// name (the name sent with the file is never used). Multer keeps the file
-// in memory; the photo store (MinIO, or public/uploads without it) then
-// keeps it under that name
+// Setup Multer untuk upload foto: hanya gambar, maksimal 2MB, dengan nama
+// acak (nama file asli tidak pernah dipakai). Multer menyimpan file di
+// memory, lalu photo store (MinIO, atau public/uploads jika MinIO tidak
+// dipakai) menyimpannya dengan nama tersebut
 const multer = require("multer");
 const photos = require("./utils/photo-store");
 const PHOTO_TYPES = { "image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp", "image/gif": ".gif" };
@@ -402,11 +405,12 @@ const upload = multer({
   fileFilter: (req, file, cb) => cb(null, Boolean(PHOTO_TYPES[file.mimetype])),
 });
 
-// a photo too big comes back as a message on the form, not a crash
+// jika upload gagal (misalnya foto lebih dari 2MB), user diarahkan kembali
+// dengan pesan error, bukan crash
 const uploadPhoto = (req, res, next) =>
   upload.single("image")(req, res, async (err) => {
     if (!err && req.file) {
-      // req.file.filename is the name it is kept under, as with disk storage
+      // req.file.filename diisi nama simpanan file, seperti pada disk storage
       req.file.filename = crypto.randomBytes(16).toString("hex") + PHOTO_TYPES[req.file.mimetype];
       try {
         await photos.save(req.file.filename, req.file.buffer);
@@ -422,14 +426,14 @@ const uploadPhoto = (req, res, next) =>
     next();
   });
 
-// An uploaded photo's path as stored on a contact: "/uploads/<name>" and
-// nothing else, so a path from a form can never reach another file
+// Path foto yang disimpan di kontak hanya boleh "/uploads/<name>", jadi path
+// dari form tidak pernah bisa mengarah ke file lain
 const PHOTO_PATH = /^\/uploads\/[a-zA-Z0-9_-]+\.(png|jpe?g|webp|gif)$/;
 const removePhoto = (image) => {
   if (PHOTO_PATH.test(image || "")) photos.remove(image.slice("/uploads/".length)).catch(() => {});
 };
 
-// a photo goes only to who may see a contact that has it
+// foto hanya dikirim ke akun yang boleh melihat kontak yang memakainya
 app.get("/uploads/:file", async (req, res) => {
   const image = "/uploads/" + req.params.file;
   if (!PHOTO_PATH.test(image)) return res.sendStatus(404);
@@ -449,11 +453,12 @@ app.get("/uploads/:file", async (req, res) => {
   stream.pipe(res);
 });
 
-// ---- Sign in, sign up, sign out ----
+// ---- Login, sign up, logout ----
 
-// Counts per key (an address, a username) within a window; past `max` it
-// says how many seconds to wait. It holds at most `size` keys, dropping the
-// ones least recently counted, so a flood of new names can't grow it forever
+// Menghitung percobaan per key (alamat atau username) dalam satu window.
+// Lewat dari `max`, wait() memberi jumlah detik yang harus ditunggu. Maksimal
+// `size` key disimpan; key yang paling lama tidak dihitung dibuang lebih dulu,
+// jadi banjir nama baru tidak membuatnya terus membesar
 const limiter = ({ max, window, size = 10000 }) => {
   const counts = new Map();
   const current = (key) => {
@@ -477,21 +482,22 @@ const limiter = ({ max, window, size = 10000 }) => {
   };
 };
 
-// Wrong passwords: 10 in 15 minutes for one username from one address, 30
-// from one address whatever the usernames (one password tried on many
-// accounts), and 50 an hour on one account from anywhere (many addresses)
+// Batas password salah: 10 kali dalam 15 menit untuk satu username dari satu
+// alamat, 30 kali dari satu alamat untuk username apa pun (satu password
+// dicoba di banyak akun), dan 50 kali per jam untuk satu akun dari alamat
+// mana pun
 const MINUTE = 60 * 1000;
 const loginByAddressAndName = limiter({ max: 10, window: 15 * MINUTE });
 const loginByAddress = limiter({ max: 30, window: 15 * MINUTE });
 const loginByName = limiter({ max: 50, window: 60 * MINUTE });
-// new accounts from one address: 5 an hour
+// akun baru dari satu alamat: 5 per jam
 const signupByAddress = limiter({ max: 5, window: 60 * MINUTE });
 
-// the longest password taken; a longer one isn't hashed at all
+// batas panjang password; yang lebih panjang langsung ditolak tanpa di-hash
 const MAX_PASSWORD = 200;
 
 const USERNAME = /^[a-z0-9_.]{3,24}$/;
-// the form shows its own errors, so they don't go to the toast as well
+// form menampilkan error-nya sendiri, jadi error tidak ikut muncul di toast
 const authPage = (res, mode, { errors = [], ...extra } = {}) =>
   res.render("auth", {
     title: mode === "login" ? "Nook" : "Sign Up · Nook",
@@ -504,8 +510,8 @@ const authPage = (res, mode, { errors = [], ...extra } = {}) =>
     errors: [],
   });
 
-// a fresh session id for the account, so one handed out before sign-in is
-// worthless after it
+// session id dibuat ulang saat login, jadi id yang sudah ada sebelum login
+// tidak bisa dipakai lagi
 const signIn = (req, user) =>
   new Promise((resolve, reject) =>
     req.session.regenerate((err) => {
@@ -542,8 +548,8 @@ app.post("/login", async (req, res) => {
   }
 
   const user = USERNAME.test(username) ? await User.findOne({ username }) : null;
-  // a missing account is checked against a dummy hash, so it takes as long
-  // to refuse as a wrong password
+  // akun yang tidak ada tetap dicek dengan dummy hash, agar waktu penolakannya
+  // sama dengan password salah
   const ok =
     password.length <= MAX_PASSWORD &&
     (await verifyPassword(password, user ? user.passwordHash : DUMMY_HASH));
@@ -559,8 +565,8 @@ app.post("/login", async (req, res) => {
   }
 
   loginByAddressAndName.clear(who);
-  // a hash made with older, cheaper settings is made again now, while the
-  // password is at hand
+  // hash yang dibuat dengan pengaturan lama yang lebih ringan dibuat ulang
+  // sekarang, selagi password aslinya tersedia
   if (needsRehash(user.passwordHash)) {
     await User.updateOne({ _id: user._id }, { passwordHash: await hashPassword(password) });
   }
@@ -604,7 +610,7 @@ app.post("/signup", async (req, res) => {
   try {
     user = await User.create({ username, passwordHash: await hashPassword(password) });
   } catch (err) {
-    // the same name taken a moment earlier
+    // username yang sama baru saja dipakai akun lain
     if (err.code === 11000) {
       return authPage(res.status(400), "signup", {
         username,
@@ -626,10 +632,11 @@ app.post("/logout", (req, res, next) => {
   });
 });
 
-// ---- Sharing ----
+// ---- Berbagi akses ----
 
-// The owner shares a contact or note with another account by username, to
-// read or to edit too; sharing again with the same person changes that
+// Pemilik membagikan kontak atau catatan ke akun lain lewat username, untuk
+// dibaca saja atau juga diedit. Membagikan lagi ke orang yang sama akan
+// mengubah aksesnya
 const shareRoutes = (Model, base, noun, nameOf) => {
   app.post(`${base}/:_id/shares`, async (req, res) => {
     const found = await findFor(Model, req.params._id, req.user, "owner");
@@ -658,8 +665,8 @@ const shareRoutes = (Model, base, noun, nameOf) => {
     res.redirect(back);
   });
 
-  // the owner stops sharing with someone; or someone it's shared with takes
-  // it off their own account, which leaves the owner's copy as it is
+  // pemilik berhenti membagikan ke seseorang, atau penerima menghapusnya dari
+  // akunnya sendiri tanpa mengubah data milik pemilik
   app.delete(`${base}/:_id/shares/:userId`, async (req, res) => {
     const leaving = req.params.userId === String(req.user._id);
     const found = await findFor(Model, req.params._id, req.user, leaving ? "view" : "owner");
@@ -668,7 +675,8 @@ const shareRoutes = (Model, base, noun, nameOf) => {
       req.flash("error", "That share couldn't be removed.");
       return res.redirect(back);
     }
-    // only the share is pulled, so an edit saved meanwhile isn't overwritten
+    // hanya data share yang dihapus, jadi edit yang disimpan di saat yang
+    // sama tidak tertimpa
     await Model.updateOne({ _id: found.doc._id }, { $pull: { shares: { user: req.params.userId } } });
     if (leaving) {
       req.flash("msg", `${nameOf(found.doc)} removed from your account`);
@@ -679,7 +687,7 @@ const shareRoutes = (Model, base, noun, nameOf) => {
   });
 };
 
-// who a contact or note is shared with, for its owner's Share popup
+// daftar penerima share kontak atau catatan, untuk popup Share pemiliknya
 const sharesOf = async (doc) => {
   const users = await User.find(
     { _id: { $in: doc.shares.map((share) => share.user) } },
@@ -695,7 +703,7 @@ const sharesOf = async (doc) => {
     .filter((share) => share.username);
 };
 
-// Home Page
+// Halaman utama
 app.get("/", (req, res) => {
   res.render("index", {
     title: "My App",
@@ -704,22 +712,22 @@ app.get("/", (req, res) => {
   });
 });
 
-// Contact Page
+// Halaman kontak
 app.get("/contacts", async (req, res) => {
   const page = Math.max(parseInt(req.query.page) || 1, 1);
   const limit = 5;
   const skip = (page - 1) * limit;
   const search = searchOf(req.query.search);
 
-  // a search has no pages, so drop a leftover page/all from its URL
+  // search tidak memakai halaman, jadi page/all yang tersisa di URL dihapus
   if (search && (req.query.page || req.query.all)) {
     return res.redirect("/contacts?search=" + encodeURIComponent(search));
   }
 
-  // a search has no pages: every match is shown at once
+  // saat search, semua hasil ditampilkan sekaligus tanpa halaman
   const viewAll = req.query.all === "1" || !!search;
 
-  // this account's contacts and the ones shared with it
+  // kontak milik akun ini dan kontak yang dibagikan kepadanya
   const pattern = escapeRegex(search);
   const query = search
     ? {
@@ -740,7 +748,8 @@ app.get("/contacts", async (req, res) => {
   const totalContacts = await Contact.countDocuments(query);
   const totalPages = Math.ceil(totalContacts / limit);
 
-  // alphabetical (case-insensitive) so the list can be grouped A, B, C...
+  // urut abjad tanpa membedakan huruf besar/kecil, agar daftar bisa
+  // dikelompokkan A, B, C...
   const contactsQuery = Contact.find(query)
     .populate("owner", "username")
     .collation({ locale: "en", strength: 2 })
@@ -762,7 +771,7 @@ app.get("/contacts", async (req, res) => {
   });
 });
 
-// Form New Contact Page
+// Halaman form kontak baru
 app.get("/contact/new", (req, res) => {
   res.render("new-contact", {
     title: "New Contact Page",
@@ -770,7 +779,7 @@ app.get("/contact/new", (req, res) => {
   });
 });
 
-// Post New Contact
+// Simpan kontak baru
 app.post(
   "/contact",
   uploadPhoto,
@@ -788,17 +797,17 @@ app.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      // the form comes back without the photo, so it isn't kept either
+      // form dikembalikan tanpa foto, jadi foto yang di-upload juga dihapus
       if (req.file) removePhoto("/uploads/" + req.file.filename);
       res.render("new-contact", {
         title: "New Contact Page",
         layout: "layouts/main-layout",
         errors: errors.array(),
-        // keep what was typed so the form comes back filled in
+        // isian user dipertahankan agar form tetap terisi
         contact: req.body,
       });
     } else {
-      // only the form's own fields, owned by whoever made it
+      // hanya field dari form, dengan pembuatnya sebagai owner
       await Contact.create({
         owner: req.user._id,
         name: String(req.body.name),
@@ -814,7 +823,7 @@ app.post(
   }
 );
 
-// Delete Detail Contact
+// Hapus kontak
 app.delete("/contact", async (req, res) => {
   const found = await findFor(Contact, req.body._id, req.user, "owner");
   if (!found) {
@@ -827,7 +836,7 @@ app.delete("/contact", async (req, res) => {
   res.redirect("/contacts");
 });
 
-// Form Edit Contact Page
+// Halaman form edit kontak
 app.get("/contact/edit/:_id", async (req, res) => {
   const found = await findFor(Contact, req.params._id, req.user, "edit");
   if (!found) {
@@ -843,13 +852,13 @@ app.get("/contact/edit/:_id", async (req, res) => {
   });
 });
 
-// Post Edit Contact
+// Simpan perubahan kontak
 app.put(
   "/contact",
   uploadPhoto,
   [
     body("name").custom(async (value, { req }) => {
-      // another of the owner's contacts already has this name
+      // cek apakah kontak lain milik pemilik yang sama sudah memakai nama ini
       const contact = isId(req.body._id) ? await Contact.findById(req.body._id, { owner: 1 }) : null;
       const duplicate = contact
         ? await Contact.findOne({ owner: contact.owner, name: String(value), _id: { $ne: contact._id } })
@@ -878,12 +887,12 @@ app.put(
         title: "Edit Contact Page",
         layout: "layouts/main-layout",
         errors: errors.array(),
-        // the photo stays what is saved; the form can't point it elsewhere
+        // foto tetap memakai yang tersimpan; form tidak bisa mengubah path-nya
         contact: { ...req.body, _id: existing._id, image: existing.image },
       });
     } else {
-      // a new photo replaces the saved one; an emptied field removes it;
-      // otherwise it stays as saved (the form's value is never trusted)
+      // foto baru menggantikan yang lama, field kosong menghapusnya, selain itu
+      // foto tidak berubah (path dari form tidak pernah dipakai)
       let image = existing.image;
       if (req.file) image = "/uploads/" + req.file.filename;
       else if (!req.body.image) image = undefined;
@@ -909,7 +918,7 @@ app.put(
   }
 );
 
-// Detail Contact Page
+// Halaman detail kontak
 app.get("/contact/:_id", async (req, res) => {
   const found = await findFor(Contact, req.params._id, req.user);
   if (!found) {
@@ -927,10 +936,10 @@ app.get("/contact/:_id", async (req, res) => {
 
 shareRoutes(Contact, "/contact", "contact", (contact) => contact.name);
 
-// Lists only need a preview: the words of an open note, the start of an
-// encrypted one's ciphertext; the full content (with its images) stays out
+// Daftar hanya butuh preview: teks catatan biasa, atau awal ciphertext untuk
+// catatan terenkripsi. Isi lengkap beserta gambarnya tidak ikut diambil
 const PREVIEW_FIELDS = {
-  // whose it is, so a note shared with this account can say so
+  // pemilik catatan, agar catatan yang dibagikan ke akun ini bisa ditandai
   owner: 1,
   title: 1,
   mood: 1,
@@ -941,16 +950,17 @@ const PREVIEW_FIELDS = {
   content: { $substrCP: ["$content", 0, 300] },
 };
 
-// Longest note body accepted; a MongoDB document tops out at 16MB
+// Panjang maksimal isi catatan; satu dokumen MongoDB maksimal 16MB
 const MAX_NOTE_LENGTH = 7 * 1024 * 1024;
-// the same note locked in the browser: base64 is a third longer, plus room
-// for words that take more than a byte
+// batas catatan yang sama setelah dikunci di browser: base64 sepertiga lebih
+// panjang, ditambah ruang untuk karakter yang lebih dari satu byte
 const MAX_CIPHER_LENGTH = Math.ceil(MAX_NOTE_LENGTH * 1.5);
 
 const paperOf = (value) => (value === "lined" ? "lined" : "plain");
 
-// A note sent locked (encrypt set) is ciphertext from the browser: only its
-// shape can be checked. An open one is checked for words and size
+// Catatan yang dikirim terkunci (encrypt diisi) berupa ciphertext dari
+// browser, jadi hanya bentuknya yang bisa dicek. Catatan biasa dicek isi dan
+// ukurannya
 const checkNoteContent = body("content").custom((value, { req }) => {
   if (req.body.encrypt) {
     if (!readCipher(req.body, MAX_CIPHER_LENGTH)) {
@@ -965,7 +975,7 @@ const checkNoteContent = body("content").custom((value, { req }) => {
   return true;
 });
 
-// Writing Page: a month calendar by default, a flat result list while searching
+// Halaman catatan: default kalender bulanan, daftar hasil saat search
 app.get("/writing", async (req, res) => {
   const search = searchOf(req.query.search);
 
@@ -974,7 +984,7 @@ app.get("/writing", async (req, res) => {
     const limit = 5;
     const skip = (page - 1) * limit;
 
-    // An encrypted content field only holds ciphertext, so it is not searchable
+    // Catatan terenkripsi hanya berisi ciphertext, jadi isinya tidak di-search
     const pattern = escapeRegex(search);
     const query = {
       $and: [
@@ -1039,14 +1049,14 @@ app.get("/writing", async (req, res) => {
     notesByDay.get(key).push(writing);
   });
 
-  // A calendar date read as UTC gives the right weekday and month length
+  // Dibaca sebagai UTC agar hari dan jumlah hari dalam bulan tepat
   const firstWeekday = new Date(Date.UTC(year, monthNo - 1, 1)).getUTCDay();
   const daysInMonth = new Date(Date.UTC(year, monthNo, 0)).getUTCDate();
 
-  // twins (the same name, icon and color, made twice before names were kept
-  // unique) are one mark everywhere: the oldest stands for them all
+  // tanda kembar (nama, ikon, dan warna sama, yang sempat dibuat dua kali
+  // sebelum nama dibuat unik) dianggap satu tanda, diwakili yang paling lama
   const markers = [];
-  const markerOf = new Map(); // a twin's id -> the mark shown for it
+  const markerOf = new Map(); // id kembaran -> tanda yang ditampilkan
   const byLook = new Map();
   (await Marker.find({ owner: req.user._id }).sort({ createdAt: 1, _id: 1 }).lean()).forEach((marker) => {
     const id = String(marker._id);
@@ -1069,7 +1079,7 @@ app.get("/writing", async (req, res) => {
     if (!marksByDay.has(mark.day)) marksByDay.set(mark.day, new Set());
     marksByDay.get(mark.day).add(id);
   });
-  // days each mark is on (two twins on one day count once)
+  // jumlah hari tiap tanda (kembaran di hari yang sama dihitung sekali)
   const markCounts = {};
   marksByDay.forEach((ids) => ids.forEach((id) => (markCounts[id] = (markCounts[id] || 0) + 1)));
 
@@ -1081,7 +1091,7 @@ app.get("/writing", async (req, res) => {
       day,
       key,
       notes: notesByDay.get(key) || [],
-      // in the same order as the legend
+      // urutannya sama dengan legend
       marks: markers.filter((marker) => dayMarks.has(marker.id)),
     });
   }
@@ -1111,12 +1121,12 @@ app.get("/writing", async (req, res) => {
     markCounts,
     markIcons: MARK_ICONS,
     markColors: MARK_COLORS,
-    // every note, shown in the count row like the contacts total
+    // semua catatan, ditampilkan di baris jumlah seperti total kontak
     totalNotes: await Writing.countDocuments(visibleTo(req.user)),
   });
 });
 
-// Put a mark on a day, or take it off again
+// Pasang tanda di suatu hari, atau lepas jika sudah terpasang
 app.post("/marks", async (req, res) => {
   const day = req.body.date;
   const marker = isId(req.body.marker)
@@ -1128,7 +1138,8 @@ app.post("/marks", async (req, res) => {
   }
 
   const back = "/writing?month=" + day.slice(0, 7);
-  // the mark is on the day when any of its twins is; taken off, all go
+  // tanda dianggap terpasang jika salah satu kembarannya terpasang; saat
+  // dilepas, semuanya dihapus
   const twins = await twinIds(marker);
   const removed = (await DayMark.deleteMany({ day, marker: { $in: twins } })).deletedCount > 0;
   if (!removed) {
@@ -1145,7 +1156,7 @@ app.post("/marks", async (req, res) => {
   res.redirect(back);
 });
 
-// New kind of mark, put straight on the day it was made from
+// Jenis tanda baru, langsung dipasang di hari tempat tanda itu dibuat
 app.post("/markers", async (req, res) => {
   const day = isDayKey(req.body.date) ? req.body.date : null;
   const back = day ? "/writing?month=" + day.slice(0, 7) : "/writing";
@@ -1155,7 +1166,7 @@ app.post("/markers", async (req, res) => {
     req.flash("error", "Give the mark a name of up to 24 characters!");
     return res.redirect(back);
   }
-  // a full day takes no new mark, unless this name is already on it
+  // hari yang penuh tidak menerima tanda baru, kecuali nama ini sudah ada
   if (day && (await dayIsFull(req.user._id, day))) {
     const onDay = await DayMark.find({ owner: req.user._id, day }).populate("marker", "name").lean();
     if (!onDay.some((m) => m.marker?.name.toLowerCase() === name.toLowerCase())) {
@@ -1164,7 +1175,7 @@ app.post("/markers", async (req, res) => {
     }
   }
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  // a name made before is put on the day as it is, not made a second time
+  // nama yang sudah pernah dibuat langsung dipasang, tidak dibuat ulang
   const marker =
     (await Marker.findOne({
       owner: req.user._id,
@@ -1187,7 +1198,7 @@ app.post("/markers", async (req, res) => {
   res.redirect(back);
 });
 
-// Delete a kind of mark for good, along with every day it was put on
+// Hapus jenis tanda secara permanen, beserta semua hari yang memakainya
 app.delete("/markers/:_id", async (req, res) => {
   const back = safeRedirect(req.body?.redirect, "/writing");
   const marker = isId(req.params._id)
@@ -1198,7 +1209,7 @@ app.delete("/markers/:_id", async (req, res) => {
     return res.redirect(back);
   }
 
-  // with its twins, as they are shown as one mark
+  // beserta kembarannya, karena semuanya ditampilkan sebagai satu tanda
   const ids = await twinIds(marker);
   await DayMark.deleteMany({ marker: { $in: ids } });
   await Marker.deleteMany({ _id: { $in: ids } });
@@ -1206,21 +1217,21 @@ app.delete("/markers/:_id", async (req, res) => {
   res.redirect(back);
 });
 
-// a note's id in a path: a Mongo ObjectId (anything else isn't a note, so
-// /writing/new and the like fall through to their own routes)
+// id catatan di path harus berupa ObjectId Mongo. Selain itu bukan catatan,
+// jadi /writing/new dan sejenisnya diteruskan ke route masing-masing
 const isNoteId = (id) => /^[0-9a-f]{24}$/i.test(String(id || ""));
 
-// Form New Writing Page
+// Halaman form catatan baru
 app.get("/writing/new", (req, res) => {
   res.render("new-writing", {
     title: "New Note Page",
     layout: "layouts/main-layout",
-    // The calendar links here with the day the note belongs to
+    // Kalender mengarah ke sini dengan membawa tanggal catatan
     writing: { date: isDayKey(req.query.date) ? req.query.date : "" },
   });
 });
 
-// Post New Writing
+// Simpan catatan baru
 app.post(
   "/writing",
   [
@@ -1234,7 +1245,7 @@ app.post(
         title: "New Note Page",
         layout: "layouts/main-layout",
         errors: errors.array(),
-        // ciphertext can't go back into the editor
+        // ciphertext tidak bisa dimasukkan kembali ke editor
         writing: { ...req.body, content: req.body.encrypt ? "" : req.body.content },
       });
     } else {
@@ -1262,7 +1273,7 @@ app.post(
   }
 );
 
-// Encrypt Writing: the note comes back locked from the browser
+// Encrypt catatan: browser mengirim catatan yang sudah dikunci
 app.post("/writing/encrypt", async (req, res) => {
   const back = safeRedirect(req.body.redirect, "/writing");
   const writing = (await findFor(Writing, req.body._id, req.user, "owner"))?.doc;
@@ -1286,8 +1297,8 @@ app.post("/writing/encrypt", async (req, res) => {
   res.redirect(back);
 });
 
-// Decrypt Writing: the browser opened the note with its key and sends back
-// its words, saved open from now on
+// Decrypt catatan: browser membuka catatan dengan key-nya, lalu mengirim
+// isinya untuk disimpan tanpa kunci
 app.post("/writing/decrypt", async (req, res) => {
   const back = safeRedirect(req.body.redirect, "/writing");
   const writing = (await findFor(Writing, req.body._id, req.user, "owner"))?.doc;
@@ -1314,9 +1325,9 @@ app.post("/writing/decrypt", async (req, res) => {
   res.redirect(back);
 });
 
-// Wrong keys tried on an older locked note, per address and note: after 5
-// in a minute it waits. (Notes locked in the browser are never checked here,
-// the server doesn't get their key)
+// Batas key salah untuk catatan terkunci versi lama, per alamat dan catatan:
+// setelah 5 kali dalam semenit, harus menunggu. (Catatan yang dikunci di
+// browser tidak pernah dicek di sini, karena server tidak menerima key-nya)
 const LEGACY_TRIES = 5;
 const LEGACY_WINDOW = 60 * 1000;
 const legacyMisses = new Map();
@@ -1333,8 +1344,8 @@ const legacyMiss = (who) => {
   legacyMisses.set(who, entry);
 };
 
-// Open an older locked note one last time: its words go back to the
-// browser, which locks it again there (relock below)
+// Membuka catatan terkunci versi lama untuk terakhir kali: isinya dikirim ke
+// browser, lalu dikunci ulang di sana (lihat relock di bawah)
 app.post("/writing/:_id/legacy-open", async (req, res) => {
   const writing = (await findFor(Writing, req.params._id, req.user, "owner"))?.doc;
   if (!writing) return res.status(404).json({ error: "Note not found." });
@@ -1359,7 +1370,8 @@ app.post("/writing/:_id/legacy-open", async (req, res) => {
   res.json({ content: noteHtml(content) });
 });
 
-// An older locked note, locked again in the browser with the same key
+// Menyimpan catatan versi lama yang sudah dikunci ulang di browser dengan
+// key yang sama
 app.post("/writing/:_id/relock", async (req, res) => {
   const writing = (await findFor(Writing, req.params._id, req.user, "owner"))?.doc;
   if (!writing) return res.status(404).json({ error: "Note not found." });
@@ -1372,7 +1384,7 @@ app.post("/writing/:_id/relock", async (req, res) => {
   res.json({ ok: true });
 });
 
-// Delete Writing
+// Hapus catatan
 app.delete("/writing", async (req, res) => {
   const found = await findFor(Writing, req.body._id, req.user, "owner");
   if (!found) {
@@ -1384,7 +1396,7 @@ app.delete("/writing", async (req, res) => {
   res.redirect("/writing");
 });
 
-// Form Edit Writing Page
+// Halaman form edit catatan
 app.get("/writing/edit/:_id", async (req, res) => {
   const found = await findFor(Writing, req.params._id, req.user, "edit");
   if (!found) {
@@ -1393,8 +1405,8 @@ app.get("/writing/edit/:_id", async (req, res) => {
   }
   const writing = found.doc;
 
-  // a locked note opens in the editor once its key is given on the page,
-  // and is locked again there before it's saved
+  // catatan terkunci dibuka di editor setelah key-nya dimasukkan di halaman,
+  // lalu dikunci lagi di sana sebelum disimpan
   res.render("edit-writing", {
     title: "Edit Note Page",
     layout: "layouts/main-layout",
@@ -1402,7 +1414,7 @@ app.get("/writing/edit/:_id", async (req, res) => {
   });
 });
 
-// Post Edit Writing
+// Simpan perubahan catatan
 app.put(
   "/writing",
   [
@@ -1418,8 +1430,8 @@ app.put(
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      // a locked note's ciphertext can't go back into the editor: the page
-      // asks its key again
+      // ciphertext catatan terkunci tidak bisa dimasukkan kembali ke editor,
+      // jadi halaman edit dibuka ulang dan key diminta lagi
       if (req.body.encrypt) {
         req.flash("error", errors.array()[0].msg);
         return res.redirect("/writing/edit/" + req.body._id);
@@ -1432,7 +1444,7 @@ app.put(
       });
     } else {
       const writing = found.doc;
-      // a locked note is saved locked, an open one open
+      // catatan terkunci harus disimpan terkunci, catatan biasa tetap biasa
       if (!writing || Boolean(writing.isEncrypted) !== Boolean(req.body.encrypt)) {
         req.flash("error", "This note couldn't be saved. Try again.");
         return res.redirect("/writing/" + req.body._id);
@@ -1464,7 +1476,7 @@ app.put(
   }
 );
 
-// Detail Writing Page
+// Halaman detail catatan
 app.get("/writing/:_id", async (req, res, next) => {
   if (!isNoteId(req.params._id)) return next();
   const found = await findFor(Writing, req.params._id, req.user);
@@ -1483,12 +1495,12 @@ app.get("/writing/:_id", async (req, res, next) => {
 
 shareRoutes(Writing, "/writing", "note", (writing) => writing.title);
 
-// Anything else: not a page here
+// Selain route di atas: halaman tidak ditemukan
 app.use((req, res) => {
   res.status(404).send("Not found");
 });
 
-// An unexpected error is logged here, never shown with its stack
+// Error yang tidak terduga dicatat di log, stack-nya tidak pernah ditampilkan
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error(err);
@@ -1496,9 +1508,9 @@ app.use((err, req, res, next) => {
   res.status(500).send("Something went wrong.");
 });
 
-// Only this computer can reach the app (HOST=0.0.0.0 opens it to the
-// network). It listens only when started with `node app.js`; a host like
-// Vercel takes the exported app and runs it itself
+// Hanya komputer ini yang bisa mengakses aplikasi (HOST=0.0.0.0 membukanya
+// ke jaringan). Server hanya listen jika dijalankan dengan `node app.js`;
+// host seperti Vercel memakai app yang di-export dan menjalankannya sendiri
 const host = process.env.HOST || "127.0.0.1";
 if (require.main === module) {
   app.listen(port, host, () => {

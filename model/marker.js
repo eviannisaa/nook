@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
-// Jenis tanda untuk hari di kalender. Semuanya dibuat sendiri oleh user
+// Jenis tanda untuk hari di kalender. Semua tanda dibuat sendiri oleh user
 // ("Fasting", "Gym", "Sick", ...)
 const Marker = mongoose.model(
   "Marker",
   new mongoose.Schema(
     {
-      // akun pemiliknya
+      // akun pemilik
       owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

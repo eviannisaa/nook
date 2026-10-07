@@ -1,13 +1,13 @@
 <%
-  // re-rendered after a failed validation: keep what was typed, show why
+  // Jika validation gagal, halaman dirender ulang dengan isian sebelumnya dan pesan error-nya
   const values = typeof writing !== "undefined" && writing ? writing : {};
   const errorList = typeof errors !== "undefined" && errors ? errors : [];
   const fieldError = (field) => {
     const hit = errorList.find((e) => e.path === field || e.param === field);
     return hit ? hit.msg : "";
   };
-  // a locked note comes still encrypted: its key is asked here, it's opened
-  // into the editor in the browser and locked again before it's saved
+  // Catatan terkunci diterima dalam bentuk terenkripsi. Kunci diperoleh di sini,
+  // lalu catatan dibuka dan dikunci kembali sebelum disimpan
   const lockedNote = Boolean(values.isEncrypted);
   const jsValue = (v) => JSON.stringify(v).replace(/</g, "\\u003c");
   const lockedPayload = lockedNote
@@ -17,7 +17,7 @@
     : null;
 %>
 <style>
-  /* the line spread across: the words on the left, Enter key on the right */
+  /* Satu baris selebar form: teks di kiri, tombol Enter key di kanan */
   .locked-edit-note {
     display: flex;
     flex-wrap: wrap;
@@ -40,9 +40,9 @@
     gap: 0.4rem;
   }
 
-  /* Enter key reads like the note page's Decrypt: sage words with the
-     open lock and the marker stroke drawn in under them; on the right even
-     when it has to drop under the words (narrow screens) */
+  /* Enter key tampil seperti tombol Decrypt di halaman catatan: teks sage
+     dengan ikon gembok terbuka dan garis marker di bawahnya. Tetap di kanan
+     meskipun turun ke bawah teks (layar sempit) */
   .locked-edit-note .header-link {
     margin-left: auto;
   }
@@ -52,7 +52,7 @@
 <%- include("partials/actions-menu-styles") %>
 
 <div class="form-page mx-auto grid w-full max-w-2xl grid-cols-1 gap-6 p-6 pt-14">
-  <!-- floating back button, stacked above the menu button -->
+  <!-- Tombol kembali yang mengambang, tepat di atas tombol menu -->
   <a
     href="/writing/<%= values._id %>"
     aria-label="Back to note"
@@ -62,7 +62,7 @@
     <%- include("partials/doodle-icon", { name: "arrow-left", cls: "fab-icon" }) %>
   </a>
 
-  <!-- header, same pattern as the writing page -->
+  <!-- Header, polanya sama dengan halaman writing -->
   <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
     <div class="flex items-end gap-4">
       <div class="pb-1">
@@ -86,7 +86,7 @@
   >
     <input type="hidden" name="_id" value="<%= values._id %>" />
     <% if (lockedNote) { %>
-    <!-- sent locked: content holds the ciphertext, beside its salt and iv -->
+    <!-- Dikirim dalam keadaan terkunci: content berisi ciphertext, bersama salt dan iv-nya -->
     <input type="hidden" name="encrypt" value="1" />
     <input type="hidden" name="salt" id="note-salt" />
     <input type="hidden" name="iv" id="note-iv" />
@@ -134,8 +134,8 @@
   const submitBtn = document.getElementById("submit-form");
   const form = submitBtn.closest("form");
 
-  // a locked note: the key, once given, is kept only in this page to lock
-  // the note again on save
+  // Untuk catatan terkunci, kunci yang sudah dimasukkan hanya disimpan di
+  // halaman ini untuk mengunci catatan lagi saat disimpan
   const cipherEl = document.getElementById("note-cipher");
   const lockedNote = cipherEl ? JSON.parse(cipherEl.textContent) : null;
   let noteKey = null;
@@ -149,7 +149,7 @@
         closeKeyModal();
       },
     };
-    // once the layout's popup helpers below are in
+    // Tunggu sampai helper popup dari layout di bawah sudah dimuat
     document.addEventListener("DOMContentLoaded", () => openKeyModal(null, "edit", lockedNote.id));
   }
 
@@ -164,7 +164,7 @@
     submitBtn.classList.add("opacity-70", "cursor-wait");
     submitBtn.textContent = "Saving…";
 
-    // locked again with the same key: content becomes its ciphertext
+    // Catatan dikunci lagi dengan kunci yang sama, lalu content diganti ciphertext-nya
     if (lockedNote) {
       const content = document.getElementById("content");
       const locked = await noteCrypto.encrypt(content.value, noteKey);

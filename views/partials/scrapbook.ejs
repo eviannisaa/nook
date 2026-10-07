@@ -1,11 +1,11 @@
 <%#
-  The minimalist scrapbook look, laid over every page's own styles (it is
-  included after the page, so at equal specificity it wins). Pages keep
-  their clean dotted paper background; what changes is the things on it:
-  cards become sheets of paper held by a strip of washi tape, the forms are
-  lined, labels are handwritten, buttons are ink-edged stickers that press
-  in, toasts are sticky notes. The sign-in pages have their own design and
-  don't load this.
+  Tampilan scrapbook minimalis yang menimpa style setiap halaman (file ini
+  di-include setelah halaman, jadi menang jika specificity-nya sama). Latar
+  kertas bertitik di setiap halaman tetap dipakai; yang berubah adalah elemen
+  di atasnya: kartu menjadi lembaran kertas yang ditahan selotip washi, form
+  bergaris, label bergaya tulisan tangan, tombol berupa stiker bergaris tinta
+  yang bisa ditekan, dan toast berupa sticky note. Halaman login dan signup
+  punya desain sendiri dan tidak memuat file ini.
 %>
 <style>
   :root {
@@ -24,7 +24,7 @@
     --sb-tape-edge: polygon(4% 0, 96% 6%, 100% 50%, 95% 100%, 3% 94%, 0 50%);
   }
 
-  /* ---- sheets of paper ---- */
+  /* ---- Lembaran kertas ---- */
 
   .form-card,
   .detail-card,
@@ -37,8 +37,8 @@
     box-shadow: var(--sb-shadow);
   }
 
-  /* the second pencil pass each card had becomes a strip of washi tape
-     holding it down at the top */
+  /* Goresan pensil kedua di setiap kartu diganti selotip washi yang
+     menahan kartu di bagian atas */
   .form-card::after,
   .detail-card::after,
   .calendar-card::after,
@@ -84,7 +84,7 @@
     --sb-tape: var(--sb-tape-blush);
   }
 
-  /* forms are written on lined paper */
+  /* Form ditulis di atas kertas bergaris */
   .form-card {
     background:
       repeating-linear-gradient(
@@ -97,8 +97,8 @@
       var(--sb-paper);
   }
 
-  /* ---- contacts: small paper cards, a touch crooked, straightened by
-     the pointer ---- */
+  /* ---- Contacts: kartu kertas kecil yang sedikit miring, lalu lurus
+     saat di-hover atau focus ---- */
 
   .contact-card {
     border: 1px solid var(--sb-hair);
@@ -125,7 +125,7 @@
     rotate: 0deg;
   }
 
-  /* ---- handwritten labels ---- */
+  /* ---- Label bergaya tulisan tangan ---- */
 
   .field-label,
   .detail-label {
@@ -144,7 +144,7 @@
     color: color-mix(in srgb, var(--sb-accent) 85%, var(--color-ink));
   }
 
-  /* ---- inputs: hand-cut boxes, a hard mint shadow on focus ---- */
+  /* ---- Input: kotak seperti digunting tangan, dengan bayangan mint tegas saat focus ---- */
 
   .field-input,
   .field-input:hover,
@@ -175,10 +175,11 @@
     border-color: var(--color-berry);
   }
 
-  /* ---- buttons: ink-edged stickers that lift softly and press in ----
-     Every state has the same two shadow layers (a hard ink offset and a
-     soft ambient one), so the browser can glide between them instead of
-     swapping; the lift is straight up, no tilt, so the label stays crisp */
+  /* ---- Tombol: stiker bergaris tinta yang terangkat pelan dan masuk saat ditekan ----
+     Setiap state memakai dua lapis bayangan yang sama (offset tinta yang
+     tegas dan bayangan lembut di sekitarnya), jadi browser bisa membuat
+     transisi yang halus, bukan langsung berganti. Tombol terangkat lurus ke
+     atas tanpa miring agar label tetap tajam */
 
   .doodle-btn:not(.fab-simple):not(.home-nav) {
     --btn-ink: var(--color-ink);
@@ -222,7 +223,7 @@
     --btn-ink: var(--color-berry);
   }
 
-  /* small buttons: the same, a size down */
+  /* Tombol kecil: tampilannya sama, satu ukuran lebih kecil */
   .doodle-btn-sm:not(.fab-simple):not(.home-nav) {
     box-shadow:
       2px 2px 0 var(--btn-ink),
@@ -243,7 +244,7 @@
       0 4px 10px -8px rgba(30, 40, 35, 0);
   }
 
-  /* ---- popups: a sheet of paper, taped ---- */
+  /* ---- Popup: lembaran kertas yang ditempel selotip ---- */
 
   .delete-dialog {
     background-color: var(--sb-paper);
@@ -271,7 +272,7 @@
     border-radius: var(--sb-cut);
   }
 
-  /* ---- toasts: a sticky note, a little crooked ---- */
+  /* ---- Toast: sticky note yang sedikit miring ---- */
 
   #toast-success.toast,
   #toast-error.toast {

@@ -1,7 +1,7 @@
 const sanitizeHtml = require("sanitize-html");
 
-// Gambar disimpan langsung di dalam teks catatan, jadi ikut terkunci.
-// Gambar dari link (https) dan script dibuang.
+// Gambar disimpan sebagai data URL di dalam isi catatan, sehingga ikut
+// di-encrypt saat catatan dikunci. Gambar dari link (https) dan script dibuang.
 const IMAGE_DATA_URL = /^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i;
 
 const SANITIZE_OPTIONS = {
@@ -12,10 +12,10 @@ const SANITIZE_OPTIONS = {
   allowedAttributes: {
     a: ["href", "target", "rel"],
     img: ["src", "alt"],
-    // item checklist: bulatan yang dicentang atau tidak
+    // item checklist, bisa dalam kondisi dicentang atau tidak
     li: [{ name: "data-list", multiple: false, values: ["checked", "unchecked"] }],
   },
-  // teks rata tengah/kanan dari editor (rata kiri tidak butuh class)
+  // teks rata tengah/kanan dari editor (rata kiri tidak memakai class)
   allowedClasses: Object.fromEntries(
     ["p", "h2", "h3", "li", "blockquote"].map((tag) => [
       tag,
@@ -42,11 +42,11 @@ const escapeHtml = (text) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-// Catatan lama (sebelum ada editor) cuma berisi teks biasa
+// Catatan lama (sebelum ada editor) hanya berisi teks biasa
 const isHtml = (content) => /^\s*</.test(content || "");
 
-// Teks biasa diubah jadi paragraf. Baris kosong memisahkan paragraf,
-// satu enter tetap jadi baris baru
+// Teks biasa diubah menjadi paragraf. Baris kosong menjadi pemisah
+// paragraf, sedangkan satu enter menjadi baris baru
 const textToHtml = (text) =>
   (text || "")
     .split(/\r?\n\s*\r?\n/)
@@ -55,8 +55,8 @@ const textToHtml = (text) =>
     .map((para) => `<p>${escapeHtml(para).replace(/\r?\n/g, "<br>")}</p>`)
     .join("");
 
-// HTML catatan yang aman dipakai di halaman atau editor. Tag yang tidak
-// diizinkan, seperti script, dibuang
+// HTML catatan yang aman ditampilkan di halaman atau editor. Tag yang
+// tidak diizinkan, seperti script, dibuang
 const noteHtml = (content) =>
   isHtml(content)
     ? sanitizeHtml(content, SANITIZE_OPTIONS)
@@ -71,8 +71,8 @@ const decodeEntities = (text) =>
     .replace(/&#0*39;/g, "'")
     .replace(/&amp;/g, "&");
 
-// Cuma teksnya (tanpa HTML), satu baris per paragraf. Dipakai untuk preview
-// dan pencarian, supaya gambar tidak ikut dimuat atau dicari
+// Hanya teks catatan (tanpa HTML), satu baris per paragraf. Untuk preview
+// dan pencarian, agar gambar tidak ikut dimuat atau dicari
 const noteText = (content) => {
   if (!isHtml(content)) return (content || "").trim();
 
@@ -89,7 +89,7 @@ const noteText = (content) => {
     .join("\n");
 };
 
-// Catatan dianggap terisi kalau ada teks atau gambar
+// Catatan dianggap berisi jika ada teks atau gambar
 const hasNoteContent = (content) =>
   noteText(content).length > 0 || /<img\s/i.test(noteHtml(content));
 

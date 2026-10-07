@@ -1,9 +1,9 @@
 <%
-  // Rich note field for new-writing and edit-writing: paragraphs, headings,
-  // lists, quotes, links and pictures. Pictures are shrunk in the browser and
-  // kept inside the note as data URLs, so encrypting the note covers them.
-  // The paper can be plain or lined (saved with the note), or a drawing pad
-  // whose sketch goes into the note as a picture.
+  // field catatan untuk new-writing dan edit-writing: paragraf, heading,
+  // list, kutipan, link, dan gambar. Gambar diperkecil di browser lalu
+  // disimpan di dalam catatan sebagai data URL, jadi ikut ter-encrypt bersama
+  // catatan. Kertasnya bisa polos atau bergaris (disimpan bersama catatan),
+  // atau berupa pad gambar yang sketsanya masuk ke catatan sebagai gambar
   // include("partials/note-editor", { content: "<p>…</p>", paper: "lined", error: "" })
   const editorContent = typeof content !== "undefined" && content ? content : "";
   const editorPaper = typeof paper !== "undefined" && paper === "lined" ? "lined" : "plain";
@@ -12,8 +12,8 @@
 <%- include("note-body-styles") %>
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
 <style>
-  /* the whole editor is one pale field like the inputs above it; the
-     toolbar sits on top, split off by a dashed pen line */
+  /* seluruh editor tampil sebagai satu field pucat seperti input di atasnya.
+     Toolbar ada di bagian atas, dipisah dengan garis putus-putus */
   .note-editor {
     display: flex;
     flex-direction: column;
@@ -98,13 +98,13 @@
     fill: var(--color-ink);
   }
 
-  /* the picked format gets a soft marker wash, like the switch thumb */
+  /* format yang aktif diberi latar marker lembut, sama seperti thumb switch */
   .note-editor .ql-toolbar.ql-snow button.ql-active {
     background-color: color-mix(in srgb, var(--color-marker) 22%, var(--color-card));
   }
 
-  /* left is simply the default, not a picked format: its button never
-     lights up, only center and right do */
+  /* rata kiri adalah default, bukan format yang dipilih. Karena itu
+     tombolnya tidak pernah disorot, hanya tengah dan kanan */
   .note-editor .ql-toolbar.ql-snow button.ql-align.ql-active:not([value="center"]):not([value="right"]) {
     background-color: transparent;
   }
@@ -121,25 +121,25 @@
     stroke: var(--color-ink);
   }
 
-  /* phones: small buttons kept on one row (no wrapping), lined up from
-     the start with a little air between groups; quote and align live in
-     the "more" menu */
+  /* ponsel: tombol kecil tetap dalam satu baris (tanpa wrap), rata kiri,
+     dengan sedikit jarak antar-grup. Underline, strikethrough, kutipan,
+     dan align dipindah ke menu "more" */
   @media (max-width: 639px) {
     .note-editor .ql-toolbar.ql-snow {
       flex-wrap: nowrap;
       justify-content: flex-start;
       gap: 0.22rem;
-      /* same side padding as the text inputs above (0.8rem on phones) */
+      /* padding samping sama dengan input teks di atasnya (0.8rem di ponsel) */
       padding: 0.3rem 0.8rem;
     }
 
-    /* buttons in a group get a little air between them too */
+    /* tombol dalam satu grup juga diberi sedikit jarak */
     .note-editor .ql-toolbar.ql-snow .ql-formats {
       gap: 0.17rem;
       padding-right: 0.25rem;
     }
 
-    /* the last group has no line after it, so no room kept for one */
+    /* grup terakhir tidak punya garis pemisah, jadi tanpa ruang tambahan */
     .note-editor .ql-toolbar.ql-snow .ql-formats:last-child {
       padding-right: 0;
     }
@@ -150,8 +150,8 @@
       padding: 0.17rem 0;
     }
 
-    /* underline, strikethrough, quote and align move into the "more"
-       menu, so the row fits the narrow card with room between buttons */
+    /* underline, strikethrough, kutipan, dan align pindah ke menu "more"
+       agar satu baris muat di kartu yang sempit dan tombolnya tetap berjarak */
     .note-editor .ql-toolbar.ql-snow .note-align,
     .note-editor .ql-toolbar.ql-snow .note-quote,
     .note-editor .ql-toolbar.ql-snow .note-extra {
@@ -163,8 +163,8 @@
     }
   }
 
-  /* "more" menu (normal field): a small paper card under the dots button,
-     one row per option with its name next to the icon */
+  /* menu "more" (field normal): kartu kecil di bawah tombol titik tiga,
+     satu baris per opsi dengan nama di samping ikonnya */
   .note-more {
     position: relative;
   }
@@ -244,10 +244,11 @@
     color: var(--color-ink);
   }
 
-  /* fullscreen has room: no dots, the three are plain toolbar buttons.
-     "is-roomy" follows fullscreen but switches at the narrow end of the
-     move (after growing, before shrinking), so the toolbar never has more
-     buttons than fit and its bottom line doesn't jump */
+  /* di fullscreen ruangnya cukup, jadi tombol titik tiga disembunyikan dan
+     ketiga opsi tampil sebagai tombol toolbar biasa. "is-roomy" mengikuti
+     fullscreen, tetapi berganti saat field dalam ukuran kecil (setelah
+     membesar, sebelum mengecil). Dengan begitu tombol toolbar selalu muat
+     dan garis bawahnya tidak melompat */
   .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-btn {
     display: none;
   }
@@ -276,8 +277,8 @@
     content: none;
   }
 
-  /* fullscreen on phones: the link / picture / clear buttons laid out in
-     the row keep the same smaller size (after the roomy rule, so it wins) */
+  /* fullscreen di ponsel: tombol link / gambar / clear di baris toolbar
+     tetap berukuran kecil (ditulis setelah aturan roomy agar menang) */
   @media (max-width: 639px) {
     .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-menu {
       gap: 0.15rem;
@@ -289,8 +290,8 @@
       padding: 0.17rem 0;
     }
 
-    /* their icons fill the small button like the rest, not the menu's
-       bigger size, so they don't run into each other */
+    /* ikonnya memenuhi tombol kecil seperti tombol lain, bukan memakai
+       ukuran menu yang lebih besar, agar tidak saling bertabrakan */
     .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-menu button svg {
       width: 100%;
       height: 100%;
@@ -309,21 +310,21 @@
     border: 0;
   }
 
-  /* typed text matches the other fields: Comic Neue at 0.95rem, unless a
-     bigger size is picked with A− / A+ (everything below is in em, so the
-     spacing and the lined paper grow with it) */
+  /* teks yang diketik sama dengan field lain: Comic Neue 0.95rem, kecuali
+     ukuran lain dipilih dari dropdown ukuran teks. Semua nilai di bawah
+     memakai em, jadi jarak dan garis kertas ikut menyesuaikan */
   .note-editor .ql-editor {
     font-family: var(--font-comic);
     font-size: var(--note-size, 0.95rem);
     line-height: 1.6;
-    /* the normal field keeps one short height however much is written;
-       longer notes scroll inside it (fullscreen gives the room) */
+    /* tinggi field normal tetap pendek berapa pun panjang tulisannya.
+       Catatan panjang di-scroll di dalamnya (fullscreen memberi ruang lebih) */
     height: 14rem;
-    /* one pair of values for the text and its placeholder, so the
-       placeholder sits exactly where typing starts. The top looks as wide
-       as the sides: a line of text already has room above its letters
-       (half the line gap plus the font's space over the letters), so
-       0.85em comes off the top padding */
+    /* teks dan placeholder memakai nilai yang sama, jadi placeholder tepat
+       di posisi awal mengetik. Jarak atas dibuat terlihat sama dengan jarak
+       samping. Satu baris teks sudah punya ruang di atas hurufnya (setengah
+       jarak baris ditambah ruang bawaan font), jadi padding atas dikurangi
+       0.85em */
     --pad-x: 1.1rem;
     --pad-y: calc(var(--pad-x) - 0.85em);
     padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 0.2rem);
@@ -334,7 +335,7 @@
     right: var(--pad-x);
     left: var(--pad-x);
     font-style: normal;
-    /* same as the other fields' placeholder */
+    /* sama dengan placeholder di field lain */
     color: color-mix(in srgb, var(--color-ink-soft) 70%, transparent);
   }
 
@@ -342,7 +343,7 @@
     cursor: default;
   }
 
-  /* link popup: a small paper card instead of the grey default */
+  /* popup link: kartu kecil sebagai pengganti tampilan abu-abu default */
   .note-editor .ql-snow .ql-tooltip {
     z-index: 10;
     padding: 0.45rem 0.8rem;
@@ -364,7 +365,7 @@
     color: var(--color-crayon);
   }
 
-  /* bottom bar inside the field: the fullscreen toggle on the right */
+  /* bar bawah di dalam field, dengan toggle fullscreen di sisi kanan */
   .note-editor-foot {
     display: flex;
     align-items: center;
@@ -374,11 +375,11 @@
     border-top: 1.5px dashed color-mix(in srgb, var(--color-ink) 12%, var(--color-line));
   }
 
-  /* done: a round box like the checklist. Empty and pressable while you're
-     writing in the note; pressing it ticks it sage and leaves the field,
-     and it rests (disabled) until you're in the note again */
-  /* Done and Expand: icon only (the names stay for screen readers and in
-     the tooltip), each a small square button */
+  /* Done: kotak bulat seperti checklist. Kosong dan bisa ditekan selama
+     menulis. Saat ditekan, kotak dicentang hijau dan focus keluar dari
+     field. Setelah dicentang, tombol tetap bisa ditekan untuk membatalkan */
+  /* Done dan Expand: tombol persegi kecil berisi ikon saja (namanya tetap
+     ada untuk screen reader dan tooltip) */
   .note-done {
     display: inline-flex;
     width: 1.75rem;
@@ -398,8 +399,8 @@
       opacity 0.25s var(--ease-smooth);
   }
 
-  /* hover tooltip for the icon-only buttons: a small ink label above,
-     fading in a beat after the pointer arrives */
+  /* tooltip saat hover untuk tombol ikon: label kecil gelap di atas tombol,
+     muncul perlahan sesaat setelah pointer berada di atasnya */
   .note-done,
   .note-expand {
     position: relative;
@@ -430,14 +431,14 @@
       transform 0.2s var(--ease-smooth);
   }
 
-  /* the last button sits at the right edge: its label hangs left instead */
+  /* tombol terakhir ada di tepi kanan, jadi labelnya mengarah ke kiri */
   .note-expand::after {
     right: 0;
     left: auto;
     transform: translateY(3px);
   }
 
-  /* the first paper button sits at the left edge: its label hangs right */
+  /* tombol kertas pertama ada di tepi kiri, jadi labelnya mengarah ke kanan */
   .paper-btn[data-paper="plain"]::after {
     left: 0;
     transform: translateY(3px);
@@ -486,7 +487,7 @@
     opacity: 0.5;
   }
 
-  /* an empty round box while you write; pressing it ticks it sage */
+  /* kotak bulat kosong selama menulis, dicentang hijau saat ditekan */
   .note-done-box {
     width: 1rem;
     height: 1rem;
@@ -510,20 +511,20 @@
     border-color: var(--color-crayon);
   }
 
-  /* marked Done: the text rests, it can't be scrolled until you're back
-     in the note */
+  /* setelah Done, teks tidak bisa di-scroll sampai focus kembali ke
+     catatan */
   .note-editor.is-done .ql-editor {
     overflow: hidden;
   }
 
-  /* in the form, scrolling past the end of the note carries on to the
-     page (so you can reach Save); only fullscreen keeps it in the note */
+  /* di form, scroll yang melewati akhir catatan berlanjut ke halaman (agar
+     tombol Save bisa dicapai). Hanya fullscreen yang menahannya di catatan */
   .note-editor.is-full .ql-editor {
     overscroll-behavior: contain;
   }
 
-  /* pulling down on this page never triggers the browser's pull-to-refresh
-     and loses what's written */
+  /* menarik halaman ke bawah tidak memicu pull-to-refresh browser, jadi
+     tulisan tidak hilang */
   html:has(.note-editor),
   html:has(.note-editor) body {
     overscroll-behavior-y: none;
@@ -569,9 +570,9 @@
   }
 
   .note-expand-out,
-  /* "is-expanded" is where the field is heading: set the moment you press
-     the button, so the label, the inner spacing and the next press follow
-     straight away instead of snapping when the move ends */
+  /* "is-expanded" menandai tujuan akhir field dan dipasang begitu tombol
+     ditekan. Label, jarak dalam, dan tekanan berikutnya langsung mengikuti,
+     tidak menunggu animasi selesai */
   .note-editor.is-expanded .note-expand-in {
     display: none !important;
   }
@@ -580,9 +581,9 @@
     display: inline-flex !important;
   }
 
-  /* fullscreen: the field lifts off the form and grows out of its own spot
-     to fill the window (the script animates the size from where it was);
-     a spacer keeps the form from jumping while it's away */
+  /* fullscreen: field keluar dari form dan membesar dari posisinya sampai
+     memenuhi jendela (ukurannya dianimasikan oleh script). Sebuah spacer
+     menjaga form agar tidak melompat selama field tidak di tempatnya */
   .note-editor.is-full {
     position: fixed;
     top: 0.75rem;
@@ -594,7 +595,8 @@
     box-shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.35);
   }
 
-  /* while growing or shrinking, only the size moves: no hover/focus fades */
+  /* saat membesar atau mengecil, hanya ukuran yang berubah, tanpa transisi
+     hover/focus */
   .note-editor.is-switching {
     transition: none;
   }
@@ -603,13 +605,14 @@
     overflow: hidden;
   }
 
-  /* the "more" menu swaps between a popup and plain buttons in one step;
-     with its fade on, it would flash open for a moment on leaving */
+  /* menu "more" berganti antara popup dan tombol biasa sekaligus. Jika
+     transisinya aktif, menu akan sempat terlihat terbuka saat keluar */
   .note-editor.is-switching .note-more-menu {
     transition: none;
   }
 
-  /* the page behind is washed out with paper, fading in and out */
+  /* halaman di belakang ditutup lapisan warna kertas yang muncul dan hilang
+     perlahan */
   .note-backdrop {
     position: fixed;
     inset: 0;
@@ -626,8 +629,9 @@
     pointer-events: auto;
   }
 
-  /* nothing floats over the fullscreen note: the round menu (speed dial),
-     the side menu tab and the back button fade away until you leave it */
+  /* tidak ada elemen yang melayang di atas catatan fullscreen. Menu bulat
+     (speed dial), tab menu samping, dan tombol kembali disembunyikan
+     sampai fullscreen ditutup */
   #menu-dial,
   #side-menu,
   .fab-simple {
@@ -662,15 +666,15 @@
     height: 100%;
   }
 
-  /* roomier fullscreen spacing, switched with the text reflow (see the
-     script) rather than mid-move */
+  /* jarak yang lebih lega di fullscreen. Diganti bersamaan dengan reflow
+     teks (lihat script), bukan di tengah animasi */
   .note-editor.is-roomy .ql-editor {
     --pad-x: 1.5rem;
   }
 
-  /* while the field grows or shrinks, the text steps aside for a small
-     loader in the middle: three ink dots bouncing one after another; the
-     text comes back once the new size has settled */
+  /* selama field membesar atau mengecil, teks disembunyikan dan diganti
+     loader kecil di tengah berupa tiga titik yang memantul bergantian.
+     Teks muncul lagi setelah ukuran barunya stabil */
   .note-loading {
     position: absolute;
     inset: 0;
@@ -718,9 +722,9 @@
     }
   }
 
-  /* lined paper while writing: the rules come from the text blocks (see
-     note-body-styles); the empty page under the last line keeps ruling
-     on at the normal line height, so the sheet is lined to the bottom */
+  /* kertas bergaris saat menulis: garisnya berasal dari blok teks (lihat
+     note-body-styles). Area kosong di bawah baris terakhir tetap bergaris
+     dengan tinggi baris normal, jadi garisnya sampai ke bawah */
   .note-editor.is-lined .ql-editor {
     display: flex;
     flex-direction: column;
@@ -736,7 +740,7 @@
     min-height: 1lh;
   }
 
-  /* headings scale with the picked text size too */
+  /* heading juga ikut menyesuaikan ukuran teks yang dipilih */
   .note-editor .ql-editor h2 {
     font-size: 1.58em;
   }
@@ -745,8 +749,8 @@
     font-size: 1.26em;
   }
 
-  /* text size: a dropdown in the toolbar, laid out like the "more" menu:
-     the trigger shows Aa and the size in use, the menu lists every size */
+  /* ukuran teks: dropdown di toolbar dengan tampilan seperti menu "more".
+     Trigger-nya menampilkan Aa dan ukuran aktif, menunya berisi semua ukuran */
   .size-ctl {
     position: relative;
   }
@@ -765,8 +769,8 @@
     white-space: nowrap;
   }
 
-  /* Aa only where there's room (fullscreen); the normal field needs the
-     space to keep the toolbar on one line */
+  /* Aa hanya tampil jika ruangnya cukup (fullscreen). Di field normal,
+     ruang itu dibutuhkan agar toolbar tetap satu baris */
   .note-size-aa {
     display: none;
     font-size: 1.05rem;
@@ -802,8 +806,8 @@
     transform: rotate(-90deg);
   }
 
-  /* phones: the size trigger and the dots a step down with the other
-     toolbar buttons (here, after their base rules, so these win) */
+  /* ponsel: trigger ukuran dan tombol titik tiga ikut mengecil seperti
+     tombol toolbar lain (ditulis setelah aturan dasarnya agar menang) */
   @media (max-width: 639px) {
     .note-editor .ql-toolbar.ql-snow .note-size-btn {
       gap: 0.05rem;
@@ -811,7 +815,7 @@
       font-size: 0.72rem;
     }
 
-    /* just "Aa" for the size, the name would push the row onto two lines */
+    /* ukuran cukup ditandai "Aa", karena namanya membuat baris jadi dua */
     .note-size-aa {
       display: inline;
       font-size: 0.7rem;
@@ -830,16 +834,16 @@
       font-size: 0.75rem;
     }
 
-    /* the typed text lines up with the toolbar and the inputs too; the top
-       padding keeps its usual size (fullscreen keeps its roomier 1.5rem) */
+    /* teks juga sejajar dengan toolbar dan input. Padding atas tetap seperti
+       biasa (fullscreen tetap memakai 1.5rem yang lebih lega) */
     .note-editor:not(.is-roomy) .ql-editor {
       --pad-x: 0.8rem;
       --pad-y: calc(1.1rem - 0.85em);
     }
   }
 
-  /* opens down from the trigger, lined up with its right edge, so it stays
-     inside the note card even with the trigger near the card's end */
+  /* menu terbuka ke bawah dari trigger dan rata dengan tepi kanannya, agar
+     tetap di dalam kartu catatan meskipun trigger dekat ujung kartu */
   .note-size-menu {
     position: absolute;
     top: calc(100% + 0.35rem);
@@ -863,7 +867,7 @@
       visibility 0.2s;
   }
 
-  /* the toolbar's zoom dropdown only shows while drawing */
+  /* dropdown zoom di toolbar hanya tampil saat menggambar */
   .note-editor .ql-toolbar.ql-snow .zoom-ctl {
     display: none;
   }
@@ -892,7 +896,7 @@
     color: var(--color-ink);
   }
 
-  /* the size in use gets the same soft marker wash as a picked format */
+  /* ukuran yang aktif diberi latar marker lembut seperti format yang aktif */
   .note-editor .ql-toolbar.ql-snow .note-size-option[aria-checked="true"] {
     color: var(--color-ink);
     background-color: color-mix(in srgb, var(--color-marker) 22%, var(--color-card));
@@ -909,8 +913,8 @@
     flex: 1;
   }
 
-  /* paper switch: just three icons, sized and hovered like Done and
-     Expand; the picked one is inked, the others stay faint */
+  /* pilihan kertas: tiga ikon dengan ukuran dan efek hover seperti Done dan
+     Expand. Ikon yang dipilih tampil tegas, sisanya tetap pudar */
   .paper-switch {
     display: inline-flex;
     align-items: center;
@@ -947,8 +951,8 @@
     outline-offset: 1px;
   }
 
-  /* drawing pad: covers the text area with a card-white sheet and a faint
-     dot grid; the text formatting buttons rest while it's open */
+  /* pad gambar: menutupi area teks dengan lembar putih dan grid titik
+     tipis. Tombol format teks dinonaktifkan selama pad terbuka */
   .note-draw {
     position: absolute;
     inset: 0;
@@ -961,9 +965,9 @@
     display: none;
   }
 
-  /* the sheet is bigger than the pad (twice as wide, three times as tall):
-     it scrolls inside both ways, the dot grid moving with it, while the
-     tools stay put */
+  /* lembar gambar lebih besar dari pad (dua kali lebar, tiga kali tinggi).
+     Lembar bisa di-scroll ke dua arah dan grid titik ikut bergerak,
+     sedangkan alat gambar tetap di tempat */
   .note-draw-scroll {
     position: absolute;
     inset: 0;
@@ -976,8 +980,8 @@
     );
     background-size: 18px 18px;
     background-attachment: local;
-    /* no scrollbars on the sheet: it's slid with the Move tool (or a
-       trackpad / wheel), and bars would sit over the drawing */
+    /* lembar tidak punya scrollbar karena digeser dengan alat Move (atau
+       trackpad / wheel), dan scrollbar akan menutupi gambar */
     scrollbar-width: none;
   }
 
@@ -995,8 +999,8 @@
     cursor: cell;
   }
 
-  /* move: dragging (mouse or finger) slides the sheet any way, and up or
-     down past its ends carries on to the page */
+  /* move: drag (mouse atau jari) menggeser lembar ke segala arah. Jika
+     melewati batas atas atau bawah, halaman yang ikut di-scroll */
   .note-draw.is-moving canvas {
     cursor: grab;
   }
@@ -1121,10 +1125,9 @@
     pointer-events: none;
   }
 
-  /* while drawing, the text size dropdown gives its place to the sheet's
-     zoom, as the same kind of dropdown up in the toolbar; the + / 100% / −
-     box on the sheet and the resting "more" menu (it only holds text
-     formatting) step out */
+  /* saat menggambar, dropdown ukuran teks diganti dropdown zoom dengan
+     bentuk yang sama di toolbar. Kotak + / 100% / − di lembar dan menu
+     "more" (isinya hanya format teks) disembunyikan */
   .note-editor.is-drawing .ql-toolbar.ql-snow .size-ctl:not(.zoom-ctl),
   .note-editor.is-drawing .ql-toolbar.ql-snow .note-more,
   .note-editor.is-drawing .draw-zoom {
@@ -1161,9 +1164,9 @@
     opacity: 0.6;
   }
 
-  /* tablets and desktop: the toolbar icons a touch smaller, their buttons
-     keep the same size (fullscreen's link / picture / clear in the row
-     too); phones have their own smaller buttons */
+  /* tablet dan desktop: ikon toolbar sedikit lebih kecil, tetapi ukuran
+     tombolnya tetap (termasuk link / gambar / clear di baris fullscreen).
+     Ponsel punya ukuran tombol sendiri yang lebih kecil */
   @media (min-width: 640px) {
     .note-editor .ql-toolbar.ql-snow .ql-formats > button:not(.note-size-btn):not(.note-more-btn),
     .note-editor.is-roomy .ql-toolbar.ql-snow .note-more-menu button {
@@ -1174,12 +1177,12 @@
       font-size: 1rem;
     }
 
-    /* the bottom bar's paper, Done and Expand buttons sit closer together */
+    /* tombol kertas, Done, dan Expand di bar bawah dibuat lebih rapat */
     .note-editor-foot {
       gap: 0.1rem;
     }
 
-    /* the paper choices closer still: no gap and slimmer buttons */
+    /* pilihan kertas lebih rapat lagi: tanpa gap dan tombolnya lebih ramping */
     .paper-switch {
       gap: 0;
     }
@@ -1189,9 +1192,9 @@
     }
   }
 
-  /* fullscreen: the paper choices move up into the toolbar's row, in its
-     right corner behind a dashed line like the other groups; the toolbar
-     keeps that corner free. From 720px, where the row still fits them */
+  /* fullscreen: pilihan kertas naik ke baris toolbar, di pojok kanan dengan
+     garis putus-putus seperti grup lain, dan toolbar menyisakan ruang di
+     pojok itu. Mulai 720px, karena di bawahnya barisnya tidak muat */
   @media (min-width: 720px) {
     .note-editor.is-full-layout .ql-toolbar.ql-snow {
       padding-right: calc(0.6rem + 4.35rem + 0.5rem);
@@ -1205,8 +1208,8 @@
       border-left: 1.5px dashed color-mix(in srgb, var(--color-ink) 10%, var(--color-line));
     }
 
-    /* up there their names hang below instead, the last one leaning left
-       off the corner */
+    /* di posisi itu label muncul di bawah tombol, dan label terakhir
+       mengarah ke kiri agar tidak keluar dari pojok */
     .note-editor.is-full-layout .paper-btn::after {
       top: calc(100% + 0.4rem);
       bottom: auto;
@@ -1231,10 +1234,10 @@
     }
   }
 
-  /* desktop: the drawing tools stack in a column down the right edge with
-     "Add to note" as a + button, and go back to a row with its name only
-     in fullscreen, where there's room ("is-full-layout" is switched while
-     the tools are faded out, so the move itself is never seen) */
+  /* desktop: alat gambar tersusun dalam kolom di tepi kanan dan "Add to
+     note" menjadi tombol +. Hanya di fullscreen alat kembali menjadi baris
+     dengan nama tombolnya karena ruangnya cukup ("is-full-layout" diganti
+     saat alat sedang tersembunyi, jadi perpindahannya tidak terlihat) */
   @media (min-width: 960px) {
     .note-editor:not(.is-full-layout) .draw-tools {
       flex-direction: column;
@@ -1257,11 +1260,12 @@
     }
   }
 
-  /* tablets: the drawing tools stack in a column down the right edge too,
-     keeping their full size; "Add to note" becomes a + button */
+  /* tablet: alat gambar juga tersusun dalam kolom di tepi kanan dengan
+     ukuran penuh, dan "Add to note" menjadi tombol + */
   @media (min-width: 640px) and (max-width: 959px) {
-    /* the toolbar keeps desktop's button size on one row: like on phones,
-       underline, strikethrough, quote and align move into the "more" menu */
+    /* toolbar tetap satu baris dengan ukuran tombol desktop. Seperti di
+       ponsel, underline, strikethrough, kutipan, dan align pindah ke menu
+       "more" */
     .note-editor .ql-toolbar.ql-snow {
       flex-wrap: nowrap;
     }
@@ -1276,8 +1280,8 @@
       display: flex;
     }
 
-    /* fullscreen lays the menu's buttons out in the row: just "Aa" for the
-       text size there, so they all still fit */
+    /* di fullscreen, tombol menu tampil di baris toolbar, jadi ukuran teks
+       cukup ditandai "Aa" agar semuanya tetap muat */
     .note-editor.is-roomy .note-size-current {
       display: none;
     }
@@ -1303,7 +1307,7 @@
     }
   }
 
-  /* phones: the bottom bar's buttons slimmer and closer together */
+  /* ponsel: tombol di bar bawah lebih ramping dan lebih rapat */
   @media (max-width: 639px) {
     .note-editor-foot,
     .paper-switch {
@@ -1317,7 +1321,7 @@
       height: 1.5rem;
     }
 
-    /* the size and "more" dropdowns a step down, like the form text */
+    /* dropdown ukuran dan "more" sedikit lebih kecil, mengikuti teks form */
     .note-size-menu {
       min-width: 5.5rem;
     }
@@ -1344,8 +1348,8 @@
       gap: 0.4rem;
     }
 
-    /* drawing tools: a slim column down the right edge with small icons;
-       "Add to note" becomes a + button (its name kept for screen readers) */
+    /* alat gambar: kolom ramping di tepi kanan dengan ikon kecil. "Add to
+       note" menjadi tombol + (namanya tetap ada untuk screen reader) */
     .draw-tools {
       top: 0.45rem;
       right: 0.45rem;
@@ -1376,7 +1380,7 @@
       white-space: nowrap;
     }
 
-    /* zoom moves to the bottom-left corner, clear of the tools column */
+    /* zoom pindah ke pojok kiri bawah agar tidak tertutup kolom alat */
     .draw-zoom {
       right: auto;
       bottom: 0.45rem;
@@ -1389,19 +1393,19 @@
       font-size: 0.58rem;
     }
 
-    /* fullscreen: the typed text lines up with the toolbar's 0.8rem sides
-       too, keeping fullscreen's roomier top padding */
+    /* fullscreen: teks juga sejajar dengan sisi toolbar 0.8rem, dengan
+       padding atas fullscreen yang tetap lega */
     .note-editor.is-roomy .ql-editor {
       --pad-x: 0.8rem;
       --pad-y: calc(1.5rem - 0.85em);
     }
 
-    /* the zoom dropdown's "100%" a step down with the other buttons */
+    /* teks "100%" di dropdown zoom ikut mengecil seperti tombol lain */
     .note-editor.is-drawing .ql-toolbar.ql-snow .zoom-ctl .note-size-btn {
       font-size: 0.66rem;
     }
 
-    /* the hover and picked wash is a round pill, not a square */
+    /* latar saat hover dan saat dipilih berbentuk pill, bukan kotak */
     .note-editor .ql-toolbar.ql-snow .note-size-option,
     .note-editor:not(.is-roomy) .ql-toolbar.ql-snow .note-more-menu button {
       border-radius: 999px;
@@ -1429,7 +1433,7 @@
         <button type="button" class="ql-underline note-extra" title="Underline" aria-label="Underline"></button>
         <button type="button" class="ql-strike note-extra" title="Strikethrough" aria-label="Strikethrough"></button>
       </span>
-      <!-- phones: the toolbar breaks here into two tidy rows -->
+      <!-- pemisah baris toolbar (saat ini selalu disembunyikan lewat CSS) -->
       <span class="toolbar-break" aria-hidden="true"></span>
       <span class="ql-formats note-align">
         <button type="button" class="ql-align" value="" title="Align left" aria-label="Align left"></button>
@@ -1442,8 +1446,8 @@
         <button type="button" class="ql-list" value="check" title="Checklist" aria-label="Checklist"></button>
         <button type="button" class="ql-blockquote note-quote" title="Quote" aria-label="Quote"></button>
       </span>
-      <!-- text size: a dropdown of sizes, back to Normal each time the page
-           opens -->
+      <!-- ukuran teks: dropdown pilihan ukuran, selalu kembali ke Normal setiap
+           halaman dibuka -->
       <span class="ql-formats size-ctl" id="note-size">
         <button type="button" class="note-size-btn" id="note-size-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="note-size-menu" title="Text size" aria-label="Text size: Normal">
           <span class="note-size-aa" aria-hidden="true">Aa</span>
@@ -1456,8 +1460,8 @@
           <% }) %>
         </span>
       </span>
-      <!-- while drawing: the sheet's zoom takes the text size's
-           place, as the same kind of dropdown -->
+      <!-- saat menggambar: zoom lembar menggantikan ukuran teks
+           dengan bentuk dropdown yang sama -->
       <span class="ql-formats size-ctl zoom-ctl" id="draw-zoom-ctl">
         <button type="button" class="note-size-btn" id="draw-zoom-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="draw-zoom-menu" title="Zoom" aria-label="Zoom: 100%">
           <span class="zoom-current" id="draw-zoom-current">100%</span>
@@ -1469,8 +1473,8 @@
           <% }) %>
         </span>
       </span>
-      <!-- link, picture and clear formatting: tucked into a "more" menu in
-           the normal field, laid out like the other groups in fullscreen -->
+      <!-- link, gambar, dan clear formatting: masuk ke menu "more" di field
+           normal, dan tampil seperti grup lain di fullscreen -->
       <span class="ql-formats note-more" id="note-more">
         <button type="button" class="note-more-btn" id="note-more-btn" aria-expanded="false" aria-controls="note-more-menu" title="More options" aria-label="More options">
           <%- include("doodle-icon", { name: "dots" }) %>
@@ -1479,8 +1483,8 @@
           <button type="button" class="ql-link" title="Link" aria-label="Link" data-label="Link"></button>
           <button type="button" class="ql-image" title="Add picture" aria-label="Add picture" data-label="Picture"></button>
           <button type="button" class="ql-clean" title="Clear formatting" aria-label="Clear formatting" data-label="Clear formatting"></button>
-          <!-- phones: underline, strikethrough, quote and the align
-               buttons live here instead of in the row -->
+          <!-- ponsel dan tablet: underline, strikethrough, kutipan, dan
+               align ada di sini, bukan di baris toolbar -->
           <button type="button" class="ql-underline more-align" title="Underline" aria-label="Underline" data-label="Underline"></button>
           <button type="button" class="ql-strike more-align" title="Strikethrough" aria-label="Strikethrough" data-label="Strikethrough"></button>
           <button type="button" class="ql-blockquote more-align" title="Quote" aria-label="Quote" data-label="Quote"></button>
@@ -1491,7 +1495,7 @@
       </span>
     </div>
     <div id="note-editor-area" aria-labelledby="content-label"><%- noteHtml(editorContent) %></div>
-    <!-- drawing pad: laid over the text area while "Drawing" is picked -->
+    <!-- pad gambar: menutupi area teks saat "Drawing" dipilih -->
     <div class="note-draw" id="note-draw" hidden>
       <div class="note-draw-scroll" id="note-draw-scroll">
         <canvas id="note-draw-canvas" aria-label="Drawing pad"></canvas>
@@ -1514,7 +1518,7 @@
           <span class="draw-add-label">Add to note</span>
         </button>
       </div>
-      <!-- zoom: bottom right, stacked -->
+      <!-- zoom: tersusun vertikal di kanan bawah -->
       <div class="draw-zoom" role="group" aria-label="Zoom">
         <button type="button" class="draw-tool" id="draw-zoom-in" title="Zoom in" aria-label="Zoom in">
           <%- include("doodle-icon", { name: "plus" }) %>
@@ -1526,7 +1530,7 @@
       </div>
     </div>
     <div class="note-editor-foot">
-      <!-- paper: plain, lined, or a drawing pad -->
+      <!-- kertas: polos, bergaris, atau pad gambar -->
       <div class="paper-switch" id="paper-switch" role="group" aria-label="Paper">
         <button type="button" class="paper-btn" data-paper="plain" aria-pressed="<%= editorPaper === 'plain' %>" data-tip="Plain paper" aria-label="Plain paper">
           <%- include("doodle-icon", { name: "paper" }) %>
@@ -1558,10 +1562,11 @@
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script>
   (function () {
-    // pictures are resized so a note with a few photos stays a few MB
+    // gambar diperkecil agar catatan dengan beberapa foto tetap beberapa MB
     const MAX_SIDE = 1600;
     const MAX_GIF_BYTES = 2 * 1024 * 1024;
-    // same cap as the server: encrypting doubles it and MongoDB stops at 16MB
+    // batasnya sama dengan server: encrypt membuat ukurannya dua kali lipat,
+    // sedangkan batas MongoDB 16MB
     const MAX_NOTE_LENGTH = 7 * 1024 * 1024;
     const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 
@@ -1578,9 +1583,9 @@
         reader.readAsDataURL(blob);
       });
 
-    // GIFs keep their animation (so no resize), everything else is redrawn
-    // at most 1600px on its longest side as WebP, or JPEG where the browser
-    // can't write WebP
+    // GIF tidak di-resize agar animasinya tetap ada. Gambar lain digambar
+    // ulang dengan sisi terpanjang maksimal 1600px sebagai WebP, atau JPEG
+    // jika browser tidak mendukung WebP
     async function shrinkImage(file) {
       if (!IMAGE_TYPES.includes(file.type)) return null;
       if (file.type === "image/gif") {
@@ -1603,7 +1608,7 @@
       const webp = canvas.toDataURL("image/webp", 0.85);
       if (webp.startsWith("data:image/webp")) return webp;
 
-      // JPEG has no transparency: put the picture on white first
+      // JPEG tidak mendukung transparansi, jadi gambar diberi latar putih
       ctx.globalCompositeOperation = "destination-over";
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1647,7 +1652,7 @@
         toolbar: {
           container: "#note-toolbar",
           handlers: {
-            // pick one or more pictures from the device
+            // pilih satu atau beberapa gambar dari perangkat
             image() {
               const picker = document.createElement("input");
               picker.type = "file";
@@ -1661,7 +1666,7 @@
             },
           },
         },
-        // pasted and dropped pictures go through the same shrink step
+        // gambar dari paste atau drop juga diperkecil dengan cara yang sama
         uploader: {
           mimetypes: IMAGE_TYPES,
           handler(range, files) {
@@ -1675,8 +1680,8 @@
       if (!errorEl.hidden) clearError();
     });
 
-    // the checklist button never matches "checked"/"unchecked" on its own,
-    // so light it up by hand while the cursor is in a checklist
+    // tombol checklist tidak otomatis aktif untuk "checked"/"unchecked",
+    // jadi disorot manual selama kursor berada di checklist
     const checkBtn = wrap.querySelector('.ql-list[value="check"]');
     quill.on("editor-change", () => {
       const range = quill.getSelection();
@@ -1684,7 +1689,7 @@
       checkBtn.classList.toggle("ql-active", list === "checked" || list === "unchecked");
     });
 
-    // fullscreen toggle at the bottom of the field; Esc leaves it too
+    // toggle fullscreen di bagian bawah field. Esc juga menutup fullscreen
     const expandBtn = document.getElementById("note-expand");
 
     const backdrop = document.getElementById("note-backdrop");
@@ -1694,8 +1699,8 @@
     let spacer = null;
     let animation = null;
 
-    // the lifted card's shadow grows and fades with it, rather than
-    // popping on or off at the ends
+    // bayangan kartu ikut membesar dan memudar bersama animasi, tidak
+    // muncul atau hilang tiba-tiba di awal dan akhir
     const LIFTED = "0 18px 50px -20px rgba(0, 0, 0, 0.35)";
     const FLAT = "0 0 0 0 rgba(0, 0, 0, 0)";
 
@@ -1707,9 +1712,9 @@
       boxShadow: shadow,
     });
 
-    // link / picture / clear: when fullscreen settles they step out of the
-    // dots one after another; before shrinking they tuck back in and the
-    // dots spin back in their place
+    // link / gambar / clear: setelah fullscreen selesai, tombolnya muncul
+    // bergantian dari posisi titik tiga. Sebelum mengecil, tombolnya
+    // disembunyikan lagi dan titik tiga berputar kembali ke tempatnya
     const moreItems = [...document.querySelectorAll("#note-more-menu button")];
     const ITEM_IN = { duration: 320, easing: "cubic-bezier(0.34, 1.4, 0.64, 1)", fill: "backwards" };
     const ITEM_OUT = { duration: 150, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" };
@@ -1756,8 +1761,8 @@
       );
     }
 
-    // expanding: the dots bow out right away (spinning off the way they
-    // came in) instead of waiting for the three buttons to replace them
+    // saat membesar, titik tiga langsung menghilang sambil berputar, tanpa
+    // menunggu ketiga tombol menggantikannya
     let dotsFade = null;
 
     function hideDots() {
@@ -1776,13 +1781,14 @@
       if (tucking || on === wrap.classList.contains("is-expanded")) return;
       setMoreOpen(false);
 
-      // leaving: tuck the three buttons away first, then shrink
+      // saat keluar: sembunyikan ketiga tombol dulu, lalu kecilkan field
       if (!on && wrap.classList.contains("is-roomy") && !animation) {
         tucking = true;
         tuckMoreItems().then((anims) => {
           tucking = false;
           moveFullscreen(false);
-          // they're inside the closed menu now; drop the faded-out state
+          // tombol sudah kembali ke menu yang tertutup, jadi state pudarnya
+          // dihapus
           anims?.forEach((a) => a.cancel());
         });
         return;
@@ -1790,16 +1796,16 @@
       moveFullscreen(on);
     }
 
-    // while the field moves, the text steps aside for a loader and
-    // comes back at the new size; its lines are also held at the small
-    // width meanwhile, so it only reflows once
+    // selama field bergerak, teks diganti loader lalu muncul lagi dengan
+    // ukuran baru. Lebar barisnya juga ditahan selama animasi, jadi teks
+    // hanya reflow sekali
     const editorEl = quill.root;
 
     function holdTextWidth(width) {
       editorEl.style.width = width ? width + "px" : "";
     }
 
-    // loader: three dots in the middle of the field
+    // loader: tiga titik di tengah field
     const loader = document.createElement("div");
     loader.className = "note-loading";
     loader.setAttribute("aria-hidden", "true");
@@ -1833,11 +1839,11 @@
       textFade.onfinish = () => (textFade = null);
     }
 
-    // what changes place in fullscreen (tablet and desktop): the paper
-    // choices go up to the toolbar row, and the drawing tools turn from a
-    // column into a row (desktop). They fade out as the field starts to
-    // move, switch places while unseen ("is-full-layout"), and fade back
-    // in once it has settled
+    // elemen yang pindah posisi di fullscreen (tablet dan desktop): pilihan
+    // kertas naik ke baris toolbar, dan alat gambar berubah dari kolom
+    // menjadi baris (desktop). Elemen ini disembunyikan saat field mulai
+    // bergerak, dipindah selagi tidak terlihat ("is-full-layout"), lalu
+    // muncul lagi setelah field stabil
     const movers = [document.getElementById("paper-switch"), document.querySelector(".draw-tools")];
     let moverFades = [];
 
@@ -1874,7 +1880,7 @@
     }
 
     function moveFullscreen(on) {
-      // a click mid-way turns the running move around from where it is
+      // klik di tengah animasi membalik arah animasi dari posisi saat ini
       const from = wrap.getBoundingClientRect();
       if (animation) {
         animation.cancel();
@@ -1882,8 +1888,8 @@
       }
 
       showLoader();
-      // the paper choices and drawing tools step out of sight first;
-      // shrinking, they go back to their places once unseen
+      // pilihan kertas dan alat gambar disembunyikan dulu. Saat mengecil,
+      // posisinya dikembalikan setelah tidak terlihat
       fadeMoversOut().then(() => {
         if (!wrap.classList.contains("is-expanded")) wrap.classList.remove("is-full-layout");
       });
@@ -1893,10 +1899,11 @@
       document.documentElement.classList.toggle("note-fullscreen", on);
       wrap.classList.add("is-switching");
 
-      // shrinking: back to the dots and the normal spacing, and the lines
-      // take the width they'll have in the form, before the field narrows
+      // saat mengecil: kembali ke titik tiga dan jarak normal. Lebar baris
+      // langsung disamakan dengan lebarnya di form sebelum field menyempit
       if (!on) {
-        // (also when turned around mid-grow, while the dots were fading off)
+        // (termasuk saat dibalik di tengah animasi membesar, ketika titik
+        // tiga sedang menghilang)
         if (wrap.classList.contains("is-roomy") || dotsFade) {
           wrap.classList.remove("is-roomy");
           showDots();
@@ -1909,9 +1916,9 @@
 
       if (on) {
         hideDots();
-        // growing: keep the lines at their current width until it's done
+        // saat membesar: lebar baris ditahan sampai animasi selesai
         if (!reduceMotion.matches) holdTextWidth(editorEl.getBoundingClientRect().width);
-        // hold the field's place in the form while it's lifted out
+        // jaga posisi field di form selama field dikeluarkan
         if (!spacer) {
           spacer = document.createElement("div");
           spacer.style.height = from.height + "px";
@@ -1924,11 +1931,12 @@
       const done = () => {
         animation = null;
         holdTextWidth(null);
-        // grown: now there's room for the three buttons and wider lines
+        // sudah membesar: sekarang ada ruang untuk ketiga tombol dan baris
+        // yang lebih lebar
         if (on) {
           wrap.classList.add("is-roomy");
           wrap.classList.add("is-full-layout");
-          // the dots are display:none now; drop their faded-out state
+          // titik tiga sudah display:none, jadi state pudarnya dihapus
           dotsFade?.cancel();
           dotsFade = null;
           showMoreItems();
@@ -1939,8 +1947,8 @@
           spacer?.remove();
           spacer = null;
           document.documentElement.style.overflow = "";
-          // typing in fullscreen can change how tall the field wants to be:
-          // settle into the new height instead of jumping to it
+          // mengetik di fullscreen bisa mengubah tinggi field, jadi tinggi
+          // barunya dianimasikan agar tidak melompat
           const natural = wrap.offsetHeight;
           if (kept && Math.abs(natural - kept) > 1 && !reduceMotion.matches) {
             wrap.animate([{ height: kept + "px" }, { height: natural + "px" }], {
@@ -1949,16 +1957,16 @@
             });
           }
         }
-        // the settled look is painted first, so the card fill doesn't fade
-        // over the normal field; then hover/focus fades come back
+        // tampilan akhir dirender dulu agar warna kartu tidak memudar di atas
+        // field normal. Setelah itu transisi hover/focus diaktifkan lagi
         requestAnimationFrame(() =>
           requestAnimationFrame(() => {
             if (!animation) wrap.classList.remove("is-switching");
           })
         );
-        // back to the text, unless the note was just marked Done: then the
-        // field rests (the pressed Expand button lets go of focus, so the
-        // field doesn't keep its active look)
+        // focus kembali ke teks, kecuali catatan baru saja ditandai Done.
+        // Dalam kasus itu, tombol Expand melepas focus agar field tidak
+        // terlihat aktif
         if (!doneBtn.classList.contains("is-done")) {
           quill.focus();
           quill.scrollSelectionIntoView();
@@ -1972,8 +1980,8 @@
 
       if (reduceMotion.matches) return done();
 
-      // grow from the field's spot to the full window, or shrink back into
-      // the spot the spacer kept
+      // membesar dari posisi field sampai memenuhi jendela, atau mengecil
+      // kembali ke posisi yang dijaga spacer
       const to = on ? wrap.getBoundingClientRect() : spacer.getBoundingClientRect();
       animation = wrap.animate([box(from, on ? FLAT : LIFTED), box(to, on ? LIFTED : FLAT)], {
         ...(on ? GROW : SHRINK),
@@ -1987,8 +1995,8 @@
 
     expandBtn.addEventListener("click", () => setFullscreen(!wrap.classList.contains("is-expanded")));
 
-    // "more" menu: opens under the dots, closes after a pick, a click
-    // elsewhere or Esc
+    // menu "more": terbuka di bawah titik tiga, dan tertutup setelah opsi
+    // dipilih, klik di luar menu, atau Esc
     const more = document.getElementById("note-more");
     const moreBtn = document.getElementById("note-more-btn");
 
@@ -2011,22 +2019,22 @@
         moreBtn.focus();
         return;
       }
-      // the link popup uses Esc to close itself first
+      // jika popup link terbuka, Esc menutup popup itu dulu
       if (e.key !== "Escape" || !wrap.classList.contains("is-expanded")) return;
       if (wrap.querySelector(".ql-tooltip.ql-editing")) return;
       setFullscreen(false);
     });
 
-    // done: pressable while focus is anywhere in the field (text or
-    // toolbar); pressing it ticks it and leaves the field. Pressing the tick
-    // again, or coming back into the note, clears it
+    // Done: bisa ditekan selama focus ada di dalam field (teks atau
+    // toolbar). Saat ditekan, tombol dicentang dan focus keluar dari field.
+    // Centang hilang jika tombol ditekan lagi atau focus kembali ke catatan
     const doneBtn = document.getElementById("note-done");
     const syncDone = () => {
-      // the bottom bar (paper, Expand) and the text size don't count as
-      // writing: using them after Done keeps the tick
+      // bar bawah (kertas, Expand) dan ukuran teks tidak dianggap menulis,
+      // jadi memakainya setelah Done tidak menghapus centang
       const active = document.activeElement;
       const inField = wrap.contains(active) && !active.closest(".note-editor-foot, .size-ctl");
-      // a ticked Done stays pressable, so it can be unticked
+      // Done yang sudah dicentang tetap bisa ditekan untuk membatalkannya
       doneBtn.disabled = !inField && !doneBtn.classList.contains("is-done");
       if (inField) {
         doneBtn.classList.remove("is-done");
@@ -2034,12 +2042,12 @@
       }
     };
     wrap.addEventListener("focusin", syncDone);
-    // focus may be on its way to another part of the field: check once it lands
+    // focus mungkin sedang pindah ke bagian lain field, jadi cek setelah pindah
     wrap.addEventListener("focusout", () => setTimeout(syncDone));
-    // keep the text focused while pressing, so the click still counts
+    // teks tetap focus saat tombol ditekan agar klik tetap terhitung
     doneBtn.addEventListener("mousedown", (e) => e.preventDefault());
     doneBtn.addEventListener("click", () => {
-      // pressed again while ticked: untick and carry on writing
+      // ditekan lagi saat sudah dicentang: centang dihapus dan lanjut menulis
       if (doneBtn.classList.contains("is-done")) {
         quill.focus();
         syncDone();
@@ -2054,8 +2062,8 @@
 
     document.getElementById("content-label").addEventListener("click", () => quill.focus());
 
-    // ---- text size: a few steps around the normal field size; every note
-    // opens at the normal size ----
+    // ---- ukuran teks: beberapa tingkat di sekitar ukuran field normal.
+    // Setiap catatan dibuka dengan ukuran normal ----
     const SIZES = [0.85, 0.95, 1.1, 1.25, 1.45, 1.7];
     const sizeCtl = document.getElementById("note-size");
     const sizeBtn = document.getElementById("note-size-btn");
@@ -2070,8 +2078,8 @@
       sizeBtn.setAttribute("aria-label", "Text size: " + sizeCurrent.textContent);
     }
 
-    // the menu opens under the trigger, closes after a pick, a click
-    // elsewhere or Esc
+    // menu terbuka di bawah trigger, dan tertutup setelah opsi dipilih,
+    // klik di luar menu, atau Esc
     function setSizeOpen(open) {
       sizeCtl.classList.toggle("is-open", open);
       sizeBtn.setAttribute("aria-expanded", String(open));
@@ -2091,7 +2099,8 @@
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && sizeCtl.classList.contains("is-open")) {
-        // caught first (capture), so Esc only closes the menu, not fullscreen
+        // ditangkap lebih dulu (capture) agar Esc hanya menutup menu, bukan
+        // fullscreen
         e.stopPropagation();
         setSizeOpen(false);
         sizeBtn.focus();
@@ -2099,17 +2108,17 @@
     }, true);
     applySize();
 
-    // ---- paper: plain / lined (saved with the note) or the drawing pad ----
+    // ---- kertas: polos / bergaris (disimpan di catatan) atau pad gambar ----
     const paperInput = document.getElementById("paper");
     const paperBtns = [...document.querySelectorAll(".paper-btn")];
     const drawLayer = document.getElementById("note-draw");
     const canvas = document.getElementById("note-draw-canvas");
     const ctx = canvas.getContext("2d");
     const addBtn = document.getElementById("draw-add");
-    // the pad sits over the text area, inside Quill's container
+    // pad diletakkan di atas area teks, di dalam container Quill
     editorEl.parentElement.append(drawLayer);
 
-    // where the drawing goes: the last place the cursor was in the text
+    // gambar dimasukkan ke posisi terakhir kursor di teks
     let lastIndex = null;
     quill.on("selection-change", (range) => {
       if (range) lastIndex = range.index;
@@ -2118,7 +2127,8 @@
     function setPaper(kind) {
       const drawing = kind === "draw";
       const wasDrawing = wrap.classList.contains("is-drawing");
-      // leaving the pad keeps the sketch: it goes into the note first
+      // sketsa tidak hilang saat keluar dari pad, karena dimasukkan ke
+      // catatan terlebih dulu
       if (wasDrawing && !drawing) addDrawing();
 
       paperBtns.forEach((btn) => btn.setAttribute("aria-pressed", String(btn.dataset.paper === kind)));
@@ -2134,8 +2144,8 @@
 
     paperBtns.forEach((btn) => btn.addEventListener("click", () => setPaper(btn.dataset.paper)));
 
-    // canvas matches the pad's size at the screen's pixel density; a resize
-    // (fullscreen in or out) keeps what's drawn, pinned to the top left
+    // ukuran canvas mengikuti pad dan pixel density layar. Saat ukuran
+    // berubah (masuk atau keluar fullscreen), gambar tetap ada di kiri atas
     let dpr = 1;
     const scroller = document.getElementById("note-draw-scroll");
 
@@ -2144,8 +2154,8 @@
       const viewH = scroller.clientHeight;
       if (!viewW || !viewH) return;
       const nextDpr = Math.min(window.devicePixelRatio || 1, 2);
-      // twice as wide and three times as tall as the pad, and never
-      // smaller than what's already there
+      // dua kali lebar dan tiga kali tinggi pad, dan tidak pernah lebih
+      // kecil dari ukuran saat ini
       const cssW = Math.max(viewW * 2, canvas.width / dpr || 0);
       const cssH = Math.max(viewH * 3, canvas.height / dpr || 0);
       const w = Math.round(cssW * nextDpr);
@@ -2166,14 +2176,14 @@
       applyZoom();
     }
 
-    // zoom: the sheet is shown bigger or smaller (the drawing itself keeps
-    // its resolution); the middle of the view stays in the middle
+    // zoom: lembar ditampilkan lebih besar atau lebih kecil (resolusi gambar
+    // tidak berubah). Titik tengah tampilan tetap berada di tengah
     const ZOOMS = [0.5, 0.75, 1, 1.5, 2, 3];
     let zoomIndex = 2;
     const zoomLevel = document.getElementById("draw-zoom-level");
     const zoomIn = document.getElementById("draw-zoom-in");
     const zoomOut = document.getElementById("draw-zoom-out");
-    // the same zoom as a dropdown in the toolbar, like text size
+    // zoom yang sama dalam bentuk dropdown di toolbar, seperti ukuran teks
     const zoomCtl = document.getElementById("draw-zoom-ctl");
     const zoomBtn = document.getElementById("draw-zoom-btn");
     const zoomCurrent = document.getElementById("draw-zoom-current");
@@ -2197,7 +2207,7 @@
       index = Math.max(0, Math.min(ZOOMS.length - 1, index));
       if (index === zoomIndex) return;
       const before = zoom();
-      // the sheet point in the middle of the view, before zooming
+      // titik lembar yang berada di tengah tampilan sebelum zoom
       const cx = (scroller.scrollLeft + scroller.clientWidth / 2) / before;
       const cy = (scroller.scrollTop + scroller.clientHeight / 2) / before;
       zoomIndex = index;
@@ -2227,7 +2237,8 @@
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && zoomCtl.classList.contains("is-open")) {
-        // caught first (capture), so Esc only closes the menu, not fullscreen
+        // ditangkap lebih dulu (capture) agar Esc hanya menutup menu, bukan
+        // fullscreen
         e.stopPropagation();
         setZoomOpen(false);
         zoomBtn.focus();
@@ -2238,12 +2249,12 @@
       if (!drawLayer.hidden) sizeCanvas();
     }).observe(drawLayer);
 
-    // pen strokes: smoothed through the midpoints between pointer samples;
-    // the eraser rubs out with a wider round tip
+    // goresan pensil dihaluskan melalui titik tengah antar-sampel pointer.
+    // Penghapus memakai ujung bulat yang lebih lebar
     let tool = "pen";
     let hasInk = false;
     let stroke = null;
-    // bounds of everything drawn (canvas pixels), for cropping the picture
+    // batas seluruh gambar (dalam pixel canvas), untuk crop hasil gambar
     let bounds = null;
 
     const inkColor = () => getComputedStyle(wrap).getPropertyValue("--color-ink").trim() || "#30332f";
@@ -2259,7 +2270,7 @@
       })
     );
 
-    // screen point to sheet pixels, whatever the zoom
+    // ubah titik di layar menjadi pixel lembar, berapa pun zoom-nya
     const pointAt = (e) => {
       const rect = canvas.getBoundingClientRect();
       return {
@@ -2278,8 +2289,8 @@
       }
     }
 
-    // move tool: drag to slide the sheet any way; past its top or bottom
-    // the drag scrolls the page instead
+    // alat move: drag untuk menggeser lembar ke segala arah. Jika melewati
+    // batas atas atau bawah, drag akan scroll halaman
     let pan = null;
     canvas.addEventListener("pointerdown", (e) => {
       if (e.button !== 0 || tool !== "move") return;
@@ -2313,13 +2324,13 @@
       ctx.globalCompositeOperation = erasing ? "destination-out" : "source-over";
       ctx.strokeStyle = inkColor();
       ctx.fillStyle = inkColor();
-      // the pen is the same thickness on the drawing at any zoom (it just
-      // looks thinner zoomed out and thicker zoomed in, like the rest)
+      // ketebalan pensil pada gambar sama di semua zoom (hanya terlihat
+      // lebih tipis saat zoom out dan lebih tebal saat zoom in)
       ctx.lineWidth = (erasing ? 18 : 2.6) * dpr;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       stroke = { last: p, mid: p };
-      // a tap leaves a dot
+      // tap meninggalkan satu titik
       ctx.beginPath();
       ctx.arc(p.x, p.y, ctx.lineWidth / 2, 0, Math.PI * 2);
       ctx.fill();
@@ -2360,8 +2371,9 @@
 
     document.getElementById("draw-clear").addEventListener("click", clearDrawing);
 
-    // the sketch, cropped to what's drawn (plus a margin), becomes a picture
-    // in the note where the cursor last was; the pad is cleared for the next
+    // sketsa di-crop sesuai area yang digambar (ditambah margin), lalu
+    // dimasukkan ke catatan di posisi terakhir kursor. Setelah itu pad
+    // dikosongkan
     function addDrawing() {
       if (!hasInk || !bounds) return false;
       const margin = 16 * dpr;
@@ -2375,7 +2387,7 @@
       out.width = w;
       out.height = h;
       const outCtx = out.getContext("2d");
-      // on white, so it reads on any paper
+      // diberi latar putih agar tetap terlihat di kertas apa pun
       outCtx.fillStyle = "#ffffff";
       outCtx.fillRect(0, 0, w, h);
       outCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
@@ -2389,17 +2401,17 @@
 
     addBtn.addEventListener("click", () => {
       addDrawing();
-      // back to writing on the paper that was picked before
+      // kembali menulis di kertas yang dipilih sebelumnya
       setPaper(paperInput.value);
       quill.focus();
       quill.setSelection(lastIndex, 0, "user");
     });
 
-    // called by the page's save button: fills the hidden field, or shows why
-    // the note can't be saved yet
+    // dipanggil oleh tombol save di halaman: mengisi hidden field, atau
+    // menampilkan alasan catatan belum bisa di-save
     window.noteEditor = {
       sync() {
-        // a sketch still on the pad is part of the note
+        // sketsa yang masih ada di pad ikut menjadi bagian catatan
         if (wrap.classList.contains("is-drawing")) setPaper(paperInput.value);
         const empty = quill.getText().trim() === "" && !quill.root.querySelector("img");
         if (empty) {
@@ -2418,8 +2430,8 @@
         return true;
       },
 
-      // a locked note's words, opened on the edit page once its key is given
-      // (already cleaned by note-crypto)
+      // isi catatan terkunci yang dimuat di halaman edit setelah key-nya
+      // dimasukkan (sudah dibersihkan oleh note-crypto)
       load(html) {
         quill.setContents(quill.clipboard.convert({ html }), "silent");
         quill.history.clear();

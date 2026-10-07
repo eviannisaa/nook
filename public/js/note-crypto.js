@@ -1,17 +1,19 @@
-// Locked notes are encrypted and decrypted here in the browser, so the key
-// never leaves it: the server only keeps the ciphertext with its salt and iv.
-// AES-256-GCM (a wrong key fails its auth check), the key stretched from the
-// passphrase with PBKDF2-SHA256
+// Catatan terkunci di-encrypt dan di-decrypt di browser, sehingga key tidak
+// dikirim ke server (kecuali sekali untuk catatan lama, lihat openLegacy).
+// Server hanya menyimpan ciphertext beserta salt dan iv-nya. Algoritmanya
+// AES-256-GCM (key yang salah gagal di auth check), dengan key yang
+// diturunkan dari passphrase memakai PBKDF2-SHA256
 (() => {
-  // OWASP's guidance for PBKDF2-SHA256; it costs every guess at a key the
-  // same, about half a second
+  // Jumlah iterasi sesuai rekomendasi OWASP untuk PBKDF2-SHA256. Setiap
+  // percobaan menebak key butuh waktu sekitar setengah detik
   const ITERATIONS = 600000;
   const MIN_KEY_LENGTH = 8;
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
-  // in chunks: a note with photos is several MB, too long for one call
+  // diproses per bagian karena catatan berisi foto bisa beberapa MB,
+  // terlalu besar untuk satu kali pemanggilan
   const toBase64 = (bytes) => {
     let binary = "";
     for (let i = 0; i < bytes.length; i += 0x8000) {
@@ -44,7 +46,8 @@
     );
   }
 
-  // the fields the server stores: a fresh salt and iv every time it's saved
+  // menghasilkan field yang disimpan server. Salt dan iv selalu dibuat baru
+  // setiap kali catatan disimpan
   async function encrypt(html, passphrase) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -61,8 +64,8 @@
     };
   }
 
-  // the note's HTML, cleaned for the page; throws "Wrong key!" when the key
-  // doesn't fit
+  // menghasilkan HTML catatan yang sudah dibersihkan untuk halaman. Melempar
+  // error "Wrong key!" jika key salah
   async function decrypt(note, passphrase) {
     const key = await deriveKey(passphrase, fromBase64(note.salt));
     let plain;
@@ -78,14 +81,14 @@
     return sanitize(decoder.decode(plain));
   }
 
-  // The same rules as utils/note-html.js on the server, which never sees a
-  // locked note's words: whatever a ciphertext holds, only these tags and
-  // attributes reach the page
+  // Aturannya sama dengan utils/note-html.js di server, yang tidak pernah
+  // melihat isi catatan terkunci. Apa pun isi ciphertext-nya, hanya tag dan
+  // atribut berikut yang ditampilkan di halaman
   const ALLOWED_TAGS = new Set([
     "P", "BR", "H2", "H3", "STRONG", "B", "EM", "I", "U", "S",
     "OL", "UL", "LI", "BLOCKQUOTE", "A", "IMG",
   ]);
-  // dropped along with what's inside them, not just unwrapped
+  // tag ini dibuang beserta isinya, bukan hanya tag-nya
   const DROPPED_TAGS = new Set([
     "SCRIPT", "STYLE", "TEXTAREA", "OPTION", "NOSCRIPT", "TEMPLATE",
     "IFRAME", "OBJECT", "EMBED", "SVG", "MATH", "TITLE", "HEAD",
@@ -147,8 +150,8 @@
       .replace(/'/g, "&#39;");
 
   function sanitize(html) {
-    // notes written before the editor are plain text: paragraphs, as on the
-    // server
+    // catatan dari sebelum ada editor berupa teks biasa dan diubah menjadi
+    // paragraf, sama seperti di server
     if (!/^\s*</.test(html || "")) {
       return (html || "")
         .split(/\r?\n\s*\r?\n/)
@@ -158,22 +161,24 @@
         .join("");
     }
 
-    // parsed in a document of its own, where nothing runs or loads
+    // di-parse di dokumen terpisah, sehingga tidak ada script yang berjalan
+    // atau resource yang dimuat
     const parsed = new DOMParser().parseFromString(html, "text/html");
     const out = document.createElement("div");
     cleanInto(parsed.body, out);
     return out.innerHTML;
   }
 
-  // a key good enough to lock with; opening an older note takes any key
+  // mengecek panjang minimum key untuk mengunci catatan. Untuk membuka
+  // catatan lama, key apa pun diterima
   const keyProblem = (passphrase) =>
     (passphrase || "").length < MIN_KEY_LENGTH
       ? `Use a key of at least ${MIN_KEY_LENGTH} characters.`
       : "";
 
-  // Notes locked before the browser did the encryption: the server opens
-  // them one last time (the key goes there once more), and they're locked
-  // again here straight away, so from then on they're like any other
+  // Catatan lama yang di-encrypt di server. Key dikirim ke server sekali
+  // lagi untuk decrypt, lalu catatan langsung di-encrypt ulang di sini.
+  // Setelah itu, catatan diperlakukan sama seperti catatan lain
   async function openLegacy(note, passphrase) {
     const res = await fetch(`/writing/${note.id}/legacy-open`, {
       method: "POST",
@@ -190,14 +195,14 @@
       body: JSON.stringify(relocked),
     });
     if (!saved.ok) throw new Error("Couldn't upgrade this note's lock. Try again.");
-    // what the page holds now matches the server
+    // data di halaman kini sama dengan yang tersimpan di server
     Object.assign(note, relocked, { legacy: false });
 
     return sanitize(data.content);
   }
 
-  // a locked note's HTML from what the page was given: { id, legacy } or
-  // { id, content, salt, iv }
+  // menghasilkan HTML catatan terkunci dari data yang diterima halaman:
+  // { id, legacy } atau { id, content, salt, iv }
   const open = (note, passphrase) =>
     note.legacy ? openLegacy(note, passphrase) : decrypt(note, passphrase);
 

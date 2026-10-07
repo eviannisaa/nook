@@ -1,10 +1,10 @@
-<%# shared by new-writing and edit-writing, on top of contact-form-styles %>
+<%# Dipakai bersama oleh new-writing dan edit-writing, di atas contact-form-styles %>
 <style>
-  /* mood: a row of faces with their names under them, each a small pale
-     field like the inputs. Resting faces are a little faded. The picked
-     field fades onto a marker wash where it is (the last one fades back
-     at the same time, nothing slides between them), and its face pops up
-     with a little wobble */
+  /* Mood: deretan wajah dengan namanya di bawah, masing-masing dalam kotak
+     kecil yang pucat seperti input. Wajah yang tidak dipilih sedikit pudar.
+     Kotak yang dipilih berubah perlahan menjadi warna marker di tempatnya
+     (kotak sebelumnya kembali pudar bersamaan, tanpa ada yang bergeser), dan
+     wajahnya membesar dengan sedikit goyangan */
   .mood-picker {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -29,15 +29,16 @@
       box-shadow 0.8s var(--ease-smooth);
   }
 
-  /* every other face leans the other way, like doodles on a page */
+  /* Kotak urutan genap memakai sudut bergelombang yang dibalik, seperti doodle di kertas */
   .mood-opt:nth-of-type(even) {
     border-radius: 12px 16px 11px 17px / 17px 11px 16px 12px;
   }
 
-  /* the face moves with the separate scale / rotate / translate
-     properties: the pick's pop and settle are played by the script as
-     springs (so a pick never jumps, whatever the face was doing), while
-     the hover lean eases on its own */
+  /* Wajah digerakkan lewat properti scale / rotate / translate yang
+     terpisah: efek membesar lalu kembali tenang saat dipilih dijalankan
+     script sebagai spring (jadi tidak pernah melompat, apa pun gerakan
+     wajah saat itu), sedangkan posisi miring saat hover memakai transisi
+     CSS sendiri */
   .mood-face {
     font-size: 1.3rem;
     line-height: 1;
@@ -86,7 +87,7 @@
     box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.35);
   }
 
-  /* picked: the face lights up and sits a touch bigger */
+  /* Saat dipilih, wajah tampil cerah dan sedikit lebih besar */
   .mood-opt:has(input:checked) .mood-face {
     filter: none;
     opacity: 1;
@@ -110,7 +111,7 @@
     }
   }
 
-  /* encrypt: a quiet dashed box under the note, the key field opens inside */
+  /* Encrypt: kotak putus-putus yang kalem di bawah catatan, field key muncul di dalamnya */
   .encrypt-box {
     display: flex;
     flex-direction: column;
@@ -185,8 +186,9 @@
     color: var(--color-ink);
   }
 
-  /* phones: the note form's own bits a step smaller too, with the rest of
-     the form (the shared sizes and spacing live in contact-form-styles) */
+  /* Ponsel: bagian khusus form catatan juga satu ukuran lebih kecil, sama
+     seperti bagian form lainnya (ukuran dan jarak bersama ada di
+     contact-form-styles) */
   @media (max-width: 639px) {
     .form-page .encrypt-toggle {
       font-size: 0.85rem;
@@ -197,12 +199,12 @@
       font-size: 0.75rem;
     }
 
-    /* the typed note scales with it, whichever size is picked */
+    /* Teks catatan ikut mengecil, berapa pun ukuran yang dipilih */
     .form-page .note-editor .ql-editor {
       font-size: calc(var(--note-size, 0.95rem) * 0.9);
     }
 
-    /* three to a row, so every name fits, and a size down */
+    /* Tiga per baris agar semua nama muat, dan satu ukuran lebih kecil */
     .form-page .mood-picker {
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 0.4rem;

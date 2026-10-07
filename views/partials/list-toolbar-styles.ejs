@@ -1,7 +1,7 @@
-<%# floating search + add buttons, search capsule and count row, shared by
-    the contacts and writing pages %>
+<%# tombol search + add yang mengambang, kapsul search, dan baris jumlah,
+    dipakai bersama oleh halaman contacts dan writing %>
 <style>
-  /* total count: a quiet caption so the eye goes to the contacts, not here */
+  /* jumlah total: keterangan samar supaya perhatian tertuju ke kontak, bukan ke sini */
   .contact-count {
     display: inline-flex;
     align-items: baseline;
@@ -12,17 +12,17 @@
     color: var(--color-ink-soft);
   }
 
-  /* the number is a notch darker than its label, still well below the cards */
+  /* angkanya sedikit lebih gelap dari labelnya, tapi tetap jauh lebih samar dari card */
   .contact-count-num {
     color: color-mix(in srgb, var(--color-ink) 70%, var(--color-ink-soft));
   }
 
-  /* search box outlined just like the contact cards: soft ink, full ink when active */
+  /* outline search box sama seperti card kontak: tinta lembut, jadi tinta penuh saat aktif */
   .search-input,
   .search-input:hover,
   .search-input:focus {
     font-family: var(--font-comic);
-    /* same size as the total contacts caption */
+    /* ukurannya sama dengan keterangan jumlah kontak */
     font-size: 0.9rem;
     background-color: var(--color-card);
     border: 1.5px solid color-mix(in srgb, var(--color-ink) 50%, var(--color-line));
@@ -42,7 +42,7 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-secondary) 45%, transparent);
   }
 
-  /* count + layout switch row */
+  /* baris jumlah dan switch layout */
   .toolbar-row {
     position: relative;
     display: flex;
@@ -51,33 +51,33 @@
     justify-content: space-between;
   }
 
-  /* phones: with no count in it the row only holds the (floating) search
-     box, so it takes no room in the page */
+  /* ponsel: jika tidak ada jumlah, baris ini hanya berisi search box (yang
+     mengambang), jadi tidak memakan ruang di halaman */
   @media (max-width: 639px) {
     .toolbar-row:not(:has(.contact-count)) {
       display: contents;
     }
 
-    /* the count a step down, like the line under the page title */
+    /* jumlah diperkecil satu tingkat, seperti baris di bawah judul halaman */
     .contact-count {
       font-size: 0.8rem;
     }
   }
 
-  /* floating search box: a capsule that grows out of the search button to
-     the left. The button sits on top of its right end, so the two read as one
-     piece; opening reveals it from the button outward. */
+  /* search box mengambang: kapsul yang memanjang ke kiri dari tombol search.
+     Tombol menutupi ujung kanannya, jadi keduanya terlihat menyatu. Saat
+     dibuka, kapsul muncul dari tombol ke arah luar. */
   .search-box {
     position: fixed;
-    right: 1.5rem; /* same edge as the button */
-    top: calc(50% - 3.375rem); /* same line as the search button */
-    z-index: 39; /* just under the button, which caps the capsule */
+    right: 1.5rem; /* tepinya sama dengan tombol */
+    top: calc(50% - 3.375rem); /* sejajar dengan tombol search */
+    z-index: 39; /* tepat di bawah tombol, yang menutupi ujung kapsul */
     width: calc(100vw - 3rem);
     height: 3rem;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    /* padded clip so the focus ring and shadow aren't cut off */
+    /* clip diberi ruang lebih supaya focus ring dan shadow tidak terpotong */
     clip-path: inset(-24px -8px -24px calc(100% - 3rem) round 30px);
     transition:
       clip-path 0.45s var(--ease-smooth),
@@ -96,24 +96,24 @@
       visibility 0s;
   }
 
-  /* desktop: a short capsule, not a long bar */
+  /* desktop: kapsul pendek, bukan bar panjang */
   @media (min-width: 640px) {
     .search-box {
       width: 16rem;
     }
   }
 
-  /* the input fills the capsule; right padding leaves room under the button */
-  /* same wobbly outline and focus state as the search box always had on the
-     left; the right end is shaped to join the button */
+  /* input memenuhi kapsul; padding kanan memberi ruang di bawah tombol */
+  /* sisi kiri tetap memakai outline tidak rata dan state focus seperti search
+     box biasa; ujung kanannya dibentuk supaya menyambung dengan tombol */
   .search-box .search-input,
   .search-box .search-input:hover,
   .search-box .search-input:focus {
-    width: calc(100% - 1.5rem); /* ends under the middle of the button */
+    width: calc(100% - 1.5rem); /* berakhir di bawah bagian tengah tombol */
     height: 100%;
     padding: 0 2.3rem 0 1.15rem;
-    /* left end keeps the wobbly doodle corners; the right end has no border
-       or rounding, it tucks under the button so the two read as one piece */
+    /* ujung kiri tetap memakai sudut doodle yang tidak rata; ujung kanan tanpa
+       border dan tanpa lengkungan, terselip di bawah tombol supaya menyatu */
     border-right-width: 0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
@@ -125,16 +125,16 @@
     box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.35);
   }
 
-  /* the focus ring wraps the whole capsule (input + button) so it stays one
-     piece: doodle corners on the left, rounded around the button on the right */
+  /* focus ring membungkus seluruh kapsul (input + tombol) supaya tetap menyatu:
+     sudut doodle di kiri, melengkung mengikuti tombol di kanan */
   .search-box::before {
     content: "";
     position: absolute;
     inset: -3px;
     z-index: -1;
     background-color: color-mix(in srgb, var(--color-secondary) 45%, transparent);
-    /* right radii = half the ring height (54px); 999px would make the
-       browser shrink every corner, flattening the left ones */
+    /* radius kanan = setengah tinggi ring (54px). Jika memakai 999px, browser
+       akan mengecilkan semua sudut sehingga sudut kiri jadi rata */
     border-radius: 25px 27px 27px 19px / 19px 27px 27px 25px;
     opacity: 0;
     pointer-events: none;
@@ -156,7 +156,7 @@
     transform: translateY(-50%);
   }
 
-  /* the button's two icons swap in place: search ↔ chevron (hide) */
+  /* dua ikon tombol bergantian di posisi yang sama: search ↔ chevron (sembunyikan) */
   .fab-search .fab-icon {
     transition:
       opacity 0.45s var(--ease-smooth),
@@ -179,8 +179,8 @@
     transform: none;
   }
 
-  /* active-search badge: a small paper disc on the button's top-right corner
-     holding the first letter of the query; pops in when the box is hidden */
+  /* badge search aktif: lingkaran kertas kecil di sudut kanan atas tombol berisi
+     huruf pertama query; muncul saat box disembunyikan */
   .search-badge {
     position: absolute;
     top: -0.3rem;
@@ -213,21 +213,21 @@
     transform: scale(1);
   }
 
-  /* the + reads heavier than the search glyph at the same size; trim it a bit */
+  /* ikon + terlihat lebih tebal dari ikon search di ukuran yang sama, jadi sedikit diperkecil */
   .fab .fab-icon {
     width: 1.05em;
     height: 1.05em;
   }
 
-  /* search open: the button that caps the capsule gets the ink line */
+  /* saat search terbuka, tombol di ujung kapsul mendapat garis tinta */
   .fab-search[aria-expanded="true"] {
     color: var(--color-ink);
     background-color: var(--color-card);
     border-color: var(--color-ink);
   }
 
-  /* search + add buttons: a pair centred on the right edge, search on top,
-     3rem each and 0.75rem apart (the menu button keeps the bottom corner) */
+  /* tombol search + add: sepasang tombol di tengah tepi kanan, search di atas,
+     masing-masing 3rem dengan jarak 0.75rem (sudut bawah untuk tombol menu) */
   .fab-search {
     top: calc(50% - 3.375rem);
   }
@@ -236,9 +236,9 @@
     top: calc(50% + 0.375rem);
   }
 
-  /* phones + tablets: while the search box is open, a paper scrim rises from
-     the bottom of the screen to just above the input, fading out at its top
-     edge, so the floating controls never sit on top of busy content */
+  /* ponsel: selama search box terbuka, lapisan kertas naik dari bawah layar
+     sampai tepat di atas input dan memudar di tepi atasnya, supaya tombol
+     mengambang tidak menumpuk di atas konten yang ramai */
   .search-scrim {
     display: none;
   }
@@ -249,9 +249,9 @@
       right: 0;
       bottom: 0;
       left: 0;
-      z-index: 38; /* under the search box (39) and the buttons (40) */
+      z-index: 38; /* di bawah search box (39) dan tombol (40) */
       display: block;
-      /* tablet: the search button sits at 50% - 3.375rem, 3rem tall */
+      /* tablet: tombol search ada di 50% - 3.375rem, tingginya 3rem */
       height: calc(50% + 3.375rem + 2.5rem);
       background: linear-gradient(
         to top,
@@ -277,14 +277,13 @@
 
   @media (max-width: 639px) {
     .search-scrim {
-      /* phone: the search button sits at bottom 7.2rem, 2.5rem tall */
+      /* ponsel: tombol search ada di bottom 7.2rem, tingginya 2.5rem */
       height: calc(7.2rem + 2.5rem + 2.5rem);
     }
   }
 
-  /* tablets: the buttons keep their desktop size (3rem, 1.5rem from the
-     edge), so the content gets equal side gutters that clear them
-     (1.5rem edge + 3rem button + 0.75rem air = 5.25rem) */
+  /* tablet: gutter kiri dan kanan dibuat sama (5.25rem) supaya konten tidak
+     tertutup tombol mengambang */
   @media (min-width: 640px) and (max-width: 959px) {
     .list-page {
       padding-right: 5.25rem;
@@ -292,20 +291,20 @@
     }
   }
 
-  /* phones: the floating buttons shrink a little (3rem → 2.5rem), hug the
-     edge and stack in the bottom corner; the content gets equal side gutters
-     that also clear them, so nothing is ever hidden behind the buttons */
+  /* ponsel: tombol mengambang dibuat lebih kecil, menempel ke tepi, dan
+     ditumpuk di sudut bawah. Gutter kiri dan kanan dibuat sama dan cukup
+     lebar, supaya tidak ada konten yang tertutup tombol */
   @media (max-width: 639px) {
-    /* even gutters on both sides, wide enough on the right to clear the
-       buttons (1.75rem tabs on the edge + a little air) */
+    /* gutter kiri dan kanan sama, cukup lebar di kanan supaya tidak tertutup
+       tombol (tab 1.75rem di tepi + sedikit jarak) */
     .list-page {
       padding-right: 2.5rem;
       padding-left: 2.5rem;
     }
 
-    /* room at the end so the last of the page (the pagination) scrolls
-       clear of the search box and its fade: 5.35rem + 1.75rem + 2.5rem,
-       and a little air */
+    /* ruang di bagian bawah supaya akhir halaman (pagination) bisa di-scroll
+       melewati search box dan fade-nya: 5.35rem + 1.75rem + 2.5rem, ditambah
+       sedikit jarak */
     .list-page {
       padding-bottom: 10.5rem;
     }
@@ -318,8 +317,8 @@
       font-size: 1.05rem;
     }
 
-    /* stacked in the bottom corner above the menu button (bottom 1rem):
-       menu → + → search, 2.5rem each, 0.6rem apart */
+    /* ditumpuk di sudut bawah, di atas tombol menu (bottom 1rem):
+       menu → + → search, masing-masing 2.5rem dengan jarak 0.6rem */
     .fab {
       top: auto;
       bottom: 4.1rem;
@@ -334,7 +333,7 @@
       top: auto;
       bottom: 7.2rem;
       right: 0.75rem;
-      /* left edge lines up with the content gutter (3.5rem) */
+      /* tepi kiri berjarak 3.5rem dari tepi layar */
       width: calc(100vw - 3.5rem - 0.75rem);
       height: 2.5rem;
     }
@@ -367,9 +366,9 @@
     }
   }
 
-  /* compact search + add buttons: 2.5rem (phones 2.25rem), stacked above the
-     3rem (phones 2.5rem) menu button on the same vertical line. The search
-     capsule, its focus ring and the phone/tablet scrim follow the new size. */
+  /* tombol search + add versi ringkas: 2.5rem (di ponsel 1.75rem, lihat blok
+     di bawah), ditumpuk di atas tombol menu. Kapsul search, focus ring-nya,
+     dan scrim ikut menyesuaikan ukuran baru ini. */
   .fab-search,
   .fab {
     right: 1.75rem;
@@ -378,12 +377,12 @@
     font-size: 1.05rem;
   }
 
-  /* stacked in the bottom corner above the menu button (bottom 1.5rem,
-     2.5rem tall): search and + sit close together as a pair (0.4rem), with a
-     little more air (1.1rem) before the menu */
-  /* + is a tab on the right edge, like back and the menu under it: round
-     on its left, flat where it meets the screen's edge, also when pointed
-     at or pressed */
+  /* ditumpuk di sudut bawah, di atas tombol menu (bottom 1.5rem, tinggi
+     2.5rem): search dan + berdekatan sebagai pasangan (0.4rem), dengan jarak
+     sedikit lebih lebar (1.1rem) ke tombol menu */
+  /* + berbentuk tab di tepi kanan, seperti tombol back dan menu di bawahnya:
+     bulat di kiri, rata di sisi yang menempel ke tepi layar, termasuk saat
+     hover atau ditekan */
   .fab {
     top: auto;
     right: 0;
@@ -436,15 +435,15 @@
 
   @media (max-width: 959px) {
     .search-scrim {
-      /* search button: bottom 8rem, 2.5rem tall, + 2.5rem fade */
+      /* tombol search: bottom 8rem, tinggi 2.5rem, + fade 2.5rem */
       height: calc(8rem + 2.5rem + 2.5rem);
     }
   }
 
   @media (max-width: 639px) {
-    /* 1.75rem, the icon with them (0.9rem); tabs on the right edge like
-       back and the menu: round on the left, flat where they meet the
-       screen's edge, also when pointed at, pressed or open */
+    /* 1.75rem, ikonnya ikut mengecil (0.75rem); berbentuk tab di tepi kanan
+       seperti tombol back dan menu: bulat di kiri, rata di sisi yang menempel
+       ke tepi layar, termasuk saat hover, ditekan, atau terbuka */
     .fab-search,
     .fab {
       right: 0;
@@ -472,11 +471,11 @@
 
     .fab-search {
       top: auto;
-      bottom: 5.35rem; /* + button: 3.25rem + 1.75rem + 0.35rem */
+      bottom: 5.35rem; /* tombol +: 3.25rem + 1.75rem + 0.35rem */
     }
 
-    /* a capsule of a fair length (15rem, never past the content gutter)
-       running to the screen's edge, where the search tab caps it */
+    /* kapsul dengan panjang secukupnya (15rem, tidak melewati gutter konten)
+       sampai ke tepi layar, tempat tab search menutup ujungnya */
     .search-box {
       top: auto;
       bottom: 5.35rem;
@@ -493,12 +492,12 @@
     .search-box .search-input,
     .search-box .search-input:hover,
     .search-box .search-input:focus {
-      width: calc(100% - 0.875rem); /* under the middle of the 1.75rem button */
+      width: calc(100% - 0.875rem); /* sampai di bawah bagian tengah tombol 1.75rem */
       padding-right: 1.8rem;
     }
 
-    /* the x sits close to the search tab (about 6px off it), the typing
-       stops just before the x */
+    /* tombol x berada dekat tab search (sekitar 6px), dan teks yang diketik
+       berhenti tepat sebelum x */
     .search-box:has(.search-clear) .search-input {
       padding-right: 2.6rem;
     }
@@ -507,9 +506,9 @@
       right: 2.1rem;
     }
 
-    /* the search is a tab on the screen's edge here, so the active-search
-       badge moves to its top-left corner (the top-right one is off-screen),
-       a step smaller with the button */
+    /* di sini search berbentuk tab di tepi layar, jadi badge search aktif
+       pindah ke sudut kiri atas (sudut kanan atas ada di luar layar) dan
+       ikut mengecil bersama tombolnya */
     .search-badge {
       top: -0.35rem;
       right: auto;
@@ -529,9 +528,9 @@
     }
   }
 
-  /* tablet + desktop: the search sits inline in the count row, just left of
-     the list/card switch, always visible; the floating search button and the
-     phone scrim aren't needed there */
+  /* tablet + desktop: search tampil sebaris di baris jumlah, tepat di kiri
+     switch list/card, dan selalu terlihat. Tombol search mengambang dan scrim
+     ponsel tidak diperlukan di sini */
   .search-inline-icon {
     display: none;
   }
@@ -564,7 +563,7 @@
       display: none;
     }
 
-    /* nothing to its right (no list/card switch): sit flush with the edge */
+    /* jika tidak ada switch list/card di kanannya, search box menempel ke tepi */
     .search-box:last-child {
       margin-right: 0;
     }
@@ -581,7 +580,7 @@
       pointer-events: none;
     }
 
-    /* same quiet paper + pale pen line as the list/card switch next to it */
+    /* warna kertas dan garis pena pucat yang sama dengan switch list/card di sebelahnya */
     .search-box .search-input,
     .search-box .search-input:hover,
     .search-box .search-input:focus {

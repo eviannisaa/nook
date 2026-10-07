@@ -3,10 +3,10 @@
 <%- include("partials/actions-menu-styles") %>
 <%
   const face = writing.mood ? moodFaces[writing.mood] : "";
-  // a locked note reaches the page still encrypted: it's opened here in the
-  // browser with its key (public/js/note-crypto.js)
+  // catatan terkunci sampai ke halaman ini dalam bentuk terenkripsi, lalu
+  // dibuka di browser dengan key-nya (public/js/note-crypto.js)
   const lockedNote = Boolean(writing.isEncrypted);
-  // the downloaded PDF is named after the note, e.g. hello-world-2026-09-30.pdf
+  // nama file PDF mengikuti judul dan tanggal catatan, misalnya hello-world-2026-09-30.pdf
   const pdfSlug = String(writing.title || "")
     .toLowerCase()
     .normalize("NFKD")
@@ -15,12 +15,12 @@
     .slice(0, 60) || "note";
   const pdfDay = writing.date ? new Date(writing.date).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" }) : "";
   const pdfName = pdfSlug + (pdfDay ? "-" + pdfDay : "") + ".pdf";
-  // a value for the inline script: JSON with "<" escaped, so a title can't
-  // close the script tag
+  // nilai untuk inline script: JSON dengan "<" yang di-escape, supaya judul
+  // catatan tidak bisa menutup tag script
   const jsValue = (v) => JSON.stringify(v).replace(/</g, "\\u003c");
-  // what the browser needs to open it: the ciphertext, or for a note locked
-  // on the server before, only that it's one of those (it's upgraded when
-  // opened)
+  // data yang dibutuhkan browser untuk membuka catatan: ciphertext-nya, atau
+  // untuk catatan lama yang dulu dikunci di server, hanya penanda legacy
+  // (catatan ini di-upgrade saat dibuka)
   const lockedPayload = lockedNote
     ? writing.encVersion
       ? { id: String(writing._id), content: writing.content, salt: writing.salt, iv: writing.iv }
@@ -28,25 +28,24 @@
     : null;
 %>
 <style>
-  /* the parts a locked note shows or hides as it's opened: hidden wins over
-     their own display */
+  /* bagian yang muncul atau hilang saat catatan terkunci dibuka: atribut
+     hidden harus mengalahkan display bawaan elemennya */
   .detail-page [hidden] {
     display: none !important;
   }
 
-  /* note detail: the writing page's header on top, then one card like the
-     contact detail's: the date / mood rows, then the note's title (set
-     like the month on the calendar) under the note's label
-     and the note itself; encrypt / decrypt sits by delete, out of the
-     card */
-  /* the lined paper's rules softer here than in the editor, so they sit
-     back behind the words */
+  /* detail catatan: header halaman writing di atas, lalu satu card seperti
+     di detail kontak, berisi baris tanggal / mood, judul catatan (gayanya
+     seperti bulan di kalender) di bawah label catatan, dan isi catatan.
+     Encrypt / decrypt ada di dekat delete, di luar card */
+  /* garis kertas di sini dibuat lebih samar daripada di editor, supaya
+     tidak mengganggu tulisan */
   .detail-card .note-body {
     --note-rule-color: color-mix(in srgb, var(--color-line) 38%, transparent);
   }
 
-  /* the title stands apart from the label above it and the note under
-     it, with clear air on both sides */
+  /* judul diberi jarak yang cukup dari label di atasnya dan dari isi
+     catatan di bawahnya */
   .detail-note-title {
     margin-bottom: 0.75rem;
     overflow-wrap: anywhere;
@@ -57,7 +56,7 @@
     line-height: 1;
   }
 
-  /* the note's label, with the "decrypted" mark beside it when open */
+  /* label catatan, dengan tanda "decrypted" di sampingnya saat terbuka */
   .detail-note-head {
     display: flex;
     flex-wrap: wrap;
@@ -66,8 +65,8 @@
     margin-bottom: 0.5rem;
   }
 
-  /* the header keeps its actions on the title's line: the title's text
-     gives way (its line wraps) before they would drop under it */
+  /* actions di header tetap sebaris dengan judul. Jika ruangnya kurang,
+     teks judul yang turun ke baris berikutnya, bukan actions-nya */
   .detail-page > .header {
     flex-wrap: nowrap;
   }
@@ -81,13 +80,13 @@
     flex-shrink: 0;
   }
 
-  /* the header's actions sit on the line under the title */
+  /* actions di header sejajar dengan baris teks di bawah judul */
   .detail-page > .header .detail-actions {
     align-self: flex-end;
     padding-bottom: 0.3rem;
   }
 
-  /* when it was last edited, a quiet line under the date */
+  /* waktu terakhir diedit, ditampilkan samar di bawah tanggal */
   .detail-edited {
     display: block;
     margin-top: 0.15rem;
@@ -102,7 +101,7 @@
     }
   }
 
-  /* a quiet line about the lock */
+  /* keterangan status kunci, ditampilkan samar */
   .detail-lock-note {
     display: flex;
     align-items: center;
@@ -113,8 +112,8 @@
     color: var(--color-ink-soft);
   }
 
-  /* the locked text: a pale inset box, scrambled letters you can't select,
-     shown at its full height */
+  /* teks terkunci: kotak pucat berisi huruf acak yang tidak bisa dipilih,
+     ditampilkan setinggi isinya */
   .detail-cipher {
     padding: 1rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -129,8 +128,8 @@
   }
 
   @media (max-width: 639px) {
-    /* the title's text keeps at least 10rem; when "Decrypt" and Actions
-       don't fit beside that, they step down under it, to the right */
+    /* teks judul mendapat lebar minimal 10rem. Jika "Decrypt" dan Actions
+       tidak muat di sampingnya, keduanya turun ke bawah judul, rata kanan */
     .detail-page > .header {
       flex-wrap: wrap;
       row-gap: 0.6rem;
@@ -153,12 +152,13 @@
       font-size: 1.1rem;
     }
 
-    /* the note's title at the calendar month's phone size */
+    /* judul catatan memakai ukuran bulan di kalender versi ponsel */
     .detail-note-title {
       font-size: 1.05rem;
     }
 
-    /* page title and its line a size down, as on the writing page */
+    /* judul halaman dan baris di bawahnya turun satu ukuran, sama seperti
+       di halaman writing */
     .header .header-title {
       font-size: 1.75rem;
     }
@@ -175,7 +175,7 @@
       font-size: 0.7rem;
     }
 
-    /* the note reads a step smaller too, headings with it */
+    /* isi catatan juga sedikit lebih kecil, termasuk heading-nya */
     .detail-note-head {
       margin-bottom: 0.35rem;
     }
@@ -197,7 +197,7 @@
     }
   }
 
-  /* the note reads at the size of the contact's notes, headings with it */
+  /* ukuran isi catatan sama dengan catatan di detail kontak, termasuk heading-nya */
   @media (min-width: 640px) {
     .detail-card .note-body {
       font-size: 0.9rem;
@@ -213,9 +213,9 @@
   }
 </style>
 
-<!-- as wide as the writing calendar -->
+<!-- lebarnya sama dengan kalender writing -->
 <div class="detail-page mx-auto grid w-full max-w-3xl grid-cols-1 gap-6 p-6 pt-14">
-  <!-- floating back button, just above the menu button -->
+  <!-- tombol back mengambang, tepat di atas tombol menu -->
   <a
     href="/writing"
     aria-label="Back to writing"
@@ -225,8 +225,8 @@
     <%- include("partials/doodle-icon", { name: "arrow-left", cls: "fab-icon" }) %>
   </a>
 
-  <!-- page header, as on the writing page (the peep reading here), with
-       the note's actions on the same line -->
+  <!-- header halaman, sama seperti di halaman writing, dengan actions
+       catatan di baris yang sama -->
   <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
     <div class="detail-header-text flex items-end gap-4">
       <div class="pb-1">
@@ -237,14 +237,15 @@
       </div>
     </div>
 
-    <!-- the note's actions, all in the Actions menu:
-           plain    edit · download PDF · lock note · delete
-           locked   edit · remove lock · delete, with "decrypt" out beside
-                    Actions (without it the note can't be read at all)
-           opened   edit · download PDF · remove lock · delete
-         (decrypt reads it once and it stays locked; edit and remove lock
-         ask the key too. The PDF is made here in the browser, from the note
-         on the page) -->
+    <!-- semua actions catatan ada di menu Actions:
+           biasa      edit · download PDF · lock note · delete
+           terkunci   edit · remove lock · delete, plus "decrypt" di luar
+                      Actions (tanpa tombol itu catatan tidak bisa dibaca)
+           terbuka    edit · download PDF · remove lock · delete
+         (share, lock, dan remove lock hanya untuk pemilik. Decrypt hanya
+         membuka catatan untuk dibaca, catatan tetap terkunci; edit dan remove
+         lock juga meminta key. PDF dibuat di browser dari catatan yang tampil
+         di halaman) -->
     <div class="detail-actions pb-1">
       <% if (lockedNote) { %>
       <button type="button" class="header-link is-primary" id="note-open" onclick="openKeyModal(event, 'unlock', '<%= writing._id %>')">
@@ -265,7 +266,7 @@
             Edit
           </a>
           <% } %>
-          <!-- a locked note's PDF waits until it's opened -->
+          <!-- PDF catatan terkunci baru tersedia setelah catatan dibuka -->
           <button type="button" role="menuitem" id="note-pdf" data-file="<%= pdfName %>" <%= lockedNote ? "hidden" : "" %>>
             <%- include("partials/doodle-icon", { name: "download" }) %>
             <span id="note-pdf-label">Download PDF</span>
@@ -292,7 +293,7 @@
             Delete
           </button>
           <% } else { %>
-          <!-- shared with this account: taken off it only -->
+          <!-- catatan yang dibagikan ke akun ini: hanya dihapus dari akun ini -->
           <span class="actions-menu-sep" role="separator"></span>
           <button type="button" role="menuitem" class="is-danger" onclick="openDeleteModal()">
             <%- include("partials/doodle-icon", { name: "trash" }) %>
@@ -321,8 +322,8 @@
           <span class="detail-label">Date</span>
           <span class="detail-row-value"><%= formatDate(writing.date) %></span>
           <%
-            // a note saved before editedAt was kept falls back to its last
-            // update, when that came after it was written
+            // catatan yang disimpan sebelum ada field editedAt memakai waktu
+            // update terakhirnya, jika update itu terjadi setelah catatan dibuat
             const edited =
               writing.editedAt ||
               (writing.updatedAt && writing.createdAt && writing.updatedAt - writing.createdAt > 1000
@@ -349,8 +350,8 @@
     <div class="detail-divider"></div>
 
     <div class="flex flex-col gap-3">
-      <!-- the note's label, with a small mark beside it on a locked note:
-           "locked", then "decrypted" while it's open for this visit -->
+      <!-- label catatan. Pada catatan terkunci ada tanda kecil di sampingnya:
+           "locked", lalu "decrypted" selama catatan terbuka di kunjungan ini -->
       <div class="detail-note-head">
         <span class="detail-label inline-flex items-center gap-1.5">
           <%- include("partials/doodle-icon", { name: "note" }) %>
@@ -368,15 +369,15 @@
         <% } %>
       </div>
 
-      <!-- the note's title, under its label, set like the month on the
-           calendar -->
+      <!-- judul catatan di bawah labelnya, gayanya seperti bulan di
+           kalender -->
       <h3 class="detail-note-title text-2xl"><span class="header-title-mark"><%= writing.title %></span></h3>
 
       <% if (lockedNote) { %>
       <div id="note-locked">
         <div class="detail-cipher"><%= writing.content.slice(0, 3000) %></div>
       </div>
-      <!-- filled once the note is opened -->
+      <!-- diisi setelah catatan dibuka -->
       <div class="note-body <%= writing.paper === 'lined' ? 'is-lined' : '' %>" id="note-body" hidden></div>
       <% } else { %>
       <div class="note-body <%= writing.paper === 'lined' ? 'is-lined' : '' %>"><%- noteHtml(writing.content) %></div>
@@ -388,8 +389,8 @@
   <%- include("partials/share-modal", { base: "/writing/" + writing._id, noun: "note", shares }) %>
   <% } %>
 
-  <!-- delete confirmation (shared with this account: taken off it only,
-       the owner keeps it) -->
+  <!-- konfirmasi delete (catatan yang dibagikan ke akun ini hanya dihapus
+       dari akun ini, pemiliknya tetap menyimpannya) -->
   <div id="delete-modal" class="doodle-modal">
     <div class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title">
       <% if (access === "owner") { %>
@@ -425,8 +426,8 @@
     </div>
   </div>
 
-  <!-- lock and remove lock send the note back from here: locked, or opened
-       with its key (never the key itself) -->
+  <!-- lock dan remove lock mengirim catatan lewat form ini, dalam bentuk
+       terkunci atau sudah dibuka dengan key-nya (key-nya tidak pernah dikirim) -->
   <form id="lock-form" method="post" hidden>
     <input type="hidden" name="_id" value="<%= writing._id %>" />
     <input type="hidden" name="redirect" id="lock-redirect" />
@@ -443,7 +444,7 @@
 <% } %>
 
 <script>
-  // what the key popup does on this page, all in the browser
+  // aksi popup key di halaman ini, semuanya berjalan di browser
   (() => {
     const lockForm = document.getElementById("lock-form");
     const cipherEl = document.getElementById("note-cipher");
@@ -461,7 +462,7 @@
     }
 
     window.keyModalActions = {
-      // read it here; it stays locked on the server
+      // hanya dibuka untuk dibaca di sini; catatan tetap terkunci di server
       async unlock(key) {
         body.innerHTML = await noteCrypto.open(note, key);
         body.hidden = false;
@@ -472,11 +473,11 @@
         document.getElementById("note-pdf").hidden = false;
         closeKeyModal();
       },
-      // saved open from now on: the words go back, the key doesn't
+      // catatan disimpan tanpa kunci: isinya dikirim ke server, key-nya tidak
       async decrypt(key) {
         send("decrypt", { content: await noteCrypto.open(note, key) });
       },
-      // locked here, sent back as ciphertext
+      // di-encrypt di browser, lalu dikirim sebagai ciphertext
       async encrypt(key) {
         const problem = noteCrypto.keyProblem(key);
         if (problem) throw new Error(problem);
@@ -484,8 +485,8 @@
       },
     };
 
-    // from a locked note on the writing calendar: ask its key straight away
-    // (once the layout's popup helpers below are in)
+    // dibuka dari catatan terkunci di kalender writing: popup key langsung
+    // muncul (setelah helper popup dari layout di bawah siap)
     if (note && window.location.hash === "#open") {
       history.replaceState(null, "", window.location.pathname + window.location.search);
       document.addEventListener("DOMContentLoaded", () => openKeyModal(null, "unlock", note.id));
@@ -497,7 +498,7 @@
 
 <script src="/js/note-pdf.js"></script>
 <script>
-  // the note, downloaded as a PDF with its title, date and mood
+  // download catatan sebagai PDF, lengkap dengan judul, tanggal, dan mood
   (() => {
     const btn = document.getElementById("note-pdf");
     const label = document.getElementById("note-pdf-label");

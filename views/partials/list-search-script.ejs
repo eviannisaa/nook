@@ -1,9 +1,10 @@
-<%# the floating search button + capsule on list pages (contacts, writing).
-    The button carries its label in data-label. %>
+<%# Tombol search yang mengambang beserta kapsulnya di halaman list (contacts,
+    writing). Label tombol disimpan di data-label. %>
 <script>
-  // floating search button: open the hidden search box and focus it; a
-  // second press (or Esc) hides it again. Hiding never clears the search:
-  // while it's hidden with a query, the button wears the query's first letter.
+  // Tombol search mengambang: membuka kotak search yang tersembunyi lalu
+  // memberi focus. Tekan sekali lagi (atau Esc) untuk menyembunyikannya.
+  // Search tidak dihapus saat disembunyikan: selama query masih ada, tombol
+  // menampilkan huruf pertama query.
   function syncSearchBadge() {
     const btn = document.querySelector(".fab-search");
     const box = document.getElementById("search-box");
@@ -29,7 +30,7 @@
     box.classList.add("is-open");
     document.querySelector(".fab-search").setAttribute("aria-expanded", "true");
     syncSearchBadge();
-    // it floats beside the button, so no scrolling and nothing moves
+    // Kotak muncul mengambang di samping tombol, jadi halaman tidak perlu scroll dan tidak ada yang bergeser
     input.focus({ preventScroll: true });
   }
 
@@ -43,7 +44,7 @@
 
   syncSearchBadge();
 
-  // open ↔ closed; an open box with a search in it just gets focused again
+  // Buka ↔ tutup; kotak yang sedang terbuka selalu ditutup, meskipun berisi query
   function toggleSearch() {
     const box = document.getElementById("search-box");
     if (box.classList.contains("is-open")) closeSearch();

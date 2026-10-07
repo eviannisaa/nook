@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- icons -->
+    <!-- ikon -->
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
     />
 
-    <!-- fonts -->
+    <!-- font -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -26,16 +26,16 @@
 
     <title><%= title %></title>
 
-    <!-- lets the browser cross-fade whole page navigations where supported -->
+    <!-- transisi cross-fade antarhalaman di browser yang mendukung -->
     <style>
       @view-transition {
         navigation: auto;
       }
 
-      /* the page scrolls (trackpad, wheel, keys, touch) without a scrollbar:
-         on macOS it is drawn over the page's right edge and wakes as the
-         pointer nears, catching clicks meant for the edge tabs (menu, +,
-         back). Scrolling boxes inside the page keep theirs */
+      /* halaman tetap bisa di-scroll (trackpad, wheel, keyboard, sentuh) tanpa
+         scrollbar. Di macOS, scrollbar muncul di atas tepi kanan halaman saat
+         pointer mendekat dan bisa menangkap klik untuk tab di tepi (menu, +,
+         back). Area scroll di dalam halaman tetap memakai scrollbar-nya */
       html {
         scrollbar-width: none;
       }
@@ -44,14 +44,16 @@
         display: none;
       }
 
-      /* the secondary floating round buttons (search, +, back) share one quiet
-         look: paper, soft ink line, ink icon, so the green menu button stays
-         the main one. Plain CSS so it wins over the Tailwind button styles. */
+      /* tombol bulat melayang sekunder (search, +, back) memakai tampilan
+         sederhana yang sama: kertas, garis tinta tipis, dan ikon tinta, agar
+         tombol menu hijau tetap menjadi tombol utama. Ditulis dengan CSS biasa
+         agar menang atas style tombol Tailwind. */
       .fab-simple {
-        /* low-contrast at rest: paper-tinted fill, pale line, faint icon */
+        /* kontras rendah saat tidak di-hover: isi warna kertas, garis pucat, ikon samar */
         color: color-mix(in srgb, var(--color-ink-soft) 55%, var(--color-paper));
-        /* same paper fill + pale pen line as the list/card switch, drawn as a
-           wobbly hand-made circle with a faint marker fill printed off the line */
+        /* isi kertas dan garis pena pucat yang sama dengan switch list/card,
+           berbentuk lingkaran tidak rata seperti gambar tangan, dengan bayangan
+           marker samar yang sedikit bergeser dari garis */
         background-color: color-mix(in srgb, var(--color-paper-deep) 55%, var(--color-paper));
         border: 1.5px solid color-mix(in srgb, var(--color-ink) 18%, var(--color-line));
         border-radius: 56% 44% 53% 47% / 46% 55% 45% 54%;
@@ -74,9 +76,10 @@
         box-shadow: 3px 3px 0 -1px color-mix(in srgb, var(--color-marker) 45%, transparent);
       }
 
-      /* page header (contacts, new contact): the peep's shirt fades into the
-         page, and a stabilo covers the lower part of the title, slightly
-         tilted and stopping short like a real marker pass, drawn in once */
+      /* header halaman (contacts, new contact): baju peep memudar ke halaman,
+         dan stabilo menutupi bagian bawah judul. Stabilo sedikit miring dan
+         berhenti sebelum ujung seperti coretan marker asli, dengan animasi
+         yang diputar sekali */
       .header {
         margin-bottom: 0.5rem;
       }
@@ -135,8 +138,8 @@
         stroke-width: 1.8;
       }
 
-      /* page to page: the old page fades out quickly, the new one fades in.
-         No movement, so the fixed floating buttons stay put. */
+      /* perpindahan halaman: halaman lama cepat memudar, lalu halaman baru
+         muncul perlahan. Tanpa gerakan, agar tombol melayang tetap di tempat. */
       ::view-transition-old(root) {
         animation: page-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
       }
@@ -164,8 +167,8 @@
         }
       }
 
-      /* phones: the toast a size down. Outside the Tailwind layers so it
-         wins over the utility classes on the toast itself */
+      /* di ponsel, toast dibuat satu ukuran lebih kecil. Ditulis di luar layer
+         Tailwind agar menang atas utility class pada toast */
       @media (max-width: 639px) {
         .toast {
           right: 0.75rem;
@@ -211,13 +214,13 @@
         --font-hand: "Caveat", "Nunito", cursive;
         --font-comic: "Comic Neue", "Comic Sans MS", "Nunito", cursive;
 
-        /* shared motion: one soft settle curve, no overshoot */
+        /* kurva gerak bersama: berhenti dengan lembut, tanpa overshoot */
         --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
-        /* even ease-in-out for hover poses: starts and lands gently, no snap */
+        /* ease-in-out yang seimbang untuk efek hover: mulai dan berhenti dengan lembut */
         --ease-smooth: cubic-bezier(0.45, 0, 0.25, 1);
       }
 
-      /* Clean line-art frames: one thin even stroke, softly rounded */
+      /* Bingkai line-art yang bersih: satu garis tipis yang rata, sudut membulat */
       @utility sketch {
         border: 1.5px solid var(--color-line);
         border-radius: 1rem;
@@ -243,7 +246,7 @@
         body {
           color: var(--color-ink);
           background-color: var(--color-paper);
-          /* faint dot grid, like a sketchbook page */
+          /* grid titik samar, seperti halaman buku sketsa */
           background-image: radial-gradient(
             circle at 1px 1px,
             rgba(48, 51, 47, 0.06) 1px,
@@ -363,9 +366,9 @@
           border-color: var(--color-primary-hover);
         }
 
-        /* busy ("Saving…", "Locking…"): its own colors, faded. The grey of
-           a plain disabled button is also its text color, so on this fill
-           the label faded out with it */
+        /* saat sibuk ("Saving…", "Locking…"), tombol memakai warnanya sendiri
+           yang dipudarkan. Abu-abu tombol disabled biasa juga menjadi warna
+           teks, sehingga label tidak terbaca di atas warna isi ini */
         .doodle-btn-ink:disabled {
           color: var(--color-on-primary);
           opacity: 0.7;
@@ -437,7 +440,7 @@
           border-radius: 999px;
         }
 
-        /* one gentle pen squiggle instead of a flat <hr> */
+        /* garis pena bergelombang sebagai pengganti <hr> yang datar */
         .doodle-divider {
           height: 8px;
           background-repeat: repeat-x;
@@ -450,7 +453,7 @@
           font-size: 0.9rem;
         }
 
-        /* round pastel badge that holds an icon */
+        /* badge bulat pastel berisi ikon */
         .doodle-icon {
           display: inline-flex;
           flex-shrink: 0;
@@ -463,7 +466,7 @@
           border-radius: 999px;
         }
 
-        /* fixed backdrop layer behind every page */
+        /* layer latar fixed di belakang setiap halaman */
         body > .bg-doodles {
           position: fixed;
           inset: 0;
@@ -498,14 +501,14 @@
           vertical-align: -0.125em;
         }
 
-        /* icons on the round floating buttons: a bit larger, heavier pen */
+        /* ikon di tombol bulat melayang: sedikit lebih besar dan lebih tebal */
         .fab-icon {
           width: 1.2em;
           height: 1.2em;
           stroke-width: 2.3;
         }
 
-        /* Every popup shares one backdrop + box animation */
+        /* Semua popup memakai animasi backdrop dan box yang sama */
         .doodle-modal {
           position: fixed;
           inset: 0;
@@ -538,8 +541,8 @@
           transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        /* none rather than scale(1): a transform left on the box over the
-           blurred backdrop makes hover effects inside it flicker */
+        /* memakai none, bukan scale(1), karena transform yang tersisa pada box
+           di atas backdrop blur membuat efek hover di dalamnya berkedip */
         .doodle-modal.is-open > * {
           transform: none;
         }
@@ -557,9 +560,9 @@
           transform: translateY(0);
         }
 
-        /* content fades in on every navigation. Opacity only: a transform here
-           would make fixed children (the floating buttons) position against
-           this wrapper instead of the viewport, so they'd jump when it ends. */
+        /* konten muncul perlahan setiap navigasi. Hanya memakai opacity, karena
+           transform di sini membuat elemen fixed (tombol melayang) diposisikan
+           terhadap wrapper ini, bukan viewport, sehingga melompat saat selesai. */
         .page-enter {
           animation: page-fade 0.4s var(--ease-soft) backwards;
         }
@@ -570,10 +573,10 @@
           }
         }
 
-        /* rows and cards follow one another instead of all at once */
+        /* baris dan card muncul bergantian, tidak sekaligus */
         [data-stagger] {
           animation: doodle-rise 0.5s var(--ease-soft) backwards;
-          /* capped so long lists (View all) do not keep cards waiting */
+          /* dibatasi agar list panjang (View all) tidak membuat card menunggu lama */
           animation-delay: calc(min(var(--i, 0), 12) * 35ms);
         }
 
@@ -640,9 +643,9 @@
       showToast("toast-success");
       showToast("toast-error");
 
-      // Shared popup behaviour: every .doodle-modal fades its backdrop and
-      // springs its box, closes on the backdrop or Escape, and holds the page
-      // still while it is open
+      // Perilaku popup bersama: setiap .doodle-modal memunculkan backdrop dan
+      // box dengan animasi, tertutup saat backdrop diklik atau Escape ditekan,
+      // dan halaman tidak bisa di-scroll selama popup terbuka
       function openModal(el) {
         if (!el) return;
         el.classList.add("is-open");

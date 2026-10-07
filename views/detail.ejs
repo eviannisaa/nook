@@ -1,14 +1,14 @@
 <%
   const initials = (name) =>
     (name || "").trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-  // digits (and a leading +) only, for the tel: link
+  // hanya angka dan tanda + yang dipakai untuk link tel:
   const telHref = "tel:" + String(contact.phone || "").replace(/[^\d+]/g, "");
 %>
 <%- include("partials/detail-styles") %>
 <%- include("partials/actions-menu-styles") %>
 <style>
-  /* contact detail: same language as /contacts and /contact/new — the
-     phone number is the focal point, with call + copy beside it */
+  /* detail kontak: gaya tampilannya sama dengan /contacts dan /contact/new.
+     Nomor telepon menjadi fokus utama, dengan tombol call + copy di sampingnya */
   .detail-phone {
     position: relative;
     display: flex;
@@ -63,7 +63,7 @@
     white-space: pre-line;
   }
 
-  /* when the contact was added and last edited, quiet lines at the card's top */
+  /* waktu kontak ditambahkan dan terakhir diedit, ditampilkan samar di atas card */
   .detail-stamps {
     display: flex;
     flex-wrap: wrap;
@@ -73,7 +73,7 @@
     color: var(--color-ink-soft);
   }
 
-  /* floats under the copy button so it never adds space to the card */
+  /* melayang di bawah tombol copy agar tidak menambah ruang di card */
   .copied-note {
     position: absolute;
     top: calc(100% + 0.35rem);
@@ -111,7 +111,7 @@
 </style>
 
 <div class="detail-page mx-auto grid w-full max-w-2xl grid-cols-1 gap-6 p-6 pt-14">
-  <!-- floating back button, just above the menu button -->
+  <!-- tombol back melayang, tepat di atas tombol menu -->
   <a
     href="/contacts"
     aria-label="Back to contacts"
@@ -147,9 +147,9 @@
     </div>
     </div>
 
-    <!-- the contact's actions, on the same line as the name
-         (space-between), as on a note: edit · delete (or, when it's
-         shared with this account, taking it off this account) -->
+    <!-- aksi kontak, sebaris dengan nama (space-between) seperti di catatan:
+         edit · share · delete (atau, jika kontak dibagikan ke akun ini,
+         menghapusnya dari list akun ini saja) -->
     <div class="detail-actions">
       <div class="actions-menu">
         <button type="button" class="header-link actions-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="contact-actions-menu">
@@ -190,8 +190,8 @@
   <!-- card -->
   <div class="detail-card grid grid-cols-1 gap-6 p-6 sm:p-8" data-stagger style="--i: 1">
     <%
-      // a contact saved before timestamps were kept: its id still holds when
-      // it was made; edited only once saved again after that
+      // kontak yang disimpan sebelum ada timestamps: waktu dibuat diambil dari
+      // id-nya, dan baru dianggap diedit jika disimpan lagi setelahnya
       const created = contact.createdAt || contact._id.getTimestamp();
       const edited =
         contact.updatedAt && contact.updatedAt - created > 1000 ? contact.updatedAt : null;
@@ -268,7 +268,7 @@
   <% if (access === "owner") { %>
   <%- include("partials/share-modal", { base: "/contact/" + contact._id, noun: "contact", shares }) %>
 
-  <!-- delete confirmation -->
+  <!-- konfirmasi delete -->
   <div id="delete-modal" class="doodle-modal">
     <div class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title">
       <h2 id="delete-title" class="mb-1 text-2xl">Delete contact?</h2>
@@ -288,7 +288,7 @@
     </div>
   </div>
   <% } else { %>
-  <!-- shared with this account: taken off it only, the owner keeps it -->
+  <!-- kontak yang dibagikan ke akun ini hanya dihapus dari akun ini; pemiliknya tetap menyimpannya -->
   <div id="delete-modal" class="doodle-modal">
     <div class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title">
       <h2 id="delete-title" class="mb-1 text-2xl">Remove contact?</h2>
@@ -322,14 +322,14 @@
     closeModal(modal);
   }
 
-  // copy the phone number, with a short "Copied" note
+  // copy nomor telepon, lalu tampilkan pesan singkat "Copied"
   (function () {
     const btn = document.getElementById("copy-phone");
     const note = document.getElementById("copied-note");
     const number = document.getElementById("phone-num").textContent.trim();
     let timer = null;
     btn.addEventListener("click", async () => {
-      // modern clipboard first, then the classic select + copy fallback
+      // coba Clipboard API modern dulu, lalu fallback select + copy cara lama
       let ok = false;
       try {
         await navigator.clipboard.writeText(number);

@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
-// Satu tanda di satu tanggal, misalnya tanda "Gym" di 22 September.
-// Tanggalnya disimpan sebagai teks biasa ("2026-09-22"), bukan sebagai
-// tanggal plus jam. Jadi tanggalnya tidak bisa maju atau mundur sehari
-// karena beda zona waktu. Tanggal yang dipakai adalah tanggal di Jakarta.
+// Satu tanda pada satu tanggal, misalnya tanda "Gym" pada 22 September.
+// Tanggal disimpan sebagai teks ("2026-09-22"), bukan Date yang memiliki
+// jam, sehingga tidak bergeser sehari karena perbedaan zona waktu.
+// Tanggal yang dipakai mengikuti zona waktu Jakarta.
 const schema = new mongoose.Schema(
   {
-    // akun pemiliknya (sama dengan pemilik marker-nya)
+    // akun pemilik (sama dengan pemilik marker)
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

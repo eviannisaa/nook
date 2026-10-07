@@ -1,11 +1,11 @@
 <script>
-  // Actions menu: opens under its button; closes after a pick, a click
-  // elsewhere or Esc (focus back on the button); arrow keys move through
-  // its items
+  // Menu Actions: terbuka di bawah tombolnya, lalu tertutup setelah item
+  // dipilih, klik di luar menu, atau Esc (focus kembali ke tombol). Tombol
+  // panah berpindah antar-item
   document.querySelectorAll(".actions-menu").forEach((wrap) => {
     const btn = wrap.querySelector(".actions-menu-btn");
     const allItems = [...wrap.querySelectorAll('[role="menuitem"]')];
-    // a page may hide an item for now (a locked note's PDF until it's opened)
+    // Halaman bisa menyembunyikan item sementara (PDF catatan terkunci sampai catatan dibuka)
     const shown = () => allItems.filter((item) => !item.hidden);
 
     function setOpen(open, focusFirst) {

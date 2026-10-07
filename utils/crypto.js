@@ -1,18 +1,18 @@
 const crypto = require("crypto");
 
-// Sekarang catatan dikunci di browser (lihat public/js/note-crypto.js).
-// Server tidak pernah tahu key catatan atau isinya. Server cuma menyimpan
-// hasilnya. Kode di file ini cuma untuk catatan lama yang dulu dikunci di
-// server. Catatan lama itu dibuka sekali, lalu dikunci lagi di browser
+// Catatan sekarang di-encrypt di browser (lihat public/js/note-crypto.js),
+// sehingga server tidak mengetahui key maupun isi catatan dan hanya menyimpan
+// hasilnya. Kode di file ini hanya untuk catatan lama yang dulu di-encrypt di
+// server. Catatan lama di-decrypt sekali di sini, lalu di-encrypt ulang di browser
 const ALGORITHM = "aes-256-gcm";
 const KEY_LENGTH = 32;
 
 const deriveKey = (key, salt) => crypto.scryptSync(key, salt, KEY_LENGTH);
 
-// cek apakah ini catatan lama yang dikunci di server (tanpa encVersion)
+// mengecek apakah catatan di-encrypt dengan cara lama di server (tanpa encVersion)
 const isLegacyLock = (writing) => Boolean(writing?.isEncrypted && !writing.encVersion);
 
-// Membuka catatan lama. Error kalau key-nya salah
+// Decrypt catatan lama. Melempar error jika key salah
 const decryptText = (writing, key) => {
   const decipher = crypto.createDecipheriv(
     ALGORITHM,
@@ -30,17 +30,17 @@ const decryptText = (writing, key) => {
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const byteLength = (text) => Buffer.from(text, "base64").length;
 
-// Mengecek data catatan terkunci yang dikirim dari form: isi yang sudah
-// dikunci, salt dan iv (nilai acak untuk mengunci). Hasilnya data yang
-// siap disimpan, atau null kalau datanya tidak sesuai
+// Mengecek data catatan terkunci yang dikirim dari form, yaitu isi yang
+// sudah di-encrypt, salt, dan iv. Mengembalikan data yang siap disimpan,
+// atau null jika formatnya tidak valid
 const readCipher = (fields, maxLength) => {
   const { content, salt, iv } = fields || {};
   if (![content, salt, iv].every((v) => typeof v === "string" && BASE64.test(v))) {
     return null;
   }
   if (byteLength(salt) !== 16 || byteLength(iv) !== 12) return null;
-  // isinya tidak boleh terlalu pendek, dan tidak boleh lebih besar dari
-  // catatan terbesar yang diizinkan
+  // isi tidak boleh terlalu pendek dan tidak boleh melebihi ukuran
+  // maksimum catatan
   if (byteLength(content) <= 16 || content.length > maxLength) return null;
 
   return { content, salt, iv, encVersion: 2, isEncrypted: true };

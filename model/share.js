@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
-// Orang yang diberi akses ke kontak atau catatan, dan boleh mengedit atau
-// tidak. Cuma pemiliknya yang boleh menghapus atau membagikan lagi
+// User yang diberi akses ke kontak atau catatan, beserta izin edit-nya.
+// Hanya pemilik yang boleh menghapus atau membagikannya lagi
 module.exports = new mongoose.Schema(
   {
     user: {

@@ -1,14 +1,14 @@
-<%# detail pages (contact and note): paper page, a hero with a round badge,
-    the title under a stabilo and a caption line, one wobbly card with
-    labelled rows, quiet buttons, floating back / edit and the delete
-    dialog. The page's own bits (the phone line, the note body) sit in its
-    own view %>
+<%# halaman detail (kontak dan catatan): halaman kertas, hero dengan badge
+    bulat, judul dengan stabilo dan baris keterangan, satu card bergelombang
+    berisi baris berlabel, tombol sederhana, tombol back melayang, dan dialog
+    delete. Bagian khusus tiap halaman (baris telepon, isi catatan) ada di
+    view masing-masing %>
 <style>
   .detail-page {
     padding-bottom: 7rem;
   }
 
-  /* hero row: badge + title on the left, actions on the right */
+  /* baris hero: badge + judul di kiri, aksi di kanan */
   .detail-hero {
     display: flex;
     flex-wrap: wrap;
@@ -42,8 +42,8 @@
     box-shadow: 5px 4px 0 -1px color-mix(in srgb, var(--color-marker) 45%, transparent);
   }
 
-  /* wrapper: carries the fade into the page at the bottom (like the peep on
-     /contacts), with room so the marker offset isn't clipped */
+  /* wrapper: memberi efek memudar ke halaman di bagian bawah (seperti peep di
+     /contacts), dengan ruang tambahan agar offset marker tidak terpotong */
   .detail-avatar-wrap {
     position: relative;
     display: inline-flex;
@@ -73,7 +73,7 @@
     color: var(--color-ink-soft);
   }
 
-  /* on something shared with you: whose it is and what you may do */
+  /* pada data yang dibagikan ke user: siapa pemiliknya dan akses yang dimiliki */
   .detail-shared {
     display: inline-flex;
     align-items: center;
@@ -88,7 +88,7 @@
     border-radius: 999px;
   }
 
-  /* the card: wobbly capsule corners, pale line, a second pencil pass */
+  /* card: sudut kapsul bergelombang, garis pucat, dan goresan pensil kedua */
   .detail-card {
     position: relative;
     background-color: var(--color-card);
@@ -116,7 +116,7 @@
     color: var(--color-ink-soft);
   }
 
-  /* quiet pill buttons: paper fill, pale line (like the search / switch) */
+  /* tombol pill sederhana: isi warna kertas, garis pucat (seperti search / switch) */
   .quiet-btn {
     display: inline-flex;
     align-items: center;
@@ -165,7 +165,7 @@
     );
   }
 
-  /* info rows: small pastel icon, Comic label, value */
+  /* baris info: ikon pastel kecil, label Comic, lalu nilainya */
   .detail-rows {
     display: grid;
     grid-template-columns: 1fr;
@@ -220,7 +220,7 @@
     color: color-mix(in srgb, var(--color-ink-soft) 70%, transparent);
   }
 
-  /* the header's actions: the Actions menu, on the name's line */
+  /* aksi di header: menu Actions, sebaris dengan nama */
   .detail-actions {
     display: flex;
     flex-shrink: 0;
@@ -248,22 +248,22 @@
     outline: none;
   }
 
-  /* in the delete popup, Cancel at the small button's size beside Yes */
+  /* di popup delete, tombol Cancel seukuran tombol kecil di samping Yes */
   .delete-dialog .delete-link {
     padding: 0.3rem 0.8rem;
     font-size: 0.85rem;
   }
 
-  /* floating back, just above the menu (edit is in the Actions menu) */
-  /* a tab on the right edge, like the menu under it: round on its left,
-     flat where it meets the screen's edge */
+  /* tombol back melayang, tepat di atas menu (edit ada di menu Actions) */
+  /* tab di tepi kanan seperti menu di bawahnya: bulat di sisi kiri, rata
+     di sisi yang menempel ke tepi layar */
   .fab-back,
   .fab-back:hover,
   .fab-back:focus-visible,
   .fab-back:active {
     border-right-width: 0;
-    /* stays a tab when pointed at or pressed (the shared round buttons
-       change to another wobbly circle then) */
+    /* tetap berbentuk tab saat di-hover atau ditekan (tombol bulat lainnya
+       berubah menjadi lingkaran bergelombang dengan bentuk lain) */
     border-radius: 999px 0 0 999px;
   }
 
@@ -275,7 +275,7 @@
     font-size: 1.05rem;
   }
 
-  /* delete confirmation dialog, same frame as the card */
+  /* dialog konfirmasi delete, dengan bingkai yang sama seperti card */
   .delete-dialog {
     position: relative;
     width: min(22rem, calc(100vw - 2rem));
@@ -294,22 +294,22 @@
   }
 
   @media (max-width: 639px) {
-    /* the same wider gutters as the contacts and writing pages */
+    /* gutter lebar yang sama dengan halaman contacts dan writing */
     .detail-page {
       padding-right: 2.5rem;
       padding-left: 2.5rem;
       padding-bottom: 6rem;
     }
 
-    /* the card sits close under the title, as the list does on the
-       contacts page */
+    /* card diletakkan rapat di bawah judul, seperti list di halaman
+       contacts */
     .detail-card {
       margin-top: -0.6rem;
     }
 
-    /* the avatar on a row of its own, then the name with Actions beside
-       it on the name's first line (the name gives way, wrapping, before
-       Actions would drop under it) */
+    /* avatar berada di barisnya sendiri, lalu nama dengan Actions di
+       sampingnya pada baris pertama nama (nama di-wrap lebih dulu agar
+       Actions tidak turun ke bawahnya) */
     .detail-hero {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -332,7 +332,7 @@
       grid-column: 2;
     }
 
-    /* every bit of text a step smaller, as on the contacts list */
+    /* semua teks dibuat satu ukuran lebih kecil, seperti di list contacts */
     .detail-name {
       font-size: 1.25rem;
     }
@@ -359,8 +359,8 @@
       font-size: 0.95rem;
     }
 
-    /* the delete dialog with it, as wide as the page's content inside its
-       2.5rem gutters */
+    /* dialog delete ikut menyesuaikan, selebar konten halaman di dalam
+       gutter 2.5rem */
     .delete-dialog {
       width: calc(100vw - 5rem);
       padding: 1.4rem;

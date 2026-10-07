@@ -1,5 +1,5 @@
 <%
-  // re-rendered after a failed validation: keep what was typed, show why
+  // Jika validation gagal, halaman dirender ulang dengan isian sebelumnya dan pesan error-nya
   const values = typeof writing !== "undefined" && writing ? writing : {};
   const errorList = typeof errors !== "undefined" && errors ? errors : [];
   const fieldError = (field) => {
@@ -11,7 +11,7 @@
 <%- include("partials/note-form-styles") %>
 
 <div class="form-page mx-auto grid w-full max-w-2xl grid-cols-1 gap-6 p-6 pt-14">
-  <!-- floating back button, stacked above the menu button -->
+  <!-- Tombol kembali yang mengambang, tepat di atas tombol menu -->
   <a
     href="/writing"
     aria-label="Back to writing"
@@ -21,7 +21,7 @@
     <%- include("partials/doodle-icon", { name: "arrow-left", cls: "fab-icon" }) %>
   </a>
 
-  <!-- header, same pattern as the writing page -->
+  <!-- Header, polanya sama dengan halaman writing -->
   <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
     <div class="flex items-end gap-4">
       <div class="pb-1">
@@ -48,7 +48,7 @@
     novalidate
   >
     <% if (values.date) { %>
-    <!-- carried over from the date clicked on the calendar -->
+    <!-- Tanggal yang diklik di kalender, dibawa ke catatan baru -->
     <input type="hidden" name="date" value="<%= values.date %>" />
     <% } %>
 
@@ -73,8 +73,8 @@
           <div id="key-field" class="field" hidden>
             <label for="key" class="field-label"><span>Key</span><span class="req" aria-hidden="true"></span></label>
             <div class="key-wrap">
-              <!-- no name: the key stays in the browser, only the locked note
-                   is sent -->
+              <!-- Tanpa name: kunci tetap di browser, yang dikirim hanya catatan
+                   yang sudah dikunci -->
               <input type="password" id="key" placeholder="Enter the encryption key" autocomplete="off" class="doodle-input field-input" />
               <button type="button" id="toggle-key" class="key-toggle" aria-label="Show key">
                 <i id="toggle-key-icon" class="bi bi-eye"></i>
@@ -87,7 +87,7 @@
       </div>
     </div>
 
-    <!-- a locked note's salt and iv, beside its ciphertext in content -->
+    <!-- Salt dan iv catatan terkunci; ciphertext-nya ada di content -->
     <input type="hidden" name="salt" id="note-salt" />
     <input type="hidden" name="iv" id="note-iv" />
 
@@ -163,7 +163,7 @@
     submitBtn.classList.add("opacity-70", "cursor-wait");
     submitBtn.textContent = "Saving…";
 
-    // the note leaves the browser locked: content becomes its ciphertext
+    // Catatan sudah dikunci sebelum keluar dari browser: content diganti ciphertext-nya
     if (locking) {
       const content = document.getElementById("content");
       const locked = await noteCrypto.encrypt(content.value, keyInput.value);
