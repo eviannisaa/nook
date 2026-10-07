@@ -1,7 +1,7 @@
-<%# shared by new-contact and edit-contact %>
+<%# Dipakai bersama oleh new-contact dan edit-contact %>
 <style>
-  /* wobbly capsule corners like the contact cards, with the same pale pen
-     line as the quiet controls on /contacts (search, list/card switch) */
+  /* Sudut kapsul bergelombang seperti kartu kontak, dengan garis pena pucat
+     yang sama seperti kontrol kalem di /contacts (search, tombol list/card) */
   .form-card {
     position: relative;
     background-color: var(--color-card);
@@ -12,8 +12,8 @@
       0 4px 12px -8px rgba(0, 0, 0, 0.18);
   }
 
-  /* second, lighter pencil pass around the card, a touch off the main line,
-     like the card on the home page */
+  /* Goresan pensil kedua yang lebih tipis di sekeliling kartu, sedikit
+     bergeser dari garis utama, seperti kartu di halaman home */
   .form-card::after {
     content: "";
     position: absolute;
@@ -24,8 +24,9 @@
     pointer-events: none;
   }
 
-  /* avatar picker: the avatar itself is the button; a small camera badge
-     says "tap to change". Same pastel + marker-offset look as the cards. */
+  /* Pemilih avatar: avatar itu sendiri adalah tombolnya, dan badge kamera
+     kecil menandakan foto bisa diganti. Warna pastel dan bayangan marker-nya
+     sama seperti kartu. */
   .avatar-pick {
     position: relative;
     display: inline-flex;
@@ -100,7 +101,7 @@
     color: var(--color-berry);
   }
 
-  /* fields: Comic Neue labels */
+  /* Field: label memakai Comic Neue */
   .field {
     display: flex;
     flex-direction: column;
@@ -124,8 +125,8 @@
     border-radius: 999px;
   }
 
-  /* inputs outlined exactly like the search box on /contacts: quiet paper
-     fill and a pale pen line, firming up on hover and focus */
+  /* Input dibuat sama persis dengan kotak search di /contacts: latar kertas
+     yang lembut dan garis pena pucat, yang makin tegas saat hover dan focus */
   .field-input,
   .field-input:hover,
   .field-input:focus {
@@ -168,7 +169,7 @@
     color: var(--color-berry);
   }
 
-  /* phone is the field the list leads with, so it gets the stabilo accent */
+  /* Phone adalah field utama di list kontak, jadi labelnya diberi aksen stabilo */
   .field-phone .field-label span:first-child {
     position: relative;
     isolation: isolate;
@@ -219,17 +220,17 @@
     padding-bottom: 7rem;
   }
 
-  /* back button: same 2.5rem as the menu, on its vertical line, above it
-     (menu: bottom 1.5rem, 2.5rem tall, plus a 1.1rem gap) */
-  /* a tab on the right edge, like the menu under it: round on its left,
-     flat where it meets the screen's edge */
+  /* Tombol kembali: 2.5rem seperti menu, segaris vertikal dan tepat di atasnya
+     (menu: bottom 1.5rem, tinggi 2.5rem, ditambah jarak 1.1rem) */
+  /* Berbentuk tab di tepi kanan seperti menu di bawahnya: bulat di sisi kiri,
+     rata di sisi yang menempel ke tepi layar */
   .fab-back,
   .fab-back:hover,
   .fab-back:focus-visible,
   .fab-back:active {
     border-right-width: 0;
-    /* stays a tab when pointed at or pressed (the shared round buttons
-       change to another wobbly circle then) */
+    /* Tetap berbentuk tab saat di-hover atau ditekan (tombol bulat bawaan
+       berubah ke lingkaran bergelombang lain pada kondisi itu) */
     border-radius: 999px 0 0 999px;
   }
 
@@ -241,8 +242,8 @@
     font-size: 1.05rem;
   }
 
-  /* tablets: equal side gutters that clear the floating buttons, as on the
-     contacts page */
+  /* Tablet: gutter kiri dan kanan sama lebar dan tidak tertutup tombol yang
+     mengambang, seperti di halaman contacts */
   @media (min-width: 640px) and (max-width: 959px) {
     .form-page {
       padding-right: 5.25rem;
@@ -250,11 +251,11 @@
     }
   }
 
-  /* phones: smaller buttons hugging the edge (menu at bottom 1rem, 2.25rem);
-     the page title and its line a size down and every bit of form text a
-     step smaller with it; spacing as on the writing calendar: the same
-     wider gutters, the card close under the title, and its padding and
-     gaps pulled in to match */
+  /* Ponsel: tombol lebih kecil dan menempel ke tepi (menu di bottom 0.75rem,
+     ukuran 1.75rem). Judul halaman dan teks di bawahnya turun satu ukuran,
+     begitu juga semua teks form. Jarak mengikuti kalender writing: gutter
+     yang sama lebarnya, kartu dekat di bawah judul, serta padding dan gap
+     yang ikut dirapatkan */
   @media (max-width: 639px) {
     .header .header-title {
       font-size: 1.75rem;

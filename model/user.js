@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
-// Satu akun untuk satu orang. Semua yang dibuat akun ini cuma bisa dibuka
+// Satu akun untuk satu orang. Semua data milik akun ini hanya bisa dibuka
 // pemiliknya, kecuali dibagikan (lihat shares di Contact dan Writing)
 const User = mongoose.model(
   "User",
   new mongoose.Schema(
     {
-      // disimpan dalam huruf kecil, jadi "Ani" dan "ani" itu akun yang sama
+      // disimpan dalam huruf kecil, sehingga "Ani" dan "ani" dianggap akun yang sama
       username: {
         type: String,
         required: true,
@@ -15,7 +15,7 @@ const User = mongoose.model(
         trim: true,
         match: /^[a-z0-9_.]{3,24}$/,
       },
-      // password yang sudah diacak, bukan password aslinya. Caranya ada di
+      // hash password, bukan password aslinya. Cara pembuatannya ada di
       // utils/password.js
       passwordHash: {
         type: String,

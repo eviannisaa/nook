@@ -5,7 +5,7 @@ const Contact = mongoose.model(
   "Contact",
   new mongoose.Schema(
     {
-      // akun pemiliknya
+      // akun pemilik
       owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

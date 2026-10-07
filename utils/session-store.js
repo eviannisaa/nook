@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 const session = require("express-session");
 
-// Session disimpan di MongoDB, jadi kalau app di-restart, orang tidak
-// ter-logout. Session yang sudah habis waktunya dihapus otomatis oleh Mongo
+// Session disimpan di MongoDB, sehingga user tidak ter-logout saat aplikasi
+// di-restart. Session yang sudah expired dihapus otomatis oleh Mongo
 const Session = mongoose.model(
   "Session",
   new mongoose.Schema({

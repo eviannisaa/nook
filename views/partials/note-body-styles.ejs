@@ -1,8 +1,8 @@
-<%# how a written note reads: on the detail page and inside the editor, so
-    what you type looks the way it will be shown %>
+<%# Tampilan isi catatan di halaman detail dan di dalam editor, jadi teks
+    yang diketik terlihat sama seperti saat ditampilkan nanti %>
 <style>
-  /* written in the comic hand, like the headings and the rest of the
-     page's handwriting */
+  /* Memakai huruf bergaya komik, sama seperti heading dan tulisan tangan
+     lain di halaman */
   .note-body,
   .note-editor .ql-editor {
     font-family: var(--font-comic);
@@ -17,7 +17,7 @@
     margin: 0;
   }
 
-  /* an empty line in the editor stays an empty line when shown */
+  /* Baris kosong di editor tetap tampil sebagai baris kosong */
   .note-body p:empty {
     min-height: 1.7em;
   }
@@ -53,7 +53,7 @@
     border-left: 3px solid color-mix(in srgb, var(--color-marker) 55%, transparent);
   }
 
-  /* the editor draws its own list markers; the shown note uses real lists */
+  /* Editor menggambar penanda list sendiri; catatan yang ditampilkan memakai list asli */
   .note-body ul,
   .note-body ol {
     margin: 0.2em 0;
@@ -68,8 +68,8 @@
     list-style: decimal;
   }
 
-  /* checklist: a round pen-drawn box; ticked ones fill sage with a white
-     tick and their text is crossed off */
+  /* Checklist: kotak bulat bergaya goresan pena. Yang dicentang berwarna
+     sage dengan centang putih, dan teksnya dicoret */
   .note-body li[data-list="checked"],
   .note-body li[data-list="unchecked"] {
     position: relative;
@@ -116,7 +116,7 @@
     text-decoration-color: color-mix(in srgb, var(--color-ink-soft) 70%, transparent);
   }
 
-  /* the editor's round box sits where its list markers go */
+  /* Kotak bulat di editor menempati posisi penanda list */
   .note-editor .ql-editor li[data-list="checked"] > .ql-ui,
   .note-editor .ql-editor li[data-list="unchecked"] > .ql-ui {
     cursor: pointer;
@@ -127,7 +127,7 @@
     vertical-align: -0.2em;
   }
 
-  /* alignment picked in the editor; a picture follows its line */
+  /* Perataan teks yang dipilih di editor; gambar ikut perataan barisnya */
   .note-body .ql-align-center,
   .note-editor .ql-editor .ql-align-center {
     text-align: center;
@@ -149,16 +149,16 @@
     margin-left: auto;
   }
 
-  /* lined paper: every block (paragraph, heading, list, quote) draws its
-     own rules, one per line at its own line height, so the rules always
-     sit under the text, headings included. Each rule lands a breath under
-     the foot of the letters: the text (1.15em tall in Comic Neue) is
-     centred in its line, so its foot is at (1lh + 1.15em) / 2; in a tight
-     line (a heading) the rule stops at the bottom of the line */
+  /* Kertas bergaris: setiap blok (paragraf, heading, list, kutipan)
+     menggambar garisnya sendiri, satu garis per baris sesuai line height-nya,
+     jadi garis selalu berada di bawah teks, termasuk heading. Garis diletakkan
+     sedikit di bawah kaki huruf: teks (tinggi 1.15em di Comic Neue) berada di
+     tengah barisnya, jadi kakinya ada di (1lh + 1.15em) / 2. Pada baris yang
+     rapat (heading), garis berhenti di dasar baris */
   .note-body.is-lined > *,
   .note-editor.is-lined .ql-editor > *,
   .note-editor.is-lined .ql-editor::after {
-    /* the rules' ink; a page can set its own (the note detail does) */
+    /* Warna garis; halaman bisa mengatur warnanya sendiri (seperti di detail catatan) */
     --rule-color: var(--note-rule-color, color-mix(in srgb, var(--color-line) 75%, transparent));
     background-image: repeating-linear-gradient(
       to bottom,
@@ -171,7 +171,7 @@
     );
   }
 
-  /* a picture isn't text: no rules through or around it */
+  /* Gambar bukan teks, jadi tidak diberi garis di atas atau di sekitarnya */
   .note-body.is-lined > p:has(img),
   .note-editor.is-lined .ql-editor > p:has(img) {
     background-image: none;

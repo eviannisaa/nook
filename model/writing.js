@@ -5,7 +5,7 @@ const Writing = mongoose.model(
   "Writing",
   new mongoose.Schema(
     {
-      // akun pemiliknya
+      // akun pemilik
       owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -26,7 +26,7 @@ const Writing = mongoose.model(
         required: true,
       },
       // Teks catatan tanpa HTML dan gambar, untuk preview dan pencarian.
-      // Dihapus selama catatan terkunci, supaya isinya tidak bisa dibaca
+      // Dihapus selama catatan terkunci agar isinya tidak bisa dibaca
       text: {
         type: String,
       },
@@ -43,8 +43,8 @@ const Writing = mongoose.model(
         type: Date,
         required: true,
       },
-      // waktu terakhir catatan diedit dari halaman edit. Beda dengan
-      // updatedAt, yang ikut berubah saat catatan dikunci atau dibuka
+      // waktu terakhir catatan diubah dari halaman edit. Berbeda dengan
+      // updatedAt, yang juga berubah saat catatan dikunci atau dibuka
       editedAt: {
         type: Date,
       },
@@ -52,15 +52,15 @@ const Writing = mongoose.model(
         type: Boolean,
         default: false,
       },
-      // salt dan iv cuma ada selama catatan terkunci
+      // salt dan iv hanya ada selama catatan terkunci
       salt: {
         type: String,
       },
       iv: {
         type: String,
       },
-      // cara catatan dikunci. 2 = dikunci di browser (cara sekarang).
-      // Kosong = catatan lama yang dikunci di server, yang punya authTag
+      // cara catatan di-encrypt. 2 = di-encrypt di browser (cara sekarang).
+      // Kosong = catatan lama yang di-encrypt di server dan memiliki authTag
       // sendiri
       encVersion: {
         type: Number,

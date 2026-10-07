@@ -1,6 +1,7 @@
 <%
-  // same rule as contacts: an active search with results starts with the
-  // search box open; with no results it's tucked away (badge on the button)
+  // Aturannya sama dengan halaman kontak: search aktif yang ada hasilnya
+  // membuka kotak search sejak awal. Jika tidak ada hasil, kotak disembunyikan
+  // dan tombolnya diberi badge.
   const searchOpen = !!search && writings.length > 0;
 %>
 <%- include("partials/list-toolbar-styles") %>
@@ -10,14 +11,14 @@
     font-size: 0.75rem;
   }
 
-  /* Previous / Next carry a chevron, shown on phones in place of the word */
+  /* Previous / Next punya chevron yang menggantikan teksnya di ponsel */
   .writing-pager .pager-arrow {
     display: none;
   }
 
-  /* phones: "Showing …" on a line of its own, the buttons under it; the
-     arrows stand in for Previous / Next, the numbers are small round
-     buttons, and they wrap rather than run off the screen */
+  /* Ponsel: "Showing …" berada di baris sendiri dengan tombol di bawahnya.
+     Panah menggantikan Previous / Next, nomor halaman menjadi tombol bulat
+     kecil, dan semuanya turun ke baris baru agar tidak keluar layar */
   @media (max-width: 639px) {
     .writing-pager {
       flex-direction: column;
@@ -50,8 +51,8 @@
     }
   }
 
-  /* calendar framed like the form card on New Contact: pale pen line,
-     wobbly capsule corners and a second, lighter pencil pass around it */
+  /* Bingkai kalender sama dengan card form di New Contact: garis pena tipis,
+     sudut kapsul yang bergelombang, dan garis pensil kedua yang lebih samar */
   .calendar-card {
     position: relative;
     border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
@@ -61,8 +62,9 @@
       0 4px 12px -8px rgba(0, 0, 0, 0.18);
   }
 
-  /* prev / next month: bare hand-drawn arrows; on hover a faint marker
-     blob washes in behind them and the arrow nudges its way */
+  /* Bulan sebelumnya / berikutnya: panah gambar tangan tanpa bingkai. Saat
+     hover, muncul blob marker samar di belakangnya dan panah sedikit
+     bergeser ke arahnya */
   .month-nav {
     position: relative;
     isolation: isolate;
@@ -111,7 +113,7 @@
     transform: translateX(2px);
   }
 
-  /* today: handwritten and a touch tilted, with a stabilo pass behind it */
+  /* Today: tulisan tangan yang sedikit miring dengan stabilo di belakangnya */
   .cal-today {
     position: relative;
     isolation: isolate;
@@ -124,8 +126,8 @@
     transition: color 0.45s var(--ease-smooth);
   }
 
-  /* stabilo pass over the lower half of the word, like the page titles:
-     a little tilted, stopping short at the ends like a real marker */
+  /* Stabilo menutupi separuh bawah kata, sama seperti judul halaman: sedikit
+     miring dan berhenti sebelum ujung kata seperti coretan marker asli */
   .cal-today::before {
     content: "";
     position: absolute;
@@ -150,8 +152,8 @@
       opacity 0.45s var(--ease-smooth);
   }
 
-  /* hover on the link: same as a contact card's number, the text inks and
-     the stabilo darkens and thickens */
+  /* Hover pada link sama dengan nomor di card kontak: teks menjadi lebih
+     gelap, stabilo makin pekat dan tebal */
   a.cal-today:hover,
   a.cal-today:focus-visible {
     color: var(--color-ink);
@@ -163,8 +165,8 @@
     transform: rotate(-1.5deg) scaleY(1.7);
   }
 
-  /* already on this month: plain text in full ink (the arrows' hover
-     colour) with a full stabilo, not a link */
+  /* Jika sudah berada di bulan ini, Today tampil sebagai teks biasa (bukan
+     link) dengan warna tinta penuh seperti hover panah dan stabilo penuh */
   .cal-today.is-current {
     color: var(--color-ink);
     cursor: default;
@@ -183,11 +185,11 @@
     }
   }
 
-  /* day popup: same plain card as the other popups (key, delete) */
-  /* as wide as the calendar card (the page's 48rem column less its 1.5rem
-     side padding), so the popup lines up with the month behind it; written in
-     the comic hand throughout, only the weekday and section titles keep
-     their Caveat scrawl */
+  /* Popup hari: card polos yang sama dengan popup lain (key, delete) */
+  /* Lebarnya sama dengan card kalender (kolom halaman 48rem dikurangi padding
+     samping 1.5rem), sehingga popup sejajar dengan kalender di belakangnya.
+     Semua teks memakai font comic, kecuali nama hari dan judul section yang
+     tetap memakai Caveat */
   .day-modal-card {
     max-width: 45rem;
     gap: 1.1rem;
@@ -206,9 +208,9 @@
     margin-bottom: -0.35rem;
   }
 
-  /* popup title: its own doodle, not the page titles' stabilo. The weekday
-     is jotted small and tilted above like a margin note, and the date gets
-     a wavy crayon squiggle underneath */
+  /* Judul popup punya doodle sendiri, bukan stabilo seperti judul halaman.
+     Nama hari ditulis kecil dan miring di atas seperti catatan pinggir,
+     sedangkan tanggal diberi garis crayon bergelombang di bawahnya */
   .day-modal-title {
     display: flex;
     flex-direction: column;
@@ -262,20 +264,21 @@
     transform: rotate(8deg);
   }
 
-  /* list sits on a pen squiggle, same as the doodle divider */
+  /* List berada di atas garis pena bergelombang, sama seperti doodle divider */
   .day-modal-body {
     margin: 0 -0.5rem;
     padding: 0 0.5rem 0.35rem;
   }
 
-  /* the section head already opens the list, so the first row needs no
-     pen line of its own */
+  /* Header section sudah menjadi awal list, jadi baris pertama tidak perlu
+     garis pena sendiri */
   .day-modal-body > .day-note:first-child {
     border-top: 0;
   }
 
-  /* between notes: a straight dashed pen line drawn as a background, so it
-     doesn't curl up at the ends with the row's wobbly corners */
+  /* Pemisah antarcatatan berupa garis putus-putus lurus yang digambar
+     sebagai background, agar ujungnya tidak ikut melengkung mengikuti sudut
+     baris yang bergelombang */
   .day-modal-body .day-note + .day-note {
     border-top: 0;
     background-image: linear-gradient(
@@ -288,8 +291,8 @@
     background-repeat: repeat-x;
   }
 
-  /* search results: the popup's rows in the calendar's card, split by the
-     same straight dashed pen line */
+  /* Hasil search memakai baris yang sama dengan popup di dalam card kalender,
+     dipisahkan oleh garis putus-putus lurus yang sama */
   .search-notes {
     display: flex;
     flex-direction: column;
@@ -312,8 +315,8 @@
     background-repeat: repeat-x;
   }
 
-  /* the day sits over the time in the margin, the year (other years only)
-     a step quieter after it */
+  /* Tanggal berada di atas jam pada margin. Tahun hanya muncul untuk tahun
+     lain, dengan warna sedikit lebih samar */
   .day-note-day {
     font-size: 0.85rem;
     color: var(--color-ink);
@@ -340,19 +343,19 @@
     }
   }
 
-  /* the notes open on the same pen line that splits the other sections */
+  /* Section Notes diawali garis pena yang sama dengan pemisah section lain */
   .day-notes {
     padding-top: 1rem;
     border-top: 1.5px dashed color-mix(in srgb, var(--color-ink) 12%, var(--color-line));
-    /* when the popup runs out of room the notes give way first (their list
-       scrolls); flex-1's 0% basis reads as the content's height in a popup
-       with no set height, so without this the notes and the marks would
-       shrink side by side and squeeze Made before away */
+    /* Jika ruang popup tidak cukup, Notes mengecil lebih dulu dan list-nya
+       bisa di-scroll. Basis 0% dari flex-1 dianggap setinggi konten karena
+       popup tidak punya tinggi tetap. Tanpa aturan ini, Notes dan Marks akan
+       mengecil bersamaan sampai Made before tidak terlihat */
     flex-shrink: 1000;
     overflow: hidden;
   }
 
-  /* the Highlight menu may hang out over the marks below */
+  /* Menu Highlight boleh keluar dan menutupi Marks di bawahnya */
   .day-notes.is-menu-open {
     overflow: visible;
   }
@@ -361,8 +364,8 @@
     padding-block: 0.75rem 1rem;
   }
 
-  /* every section: a handwritten title on the left, its controls on the
-     right, then the content; sections are split by the same pen line */
+  /* Setiap section punya judul tulisan tangan di kiri, kontrol di kanan, lalu
+     isinya. Antarsection dipisahkan garis pena yang sama */
   .day-section {
     display: flex;
     flex-direction: column;
@@ -388,8 +391,8 @@
     transform-origin: left center;
   }
 
-  /* highlight dropdown: a hand-drawn trigger showing the pick, and under it
-     the same paper menu as "More options" in the note editor */
+  /* Dropdown Highlight: trigger gambar tangan yang menampilkan pilihan aktif,
+     dengan menu kertas yang sama seperti "More options" di editor catatan */
   .kind-row {
     position: relative;
   }
@@ -440,7 +443,7 @@
     border-radius: 10px;
   }
 
-  /* the pick, after the caption: just its icon */
+  /* Pilihan aktif ditampilkan setelah label, cukup ikonnya saja */
   .kind-current {
     display: inline-flex;
     color: var(--color-ink);
@@ -449,7 +452,7 @@
   .kind-current .doodle-i {
     width: 1.1rem;
     height: 1.1rem;
-    /* a fresh icon each pick, so this plays every time */
+    /* Ikon dibuat ulang setiap kali memilih, jadi animasi ini selalu berjalan */
     animation: kind-pick 0.55s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
@@ -492,14 +495,15 @@
     opacity: 0;
     transform: translateY(-6px) scale(0.95);
     transform-origin: top right;
-    /* closing: quiet, straight back up */
+    /* Saat ditutup: menu kembali naik dengan tenang */
     transition:
       opacity 0.3s ease,
       transform 0.35s var(--ease-smooth),
       visibility 0s linear 0.35s;
   }
 
-  /* opening: springs out of the trigger's corner (the popups' curve) */
+  /* Saat dibuka: menu memantul keluar dari sudut trigger (kurva yang sama
+     dengan popup) */
   .kind-row.is-open .kind-menu {
     visibility: visible;
     opacity: 1;
@@ -532,7 +536,8 @@
     transform: translateY(var(--glide-y, 0));
   }
 
-  /* first hover after the menu opens: appear in place, don't fly in */
+  /* Hover pertama setelah menu dibuka: blob langsung muncul di tempat, tidak
+     meluncur dari posisi lain */
   .kind-menu.glide-jump .kind-glide {
     transition: opacity 0.45s ease;
   }
@@ -561,7 +566,7 @@
       transform 0.3s var(--ease-smooth);
   }
 
-  /* the options follow the menu down one after another */
+  /* Opsi muncul satu per satu mengikuti menu yang turun */
   .kind-row.is-open .kind-option {
     opacity: 1;
     transform: none;
@@ -575,12 +580,12 @@
     width: 1.1rem;
     height: 1.1rem;
     flex-shrink: 0;
-    /* leaving: settles back slowly, no bounce */
+    /* Saat pointer keluar: ikon kembali pelan tanpa memantul */
     transition: transform 0.7s var(--ease-smooth);
   }
 
-  /* hovered: the icon leans in a touch, a beat after the glide arrives,
-     on a long soft ease-out instead of a quick spring */
+  /* Saat hover, ikon sedikit miring tepat setelah blob tiba, dengan ease-out
+     yang panjang dan lembut, bukan pantulan cepat */
   .kind-option:hover .doodle-i,
   .kind-option:focus-visible .doodle-i {
     transform: translateX(2px) rotate(-5deg);
@@ -592,14 +597,14 @@
     color: var(--color-ink);
   }
 
-  /* keyboard focus rides the same glide, so no ring is needed */
+  /* Focus keyboard memakai blob yang sama, jadi tidak perlu ring */
   .kind-option:focus-visible {
     color: var(--color-ink);
     outline: none;
   }
 
-  /* stabilo over the message text (not the title) of the notes picked in the dropdown;
-     drawn as a background on the inline text so it follows every line */
+  /* Stabilo pada isi catatan (bukan judulnya) sesuai pilihan di dropdown.
+     Digambar sebagai background teks inline agar mengikuti setiap baris */
   .day-note-ink {
     background-image: linear-gradient(
       100deg,
@@ -641,8 +646,8 @@
     }
   }
 
-  /* one row per note: time in the margin like a journal, then the note;
-     no cards, rows split by a faint pen line */
+  /* Satu baris untuk tiap catatan: jam di margin seperti jurnal, lalu isi
+     catatan. Tanpa card, antarbaris dipisahkan garis pena samar */
   .day-note {
     position: relative;
     isolation: isolate;
@@ -659,7 +664,7 @@
   }
 
 
-  /* left margin, like a journal: the time, so the title line stays clean */
+  /* Jam ditaruh di margin kiri seperti jurnal agar baris judul tetap bersih */
   .day-note-meta {
     display: flex;
     min-width: 0;
@@ -688,14 +693,15 @@
     font-size: 1.05rem;
     font-weight: 700;
     line-height: 1.35;
-    /* a step softer than full ink, so the list reads calm */
+    /* Sedikit lebih samar dari tinta penuh agar list terasa tenang */
     color: color-mix(in srgb, var(--color-ink) 78%, var(--color-card));
     transition: color 0.45s var(--ease-smooth);
   }
 
-  /* tags under the time in the margin: a locked note, and a note someone
-     shared with this account (who it's from, in the same mint pill as on
-     the note's own page; a long name is cut short, the title says it whole) */
+  /* Label di bawah jam pada margin: penanda catatan terkunci dan catatan
+     yang dibagikan ke akun ini. Label share memakai pill mint yang sama
+     dengan halaman catatan; nama yang panjang dipotong, nama lengkapnya ada
+     di title */
   .day-note-locked,
   .day-note-shared {
     display: inline-flex;
@@ -711,7 +717,8 @@
     border-radius: 999px;
   }
 
-  /* locked: the terracotta the padlock always had */
+  /* Catatan terkunci memakai warna terracotta yang sejak awal dipakai ikon
+     gembok */
   .day-note-locked {
     color: var(--color-berry);
     background-color: color-mix(in srgb, var(--color-blush) 70%, var(--color-card));
@@ -729,8 +736,8 @@
     white-space: nowrap;
   }
 
-  /* locked notes are buttons (they open the key popup), so reset the
-     button look to match the link rows */
+  /* Catatan terkunci berupa button (membuka popup key), jadi tampilan
+     default button di-reset agar sama dengan baris link */
   button.day-note {
     width: 100%;
     cursor: pointer;
@@ -745,14 +752,14 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     color: var(--color-ink-soft);
-    /* encrypted notes are one long unbroken string */
+    /* Isi catatan terenkripsi berupa satu string panjang tanpa spasi */
     overflow-wrap: anywhere;
   }
 
 
-  /* the arrow: just the sage doodle, on every note (a locked one says so
-     under its time). The row itself stays plain on hover; only the arrow
-     gets a soft wobbly blob behind it */
+  /* Panah berupa doodle sage dan ada di setiap catatan (catatan terkunci
+     ditandai di bawah jamnya). Saat hover, baris tetap polos; hanya panah
+     yang mendapat blob bergelombang di belakangnya */
   .day-note-go {
     --go-blob: var(--color-mint);
     position: relative;
@@ -769,9 +776,9 @@
     will-change: transform;
   }
 
-  /* only the arrow answers the pointer: the rest of the row
-     neither clicks nor hovers. A click on it still reaches the row's link
-     (or unlock button), and hovering it still lights up the row */
+  /* Hanya panah yang merespons pointer; bagian lain baris tidak bisa diklik
+     atau di-hover. Klik pada panah tetap diteruskan ke link baris (atau
+     tombol unlock), dan hover pada panah tetap menyorot barisnya */
   .day-note {
     pointer-events: none;
   }
@@ -785,8 +792,8 @@
     cursor: pointer;
   }
 
-  /* the blob is always painted and only its opacity fades: fading a
-     background in from transparent can flash on the way */
+  /* Blob selalu digambar dan hanya opacity-nya yang berubah, karena transisi
+     background dari transparent bisa berkedip */
   .day-note-go::before {
     content: "";
     position: absolute;
@@ -831,7 +838,7 @@
     }
   }
 
-  /* tablets: as wide as the month, inside the page's 5.25rem gutters */
+  /* Tablet: lebar popup sama dengan kalender, di dalam gutter halaman 5.25rem */
   @media (min-width: 640px) and (max-width: 959px) {
     #day-modal {
       padding-right: 5.25rem;
@@ -839,9 +846,9 @@
     }
   }
 
-  /* phones: the whole popup a size down, not the tablet / desktop sizes */
+  /* Ponsel: seluruh popup satu ukuran lebih kecil dari tablet / desktop */
   @media (max-width: 639px) {
-    /* as wide as the month, inside the page's 2.5rem gutters */
+    /* Lebar popup sama dengan kalender, di dalam gutter halaman 2.5rem */
     #day-modal {
       padding: 1rem 2.5rem;
     }
@@ -925,7 +932,7 @@
       font-size: 0.95rem;
     }
 
-    /* time moves above the title so the note gets the full width */
+    /* Jam pindah ke atas judul agar catatan memakai lebar penuh */
     .day-note {
       grid-template-columns: 1fr auto;
       gap: 0.2rem 0.5rem;
@@ -960,20 +967,20 @@
     pointer-events: none;
   }
 
-  /* contrast ladder: the book icon is the only strong mark on the month;
-     cell fill, border, numbers and the today blob all stay a step quieter
-     so the eye lands on the days you wrote something */
+  /* Urutan kontras: ikon buku menjadi satu-satunya penanda yang kuat di
+     kalender. Warna sel, border, angka, dan sorotan today dibuat lebih samar
+     agar mata langsung tertuju ke hari yang ada catatannya */
   .calendar-card {
-    /* emerald-600, bright like the mark colors but apart from their green,
-       so notes stand out from the warm terracotta used by today */
+    /* emerald-600: cerah seperti warna mark, tetapi berbeda dari hijaunya,
+       sehingga catatan terlihat jelas dibanding terracotta milik today */
     --cal-note: #059669;
-    /* today: filled with a terracotta wash, the number left alone */
+    /* Today: sel diberi warna terracotta tipis, angkanya tidak diubah */
     --cal-today-ink: var(--color-marker);
   }
 
   .cal-day {
     position: relative;
-    isolation: isolate; /* keeps the shadow layer tucked behind this cell */
+    isolation: isolate; /* menjaga layer bayangan tetap di belakang sel ini */
     display: flex;
     min-height: 4rem;
     flex-direction: column;
@@ -984,8 +991,9 @@
     background-color: var(--color-card);
     border: 1.5px solid var(--color-line);
     border-radius: 0.9rem;
-    /* leaving a cell eases out slowly, so sweeping the mouse across the
-       month leaves a soft trail instead of boxes snapping on and off */
+    /* Efek hover memudar pelan saat mouse keluar dari sel, jadi menggeser
+       mouse di kalender meninggalkan jejak halus, bukan kotak yang
+       muncul-hilang mendadak */
     transition:
       transform 0.55s var(--ease-smooth),
       background-color 0.55s var(--ease-smooth),
@@ -993,8 +1001,8 @@
       box-shadow 0.55s var(--ease-smooth);
   }
 
-  /* lift shadow as its own layer: fading opacity is far smoother than
-     animating a box-shadow on every frame */
+  /* Bayangan dibuat sebagai layer terpisah karena animasi opacity jauh lebih
+     halus daripada menganimasikan box-shadow di setiap frame */
   .cal-day::after {
     content: "";
     position: absolute;
@@ -1014,9 +1022,10 @@
       transform 0.55s var(--ease-smooth);
   }
 
-  /* hover (mouse only, so a tap doesn't leave a cell stuck lifted): comes in
-     quicker than it leaves, grows a touch, and the number and book follow a
-     beat later so the cell settles rather than jumps */
+  /* Hover hanya untuk mouse, agar tap tidak membuat sel tetap terangkat.
+     Efeknya muncul lebih cepat daripada hilangnya dan sel sedikit membesar.
+     Angka dan ikon buku menyusul sesaat kemudian agar sel bergerak halus,
+     tidak melompat */
   @media (hover: hover) {
     .cal-day:hover {
       background-color: var(--color-paper);
@@ -1043,7 +1052,7 @@
     }
   }
 
-  /* pressing shrinks the cell a touch, like pushing on paper */
+  /* Saat ditekan, sel sedikit mengecil seperti kertas yang ditekan */
   .cal-day:active {
     transform: scale(0.98);
     transition-duration: 0.3s;
@@ -1071,7 +1080,8 @@
     }
   }
 
-  /* 42 cells would drag on at the shared step, so they ripple faster */
+  /* Dengan jeda bawaan, animasi 42 sel akan terlalu lama, jadi jedanya
+     dibuat lebih singkat */
   .cal-day[data-stagger] {
     animation-delay: calc(var(--i, 0) * 12ms);
   }
@@ -1083,15 +1093,16 @@
     color: var(--color-ink-soft);
   }
 
-  /* days with notes keep the plain cell and number; the book does the talking */
+  /* Hari yang ada catatannya tetap memakai sel dan angka biasa; ikon buku
+     sudah cukup sebagai penanda */
 
-  /* today: a warm wash of the terracotta pen fills the cell, no ring;
-     a day with notes keeps it too, the book still shows those */
+  /* Today: sel diisi warna terracotta yang lembut, tanpa ring. Warna ini
+     tetap dipakai jika hari ini ada catatan, karena ikon buku tetap tampil */
   .cal-day.is-today {
     background-color: color-mix(in srgb, var(--cal-today-ink) 22%, var(--color-card));
   }
 
-  /* today's number stands out from the rest in a deep terracotta ink */
+  /* Angka today memakai terracotta pekat agar menonjol dari angka lain */
   .cal-day.is-today .cal-day-number {
     color: color-mix(in srgb, var(--cal-today-ink) 65%, var(--color-ink));
   }
@@ -1107,7 +1118,7 @@
     border-radius: 0.3rem;
   }
 
-  /* the book: the strongest mark on the calendar */
+  /* Ikon buku adalah penanda paling kuat di kalender */
   .cal-day-mark {
     display: inline-flex;
     align-items: center;
@@ -1116,8 +1127,8 @@
     color: var(--cal-note);
   }
 
-  /* the doodle sits in its 24px box with some air, so it's drawn a bit
-     larger than a font glyph to read at the same size */
+  /* Doodle punya ruang kosong di dalam kotak 24px-nya, jadi ukurannya dibuat
+     sedikit lebih besar dari glyph font agar terlihat setara */
   .cal-day-mark .doodle-i,
   .cal-legend-note .doodle-i {
     width: 1.3em;
@@ -1133,19 +1144,21 @@
     display: none;
   }
 
-  /* phones: the card sits between wide gutters (they clear the floating
-     buttons), so the whole month shrinks to fit in one tidy view: slimmer
-     card padding, tighter grid, single-letter weekdays and small square-ish
-     day cells with the number and book centred */
+  /* Ponsel: card berada di antara gutter lebar agar tidak tertutup tombol
+     floating, jadi seluruh kalender diperkecil supaya muat dalam satu
+     tampilan. Padding card lebih tipis, grid lebih rapat, nama hari cukup satu
+     huruf, dan sel hari kecil hampir persegi dengan angka dan ikon buku di
+     tengah */
   @media (max-width: 639px) {
-    /* a little wider than the shared gutter (3.5rem, only ~4px clear of the
-       floating + and menu buttons), so the month keeps some air from them */
+    /* Gutter bawaan (3.5rem) hanya berjarak ~4px dari tombol floating + dan
+       menu, jadi nilai ini memberi kalender sedikit ruang dari tombol
+       tersebut */
     .list-page {
       padding-right: 2.5rem;
       padding-left: 2.5rem;
     }
 
-    /* page title and its line a size down */
+    /* Judul halaman dan subjudulnya diperkecil satu ukuran */
     .header .header-title {
       font-size: 1.75rem;
     }
@@ -1154,14 +1167,15 @@
       font-size: 0.8rem;
     }
 
-    /* the count sits close under the header: no tall row to centre it in,
-       and it pulls up into the page's grid gap */
+    /* Jumlah catatan ditaruh rapat di bawah header: barisnya tidak dibuat
+       tinggi dan ditarik naik ke dalam gap grid halaman */
     .toolbar-row {
       min-height: 0;
       margin-top: -0.9rem;
     }
 
-    /* over the calendar the count is left out: the legend already has it */
+    /* Di tampilan kalender, jumlah catatan disembunyikan karena sudah ada di
+       legend */
     .toolbar-row.is-calendar {
       display: contents;
     }
@@ -1170,7 +1184,8 @@
       display: none;
     }
 
-    /* with no count between them, the calendar sits close under the title */
+    /* Tanpa jumlah catatan di antaranya, kalender ditaruh rapat di bawah
+       judul */
     .toolbar-row.is-calendar ~ .calendar-card {
       margin-top: -0.6rem;
     }
@@ -1184,8 +1199,8 @@
       font-size: 1.05rem;
     }
 
-    /* month title and prev / next share a line; only when they can't
-       (very narrow) the buttons drop below, kept right */
+    /* Judul bulan dan tombol prev / next berada di satu baris. Jika layar
+       terlalu sempit, tombol turun ke bawah dan tetap rata kanan */
     .cal-head {
       gap: 0.5rem;
     }
@@ -1254,20 +1269,22 @@
     }
   }
 
-  /* very narrow phones: a smaller month title keeps prev / next on its line */
+  /* Ponsel yang sangat sempit: judul bulan diperkecil agar prev / next tetap
+     satu baris dengannya */
   @media (max-width: 360px) {
     .cal-title {
       font-size: 0.95rem;
     }
   }
-  /* ---- day marks ---- */
+  /* ---- mark harian ---- */
   .cal-day-marks {
     display: inline-flex;
     align-items: center;
     gap: 0.15rem;
   }
 
-  /* each mark in its own color; the notebook keeps the sage */
+  /* Setiap mark memakai warnanya sendiri; ikon buku tetap memakai warna
+     --cal-note (emerald) */
   .cal-day-mark.is-mark {
     color: var(--mark);
   }
@@ -1284,7 +1301,7 @@
     display: none;
   }
 
-  /* tablets: two icons per cell, the rest in the +n */
+  /* Tablet: maksimal dua ikon per sel, sisanya dihitung di +n */
   @media (min-width: 640px) and (max-width: 959px) {
     .cal-day-mark.is-third,
     .cal-day-more-wide {
@@ -1296,7 +1313,7 @@
     }
   }
 
-  /* small tablets: the icons a size down too */
+  /* Tablet kecil: ikon juga diperkecil satu ukuran */
   @media (min-width: 640px) and (max-width: 767px) {
     .cal-day-mark {
       font-size: 0.58rem;
@@ -1307,8 +1324,8 @@
     color: var(--mark);
   }
 
-  /* mark icons colored in like the popup's chips: the body filled with a
-     light crayon wash, the pen line on top */
+  /* Ikon mark diwarnai seperti chip di popup: bagian dalamnya diisi warna
+     crayon tipis, dengan garis pena di atasnya */
   .cal-day-mark.is-mark .doodle-i path:first-child,
   .cal-legend-icon .doodle-i path:first-child {
     fill: currentColor;
@@ -1320,7 +1337,8 @@
     height: 1.2em;
   }
 
-  /* days marked this month: a plain number beside the name, no pill */
+  /* Jumlah hari yang diberi mark bulan ini: angka biasa di samping nama,
+     tanpa pill */
   .cal-legend-count {
     font-size: 0.75rem;
     font-weight: 700;
@@ -1328,8 +1346,8 @@
     color: var(--color-ink);
   }
 
-  /* the legend: set off from the grid by a quiet dashed rule, every icon
-     the same size, one even rhythm between items */
+  /* Legend dipisahkan dari grid oleh garis putus-putus yang samar. Semua
+     ikon berukuran sama dan jarak antaritem dibuat rata */
   .cal-legend {
     column-gap: 1.5rem;
     row-gap: 0.5rem;
@@ -1347,13 +1365,13 @@
     height: 1.1em;
   }
 
-  /* tablets and up: the legend in columns of two (three on desktop),
-     filled top to bottom: notes, then the marks down the first column,
-     then the next. Nothing is centred: each column is as wide as its
-     longest item and they pack from the left, every item at the top-left
-     of its cell. Today sits apart, alone in the top-right corner, on
-     notes' line. --rows-2 / --rows-3 (set on the legend) are how many rows
-     the notes and marks take at two / three columns */
+  /* Tablet ke atas: legend dibagi menjadi dua kolom (tiga di desktop) dan
+     diisi dari atas ke bawah, mulai dari notes lalu mark, kolom pertama dulu
+     baru kolom berikutnya. Tidak ada yang diratakan ke tengah: lebar setiap
+     kolom mengikuti item terpanjangnya, kolom disusun dari kiri, dan setiap
+     item berada di kiri atas selnya. Today dipisah sendiri di pojok kanan
+     atas, sebaris dengan notes. --rows-2 / --rows-3 (diatur di legend) adalah
+     jumlah baris notes dan mark untuk dua / tiga kolom */
   @media (min-width: 640px) {
     .cal-legend {
       position: relative;
@@ -1366,7 +1384,7 @@
       justify-items: start;
       align-items: start;
       column-gap: 2.5rem;
-      /* clear of today, on the first line */
+      /* Memberi ruang untuk today di baris pertama */
       padding-right: 5rem;
     }
 
@@ -1377,7 +1395,7 @@
 
     .cal-legend > .ml-auto {
       position: absolute;
-      top: 1rem; /* the legend's padding-top: on the first line */
+      top: 1rem; /* sama dengan padding-top legend, jadi berada di baris pertama */
       right: 0;
       margin-left: 0;
     }
@@ -1389,30 +1407,30 @@
     }
   }
 
-  /* popup marks: doodle chips on a pen line, filled with their own color
-     and a little offset pen shadow when they are on the day */
-  /* a bit of air under the chips, so they don't sit on the card's edge */
+  /* Marks di popup: chip doodle di bawah garis pena, diisi warnanya sendiri
+     dengan sedikit bayangan pena jika mark ada di hari tersebut */
+  /* Sedikit ruang di bawah chip agar tidak menempel ke tepi card */
   .day-marks {
     padding-top: 1rem;
     padding-bottom: 0.75rem;
     border-top: 1.5px dashed color-mix(in srgb, var(--color-ink) 12%, var(--color-line));
-    /* the popup grows with the New panel, the notes list giving way first;
-       only when the marks alone outgrow the popup does this section give
-       way too: the New panel shrinks, and in it only Made before, which
-       scrolls. The section itself never scrolls */
+    /* Popup ikut membesar saat panel New dibuka, dan list Notes mengecil
+       lebih dulu. Section ini baru ikut mengecil jika Marks saja sudah
+       melebihi popup: panel New yang mengecil, dan di dalamnya hanya Made
+       before yang bisa di-scroll. Section ini sendiri tidak pernah di-scroll */
     min-height: 0;
     overflow: hidden;
   }
 
-  /* its parts keep their full height: squeezed, the New panel (overflow
-     hidden, so it can shrink to nothing) would clip Made before away;
-     when the section runs out of room it scrolls instead */
+  /* Setiap bagian tetap setinggi aslinya. Jika ikut mengecil, panel New
+     (overflow hidden, jadi bisa mengecil sampai habis) akan memotong Made
+     before. Pengecualiannya diatur di aturan berikutnya */
   .day-marks > * {
     flex-shrink: 0;
   }
 
-  /* the one part that can give: the open New panel, down to its Made
-     before list (see below) */
+  /* Satu-satunya bagian yang boleh mengecil adalah panel New yang terbuka,
+     sampai ke list Made before di dalamnya (lihat di bawah) */
   .day-marks > .new-mark-wrap {
     display: flex;
     flex-direction: column;
@@ -1428,13 +1446,14 @@
     flex-shrink: 1;
   }
 
-  /* the buttons sit inside the edge, like the Highlight toggle in Notes */
+  /* Tombol berada di dalam tepi section, seperti toggle Highlight di Notes */
   .day-marks-actions {
     display: flex;
     gap: 0.15rem;
   }
 
-  /* New / Remove: handwritten text buttons; a wobbly blob shows on hover */
+  /* New / Remove: tombol teks tulisan tangan dengan blob bergelombang saat
+     hover */
   .mark-action {
     position: relative;
     isolation: isolate;
@@ -1496,8 +1515,8 @@
     gap: 0.1rem 0.25rem;
   }
 
-  /* the list is pulled left by the chips' padding, so the empty line gets
-     the same padding back and lines up with the section title */
+  /* List digeser ke kiri sebesar padding chip, jadi teks kosong diberi
+     padding yang sama agar sejajar dengan judul section */
   .day-marks-empty {
     padding-left: 0.55rem;
     font-family: var(--font-comic);
@@ -1505,10 +1524,10 @@
     color: var(--color-ink-soft);
   }
 
-  /* marks read like the calendar legend: no pill, just the doodle and its
-     name in the comic hand, always in full color. Only a chip that can be
-     tapped (in Remove mode, or under Made before) gets the wobbly blob on
-     hover, like the New / Remove buttons */
+  /* Tampilan mark mengikuti legend kalender: tanpa pill, hanya doodle dan
+     namanya dengan font comic, selalu berwarna penuh. Blob bergelombang saat
+     hover hanya muncul pada chip yang bisa di-tap (mode Remove atau di Made
+     before), sama seperti tombol New / Remove */
   .day-marks-list {
     margin-left: -0.55rem;
   }
@@ -1559,7 +1578,7 @@
     display: none;
   }
 
-  /* on the day's list the chips just show, until Remove is on */
+  /* Di list hari ini, chip hanya untuk tampilan sampai mode Remove aktif */
   #mark-form:not(.is-removing) .mark-chip {
     cursor: default;
     pointer-events: none;
@@ -1580,17 +1599,18 @@
   }
 
 
-  /* the icon's body is colored in, like a doodle filled with a crayon; the
-     pen line and any inner strokes (the pill's split, the drop's shine)
-     still show on top */
+  /* Bagian dalam ikon diwarnai seperti doodle yang diisi crayon. Garis pena
+     dan goresan di dalamnya (belahan pill, kilau tetesan) tetap terlihat di
+     atasnya */
   .mark-chip .doodle-i path:first-child {
     fill: currentColor;
     fill-opacity: 0.4;
   }
 
-  /* hover, shared by the popup's blob buttons (Highlight, New, Remove and
-     the tappable mark chips): the blob springs up from a little smaller
-     with a slight tilt, the icon nudges, and a press gives a small squish */
+  /* Efek hover untuk semua tombol blob di popup (Highlight, New, Remove, dan
+     chip mark yang bisa di-tap): blob memantul dari ukuran sedikit lebih
+     kecil dan agak miring, ikon sedikit bergerak, dan tombol mengecil saat
+     ditekan */
   .kind-toggle,
   .mark-action,
   .mark-chip {
@@ -1635,7 +1655,7 @@
     transform: rotate(-8deg) scale(1.08);
   }
 
-  /* the chevron dips toward the menu it opens */
+  /* Chevron sedikit bergeser ke arah menu yang akan dibuka */
   .kind-toggle:hover:not([aria-expanded="true"]) .kind-chevron {
     transform: rotate(90deg) translateX(2px);
   }
@@ -1653,7 +1673,7 @@
     }
   }
 
-  /* remove mode: the chips get an x and take the mark off this day */
+  /* Mode Remove: chip diberi tanda x dan menghapus mark dari hari ini */
   .mark-chip-x {
     display: none;
     margin-left: 0.1rem;
@@ -1676,12 +1696,12 @@
     color: var(--color-berry);
   }
 
-  /* new kind: a paper panel drawn by hand; name and Add on top, then the
-     icon and color picks, each on its own labelled line */
+  /* Mark baru: panel kertas gambar tangan. Nama dan tombol Add di atas,
+     lalu pilihan ikon dan warna, masing-masing di baris berlabel sendiri */
   .new-mark {
-    /* a flex column all the way down from the popup, so when room runs
-       out the squeeze reaches Made before's list: name, icon and color
-       keep their height, Made before takes what is left */
+    /* Flex column berlanjut dari popup sampai ke sini, jadi saat ruang tidak
+       cukup, yang mengecil adalah list Made before. Nama, ikon, dan warna
+       tetap setinggi aslinya, sedangkan Made before memakai sisa ruang */
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -1692,12 +1712,13 @@
     border-radius: 20px 16px 22px 14px / 14px 22px 16px 20px;
   }
 
-  /* folded: no height, pulled up over the section gap, faded out. The
-     height itself is animated in px from the script (see toggleNewMark) on
-     a slow-in, slow-out curve, so the popup around it glides; here only the
-     fade and the rows are timed:
-     - open: the panel fades in and its rows drop into place one by one
-     - close: the rows fade out together while the space starts folding */
+  /* Saat tertutup, panel tidak punya tinggi, ditarik naik menutupi gap
+     section, dan transparan. Tingginya dianimasikan dalam px dari script
+     (lihat toggleNewMark) dengan kurva slow-in, slow-out agar popup di
+     sekitarnya bergerak halus. Di sini hanya fade dan baris yang diatur
+     waktunya:
+     - buka: panel muncul perlahan dan barisnya turun satu per satu
+     - tutup: semua baris memudar bersamaan saat ruangnya mulai menutup */
   .new-mark-wrap {
     --fold: cubic-bezier(0.37, 0, 0.63, 1);
     --spring: cubic-bezier(0.22, 1, 0.36, 1);
@@ -1726,7 +1747,8 @@
     transition: transform 0.5s var(--fold);
   }
 
-  /* the rows inside: out together on close, in one by one on open */
+  /* Baris di dalam panel: hilang bersamaan saat ditutup, muncul satu per
+     satu saat dibuka */
   .new-mark > :not(input) {
     opacity: 0;
     transform: translateY(-4px);
@@ -1771,8 +1793,8 @@
     min-width: 0;
   }
 
-  /* Icon / Color: the label keeps to the top when the options wrap,
-     sitting on the first line of them (one option tall) */
+  /* Icon / Color: saat opsinya turun ke baris baru, label tetap di atas,
+     sejajar dengan baris opsi pertama (setinggi satu opsi) */
   fieldset.new-mark-row {
     align-items: flex-start;
   }
@@ -1781,7 +1803,8 @@
     line-height: 2rem;
   }
 
-  /* removed marks, picked again with one tap, under the Add form */
+  /* Mark yang pernah dibuat tetapi belum ada di hari ini, ditampilkan di
+     bawah form Add dan bisa ditambahkan dengan satu tap */
   .new-mark-before-row {
     display: flex;
     flex-direction: column;
@@ -1791,7 +1814,7 @@
     border-top: 1.5px dashed var(--color-line);
   }
 
-  /* the plus turns a quarter-and-a-half into an x while the panel is open */
+  /* Ikon plus berputar 135 derajat menjadi x selama panel terbuka */
   .new-mark-plus {
     display: inline-flex;
     transition: transform 0.55s cubic-bezier(0.34, 1.4, 0.64, 1);
@@ -1816,9 +1839,9 @@
     align-items: center;
   }
 
-  /* Made before is the only part of the Marks that scrolls; it keeps at
-     least a row and a half in view, so there is always something to
-     scroll */
+  /* Made before adalah satu-satunya bagian Marks yang bisa di-scroll. Tinggi
+     minimalnya sekitar satu setengah baris agar selalu ada isi yang bisa
+     di-scroll */
   .new-mark-before-row .day-marks-list {
     min-height: 2.6rem;
     overflow-y: auto;
@@ -1834,9 +1857,9 @@
     display: none;
   }
 
-  /* the day's marks in a grid: three to a row on phones and tablets, five
-     on desktop; a long name wraps inside its cell (between words, and a
-     word too long for the cell breaks) */
+  /* Mark hari ini ditampilkan dalam grid: tiga per baris di ponsel dan
+     tablet, lima di desktop. Nama yang panjang turun ke baris baru di dalam
+     selnya, dan kata yang terlalu panjang ikut dipotong */
   #mark-form.day-marks-list {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1856,7 +1879,7 @@
     }
   }
 
-  /* "No marks on this day" keeps the whole row */
+  /* "No marks on this day" memakai satu baris penuh */
   .day-marks-empty {
     grid-column: 1 / -1;
   }
@@ -1935,7 +1958,8 @@
     background-color: var(--color-paper-deep);
   }
 
-  /* the pick: circled in pen with the same offset shadow as the switches */
+  /* Pilihan aktif dilingkari pena dengan bayangan offset yang sama seperti
+     switch */
   .new-mark-option:has(input:checked) {
     color: var(--color-ink);
     background-color: var(--color-card);
@@ -1955,8 +1979,8 @@
     border-radius: 56% 44% 53% 47% / 46% 55% 45% 54%;
   }
 
-  /* phones: the Marks section and the New panel a size down, tighter all
-     round (here, after their base rules, so these win) */
+  /* Ponsel: section Marks dan panel New diperkecil satu ukuran dan dibuat
+     lebih rapat. Aturan ini ditaruh setelah aturan dasarnya agar menang */
   @media (max-width: 639px) {
     .day-marks {
       padding-top: 0.75rem;
@@ -2030,10 +2054,10 @@
       padding-top: 0.45rem;
     }
 
-    /* many marks: the day's list and Made before each scroll inside a
-       few rows, so the New panel's name field stays in the popup instead
-       of being pushed past its foot. A sliver of padding keeps the chips'
-       pen shadows clear of the scroll edge */
+    /* Jika mark banyak, list hari ini dan Made before masing-masing di-scroll
+       dalam beberapa baris, agar field nama di panel New tetap berada di
+       dalam popup. Padding tipis menjaga bayangan pena chip agar tidak
+       terpotong tepi scroll */
     #mark-form.day-marks-list {
       max-height: 6.2rem;
       overflow-y: auto;
@@ -2048,7 +2072,7 @@
       padding: 0.15rem 0.2rem 0.2rem 0;
     }
 
-    /* they still scroll, only the bars are hidden */
+    /* Tetap bisa di-scroll, hanya scrollbar-nya yang disembunyikan */
     #mark-form.day-marks-list,
     .new-mark-before-row .day-marks-list {
       scrollbar-width: none;
@@ -2059,16 +2083,15 @@
       display: none;
     }
 
-    /* while New is open the day's marks step aside, leaving the panel
-       the room */
+    /* Selama New terbuka, mark hari ini disembunyikan agar panel punya ruang */
     .day-marks.is-adding #mark-form {
       display: none;
     }
   }
 
   @media (max-width: 639px) {
-    /* the dots sit out of the flow along the cell's foot, so the number
-       stays dead centre whether a day has marks or not */
+    /* Titik ditempatkan di luar flow, di bagian bawah sel, agar angka tetap
+       di tengah, baik hari itu ada mark maupun tidak */
     .cal-day-marks {
       position: absolute;
       bottom: 0.22rem;
@@ -2077,9 +2100,9 @@
       gap: 0.1rem;
     }
 
-    /* phone cells trade the icons for tiny dots in each icon's color
-       (the book's sage, then the marks'); one at most, the rest counted
-       in the +n */
+    /* Di ponsel, ikon pada sel diganti titik kecil sesuai warna ikonnya
+       (emerald untuk buku, lalu warna mark). Hanya satu titik yang tampil,
+       sisanya dihitung di +n */
     .cal-day-mark .doodle-i {
       display: none;
     }
@@ -2105,8 +2128,8 @@
       font-size: 0.5rem;
     }
 
-    /* phones: the legend stacks, one item per line, while today keeps
-       to the right on the first line */
+    /* Ponsel: legend disusun ke bawah, satu item per baris, sedangkan today
+       tetap di kanan pada baris pertama */
     .cal-legend {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -2153,7 +2176,7 @@
     </div>
   </div>
 
-  <!-- floating add button, same spot as on the contacts page -->
+  <!-- Tombol add floating, posisinya sama dengan di halaman kontak -->
   <a
     href="/writing/new"
     aria-label="New note"
@@ -2163,7 +2186,7 @@
     <%- include("partials/doodle-icon", { name: "plus", cls: "fab-icon" }) %>
   </a>
 
-  <!-- floating search button (phones), above the add button -->
+  <!-- Tombol search floating (ponsel), berada di atas tombol add -->
   <button
     type="button"
     onclick="toggleSearch()"
@@ -2188,8 +2211,8 @@
       <span class="contact-count-label"><%= countNum === 1 ? "note" : "notes" %><%= search ? " found" : "" %></span>
     </span>
 
-    <!-- search: inline in this row on tablet/desktop, a floating capsule
-         from the search button on phones -->
+    <!-- Search tampil inline di baris ini pada tablet/desktop, dan menjadi
+         kapsul floating dari tombol search di ponsel -->
     <div id="search-box" class="search-box <%= searchOpen ? 'is-open' : '' %>">
       <span class="search-inline-icon" aria-hidden="true"><%- include("partials/doodle-icon", { name: "search" }) %></span>
       <input
@@ -2217,13 +2240,13 @@
   </div>
 
   <% if (mode === "calendar") { %>
-  <!-- Month calendar -->
+  <!-- Kalender bulanan -->
   <div class="doodle-card calendar-card grid grid-cols-1 gap-5" data-stagger style="--i: 2">
     <div class="cal-head flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-baseline gap-3">
         <h3 class="cal-title text-2xl"><span class="header-title-mark"><%= monthLabel %></span></h3>
       </div>
-      <!-- month nav: plain arrows with the today link between them -->
+      <!-- Navigasi bulan: panah polos dengan link today di antaranya -->
       <div class="cal-nav flex items-center gap-1">
         <a
           href="/writing?month=<%= prevMonth %>"
@@ -2273,9 +2296,10 @@
       >
         <span class="cal-day-number"><%= cell.day %></span>
         <%
-          // room for three icons: the book first when there are notes, then
-          // the marks; any more fold into a +n. Phones and tablets show two,
-          // so the third is dropped there and the mid +n counts the rest
+          // Ada ruang untuk tiga ikon: ikon buku lebih dulu jika ada catatan,
+          // lalu mark. Sisanya digabung ke +n. Ponsel dan tablet hanya
+          // menampilkan dua, jadi ikon ketiga disembunyikan dan sisanya
+          // dihitung oleh +n versi mid
           const shown = cell.marks.slice(0, 3 - (cell.notes.length ? 1 : 0));
           const lead = cell.notes.length ? 1 : 0;
           const total = cell.marks.length + lead;
@@ -2307,12 +2331,12 @@
     </div>
 
     <%
-      // items in the legend's grid: notes and the marks on this month
-      // (today sits apart, in the corner)
+      // Jumlah item di grid legend: notes dan mark yang ada di bulan ini
+      // (today dipisah sendiri di pojok)
       const legendCells = Math.max(1, (totalWritings ? 1 : 0) + markers.filter((marker) => markCounts[marker.id]).length);
     %>
     <div class="cal-legend text-ink-soft flex flex-wrap items-center" style="--rows-2: <%= Math.ceil(legendCells / 2) %>; --rows-3: <%= Math.ceil(legendCells / 3) %>">
-      <!-- notes, like the marks, only when this month has any -->
+      <!-- Sama seperti mark, notes hanya tampil jika bulan ini ada catatan -->
       <% if (totalWritings) { %>
       <span class="flex items-center gap-1.5" style="--mark: var(--cal-note)">
         <span class="cal-legend-note inline-flex"><%- include("partials/doodle-icon", { name: "notebook" }) %></span>
@@ -2320,7 +2344,7 @@
         <span class="cal-legend-count" title="Notes this month"><%= totalWritings %></span>
       </span>
       <% } %>
-      <!-- only the marks put on some day of this month -->
+      <!-- Hanya mark yang dipakai di salah satu hari bulan ini -->
       <% markers.filter((marker) => markCounts[marker.id]).forEach((marker) => { %>
       <span class="cal-legend-mark flex items-center gap-1.5" style="--mark: <%= marker.hex %>">
         <span class="cal-legend-icon inline-flex"><%- include("partials/doodle-icon", { name: marker.icon }) %></span>
@@ -2328,7 +2352,7 @@
         <span class="cal-legend-count" title="Days this month"><%= markCounts[marker.id] %></span>
       </span>
       <% }) %>
-      <!-- today sits apart, on the far right -->
+      <!-- Today dipisah sendiri di paling kanan -->
       <span class="ml-auto flex items-center gap-1.5">
         <span class="cal-legend-today inline-block h-3 w-3"></span>
         today
@@ -2336,7 +2360,7 @@
     </div>
   </div>
 
-  <!-- Day popup -->
+  <!-- Popup hari -->
   <div
     id="day-modal"
     class="doodle-modal p-6"
@@ -2365,12 +2389,14 @@
         </button>
       </div>
 
-      <!-- notes: a head with the highlight dropdown (only when the day has
-           notes), then the list, which is the only part that scrolls -->
+      <!-- Notes: header dengan dropdown Highlight (hanya jika hari itu ada
+           catatan), lalu list yang menjadi satu-satunya bagian yang bisa
+           di-scroll -->
       <section class="day-section day-notes flex min-h-0 flex-1 flex-col" aria-labelledby="day-notes-title">
         <div class="day-section-head">
           <h3 id="day-notes-title" class="day-section-title">Notes</h3>
-          <!-- highlight: a dropdown of which notes get the stabilo -->
+          <!-- Highlight: dropdown untuk memilih catatan mana yang diberi
+               stabilo -->
           <div id="kind-row" class="kind-row" hidden>
             <button
               type="button"
@@ -2385,7 +2411,7 @@
               <span class="kind-chevron"><%- include("partials/doodle-icon", { name: "chevron-right" }) %></span>
             </button>
             <div id="kind-menu" class="kind-menu" role="menu" aria-labelledby="kind-toggle">
-              <!-- one soft blob that glides to the option under the pointer -->
+              <!-- Satu blob lembut yang bergerak ke opsi di bawah pointer -->
               <span id="kind-glide" class="kind-glide" aria-hidden="true"></span>
               <button type="button" class="kind-option" role="menuitemradio" data-kind="" aria-checked="true" style="--i: 0">
                 <%- include("partials/doodle-icon", { name: "minus" }) %>
@@ -2406,8 +2432,9 @@
         <div id="day-modal-body" class="day-modal-body flex flex-1 flex-col overflow-y-auto"></div>
       </section>
 
-      <!-- marks: what is on this day. New puts one on (made before, or a new
-           kind); Remove takes one off this day -->
+      <!-- Marks: mark yang ada di hari ini. New menambahkan mark (dari Made
+           before atau mark baru), sedangkan Remove menghapusnya dari hari
+           ini -->
       <section class="day-section day-marks" aria-labelledby="day-marks-title">
         <div class="day-section-head">
           <h3 id="day-marks-title" class="day-section-title">Marks</h3>
@@ -2420,12 +2447,13 @@
               aria-expanded="false"
               aria-controls="new-mark"
             >
-              <!-- turns into Cancel while the new-mark panel is open -->
+              <!-- Berubah menjadi Cancel selama panel new-mark terbuka -->
               <span class="new-mark-plus"><%- include("partials/doodle-icon", { name: "plus" }) %></span>
               <span class="new-mark-toggle-label">New</span>
             </button>
-            <!-- remove: turns the chips below into buttons that take the mark
-                 off this day, until tapped again; shown when the day has any -->
+            <!-- Remove: mengubah chip di bawahnya menjadi tombol untuk menghapus
+                 mark dari hari ini, sampai tombol ini di-tap lagi. Hanya
+                 tampil jika hari itu punya mark -->
             <button
               type="button"
               id="remove-mark-toggle"
@@ -2465,8 +2493,8 @@
           <input type="hidden" name="redirect" value="/writing?month=<%= month %>" />
         </form>
 
-        <!-- the panel folds open: its height grows so the popup eases up
-             instead of jumping -->
+        <!-- Panel terbuka dengan tinggi yang bertambah perlahan agar popup
+             bergerak halus, tidak melompat -->
         <div id="new-mark-wrap" class="new-mark-wrap" inert>
         <form id="new-mark" action="/markers" method="post" class="new-mark">
           <input type="hidden" name="date" id="new-mark-date" />
@@ -2508,8 +2536,8 @@
             </span>
           </fieldset>
           <% if (markers.length) { %>
-          <!-- marks made before that are not on this day yet: one tap puts
-               one on this day only -->
+          <!-- Mark yang pernah dibuat tetapi belum ada di hari ini. Satu tap
+               menambahkannya ke hari ini saja -->
           <div id="made-before" class="new-mark-before-row">
             <span class="new-mark-label">Made before</span>
             <span class="day-marks-list">
@@ -2528,7 +2556,8 @@
                   <%- include("partials/doodle-icon", { name: marker.icon }) %>
                   <%= marker.name %>
                 </button>
-                <!-- x: gone for good, with every day it is on -->
+                <!-- x: delete mark secara permanen dari semua hari yang
+                     memakainya -->
                 <button
                   type="submit"
                   form="delete-marker-form"
@@ -2552,7 +2581,7 @@
     </div>
   </div>
 
-  <!-- Popup contents, one block per date -->
+  <!-- Isi popup, satu blok untuk tiap tanggal -->
   <div class="hidden">
     <% weeks.forEach((week) => { %> <% week.forEach((cell) => { if (!cell)
     return; %>
@@ -2615,7 +2644,7 @@
   </div>
 
   <% } else { %>
-  <!-- Search results -->
+  <!-- Hasil search -->
   <div class="w-full">
     <% if (writings.length === 0) { %>
     <div
@@ -2628,8 +2657,8 @@
     <% } %>
 
     <% if (writings.length !== 0) { %>
-    <!-- the same rows as the day popup, in the calendar's card; the day
-         goes in the margin above the time, since results span many days -->
+    <!-- Baris yang sama dengan popup hari, di dalam card kalender. Tanggal
+         ditaruh di margin atas jam karena hasilnya bisa dari banyak hari -->
     <div class="doodle-card calendar-card search-notes" data-stagger style="--i: 2">
       <% writings.forEach((writing, i) => { const year = formatNoteYear(writing.date); %>
       <% if (writing.isEncrypted) { %>
@@ -2774,31 +2803,31 @@
     const source = document.getElementById("day-notes-" + key);
     if (!source) return;
 
-    // "Sunday, September 27, 2026" -> weekday jotted above, date below
+    // "Sunday, September 27, 2026" -> nama hari di atas, tanggal di bawah
     const [weekday, ...rest] = source.dataset.label.split(", ");
     document.getElementById("day-modal-weekday").textContent = weekday;
     document.getElementById("day-modal-date").textContent = rest.join(", ");
-    // drop the last day's highlight before the notes go in, so they arrive
-    // plain instead of showing the stabilo for a moment while it fades
+    // Highlight dari hari sebelumnya dihapus sebelum catatan dimasukkan,
+    // agar stabilo tidak sempat terlihat lalu memudar
     const body = document.getElementById("day-modal-body");
     delete body.dataset.mark;
     body.innerHTML = source.innerHTML;
-    // everything left over from the last date (New open, Remove on, a
-    // highlight picked, the menu out) resets with no motion, so nothing is
-    // seen fading back while the popup comes up
+    // Semua state dari tanggal sebelumnya (New terbuka, Remove aktif,
+    // Highlight terpilih, menu terbuka) di-reset tanpa animasi, agar tidak
+    // ada yang terlihat kembali ke awal saat popup muncul
     const card = dayModal.querySelector(".day-modal-card");
     card.classList.add("is-resetting");
     setupMarks(key, source);
     setupKindSwitch();
-    card.offsetHeight; // apply the reset before motion is back on
+    card.offsetHeight; // terapkan reset sebelum animasi aktif lagi
     card.classList.remove("is-resetting");
 
     openModal(dayModal);
   }
 
-  // Normal / encrypted switch: every note stays listed, the picked kind just
-  // gets a stabilo. Starts with nothing marked; picking the marked side
-  // again clears it
+  // Pilihan Highlight (None / Normal / Encrypted): semua catatan tetap
+  // tampil, hanya jenis yang dipilih yang diberi stabilo. Awalnya tidak ada
+  // yang di-highlight; untuk menghapusnya, pilih None
   const kindRow = document.getElementById("kind-row");
   const kindToggle = document.getElementById("kind-toggle");
   const kindMenu = document.getElementById("kind-menu");
@@ -2821,15 +2850,16 @@
     kindMenu.querySelectorAll(".kind-option").forEach((option) => {
       const picked = option.dataset.kind === kind;
       option.setAttribute("aria-checked", String(picked));
-      // the trigger shows the picked option's icon, named for screen readers
+      // Trigger menampilkan ikon opsi yang dipilih, dan namanya diberikan
+      // lewat aria-label untuk screen reader
       if (picked && kind) kindCurrent.append(option.querySelector("svg").cloneNode(true));
     });
     kindToggle.setAttribute("aria-label", kind ? "Highlight: " + kindNames[kind] : "Highlight");
   }
 
-  // the notes section clips what spills out of it, the menu too: while the
-  // menu is out it doesn't, until the menu has faded away (.kind-menu's
-  // 0.35s) so it isn't cut off as it goes
+  // Section Notes memotong konten yang keluar, termasuk menu. Selama menu
+  // terbuka, pemotongan dimatikan dan baru aktif lagi setelah menu selesai
+  // memudar (0.35s dari .kind-menu), agar menu tidak terpotong saat ditutup
   const kindNotes = kindRow.closest(".day-notes");
   let kindClipTimer;
 
@@ -2854,7 +2884,7 @@
     kindToggle.focus();
   });
 
-  // arrows walk the options; Escape closes only the menu, not the popup
+  // Tombol panah berpindah antaropsi; Escape hanya menutup menu, bukan popup
   kindMenu.addEventListener("keydown", (e) => {
     const options = [...kindMenu.querySelectorAll(".kind-option")];
     const at = options.indexOf(document.activeElement);
@@ -2873,7 +2903,8 @@
     if (kindRow.classList.contains("is-open") && !kindRow.contains(e.target)) toggleKindMenu(false);
   });
 
-  // the glide: follows the pointer (or keyboard focus) from option to option
+  // Blob glide mengikuti pointer (atau focus keyboard) dari satu opsi ke opsi
+  // lain
   const kindGlide = document.getElementById("kind-glide");
 
   function glideTo(option) {
@@ -2881,7 +2912,7 @@
     kindMenu.classList.toggle("glide-jump", fresh);
     kindGlide.style.setProperty("--glide-y", option.offsetTop + "px");
     kindGlide.style.setProperty("--glide-h", option.offsetHeight + "px");
-    if (fresh) kindGlide.offsetHeight; // land before fading in
+    if (fresh) kindGlide.offsetHeight; // pindah ke posisi dulu sebelum muncul
     kindMenu.classList.add("is-gliding");
     if (fresh) requestAnimationFrame(() => kindMenu.classList.remove("glide-jump"));
   }
@@ -2894,7 +2925,8 @@
     const option = e.target.closest(".kind-option");
     if (option) glideTo(option);
   });
-  // pointer gone: back to the keyboard-focused option, if any, else fade out
+  // Saat pointer keluar, blob kembali ke opsi yang sedang di-focus keyboard.
+  // Jika tidak ada, blob menghilang
   kindMenu.addEventListener("pointerleave", () => {
     const focused = kindMenu.querySelector(".kind-option:focus-visible");
     focused ? glideTo(focused) : glideAway();
@@ -2906,7 +2938,8 @@
     if (!kindMenu.contains(e.relatedTarget)) glideAway();
   });
 
-  // Marks lists only what is on the day; Made before (under New) the rest
+  // Marks hanya menampilkan mark di hari ini; sisanya ada di Made before
+  // (di dalam New)
   function setupMarks(key, source) {
     const marks = source.dataset.marks.split(",").filter(Boolean);
     document.getElementById("mark-date").value = key;
@@ -2923,8 +2956,8 @@
     if (madeBefore) madeBefore.hidden = left === 0;
     document.getElementById("day-marks-empty").hidden = marks.length > 0;
     removeToggle.hidden = marks.length === 0;
-    // left open when the popup was closed: fold it without the animation,
-    // so the marks do not slide as the popup comes up
+    // Jika panel New masih terbuka saat popup ditutup, panel ditutup tanpa
+    // animasi agar Marks tidak bergeser saat popup muncul
     toggleNewMark(false, true);
     toggleRemoveMarks(false);
   }
@@ -2935,13 +2968,13 @@
     const show = open ?? !wrap.classList.contains("is-open");
     const still = instant || matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // the popup card moves with the fold. It is capped at 85vh, so left to
-    // itself it would sit still while the notes list gave way, then set off
-    // mid-speed once the cap let go; sizing it on the same curve keeps the
-    // whole popup gliding from the first frame to the last
+    // Card popup ikut dianimasikan bersama panel. Tingginya dibatasi 85vh,
+    // jadi tanpa ini card akan diam selama list Notes mengecil, lalu tiba-tiba
+    // bergerak setelah lepas dari batas. Dengan kurva yang sama, seluruh popup
+    // bergerak halus dari awal sampai akhir
     const card = wrap.closest(".day-modal-card");
 
-    // where things are right now, even halfway through a previous fold
+    // Ukuran saat ini, termasuk jika animasi sebelumnya belum selesai
     const fromHeight = wrap.getBoundingClientRect().height;
     const fromMargin = getComputedStyle(wrap).marginTop;
     const fromCard = card.getBoundingClientRect().height;
@@ -2949,14 +2982,16 @@
 
     if (still) [wrap, toggle].forEach((el) => el.classList.add("no-motion"));
     wrap.classList.toggle("is-open", show);
-    // phones hide the day's marks while New is open (see .is-adding)
+    // Di ponsel, mark hari ini disembunyikan selama New terbuka (lihat
+    // .is-adding)
     wrap.closest(".day-marks").classList.toggle("is-adding", show);
     toggle.setAttribute("aria-expanded", String(show));
     if (still) {
-      wrap.offsetHeight; // apply the end state before motion is back on
+      wrap.offsetHeight; // terapkan state akhir sebelum animasi aktif lagi
       [wrap, toggle].forEach((el) => el.classList.remove("no-motion"));
     } else {
-      // glide from there to the new size in px: slow start, slow end
+      // Animasikan dari ukuran awal ke ukuran baru dalam px: pelan di awal
+      // dan di akhir
       const timing = { duration: show ? 450 : 600, easing: "cubic-bezier(0.37, 0, 0.63, 1)" };
       const toHeight = wrap.getBoundingClientRect().height;
       const toMargin = getComputedStyle(wrap).marginTop;
@@ -2970,18 +3005,19 @@
       ).id = "fold";
       card.animate([{ height: fromCard + "px" }, { height: toCard + "px" }], timing).id = "fold";
     }
-    // folded, nothing in it can be tabbed to
+    // Saat tertutup, isi panel tidak bisa dijangkau dengan Tab
     wrap.inert = !show;
     toggle.querySelector(".new-mark-toggle-label").textContent = show ? "Cancel" : "New";
     if (show) {
       toggleRemoveMarks(false);
-      // no scroll jump while the panel is still folding open
+      // Cegah scroll melompat selama panel masih dalam animasi membuka
       document.getElementById("new-mark-name").focus({ preventScroll: true });
     }
   }
 
-  // Remove mode: only then can a chip be tapped, and it takes that mark off
-  // this day (the same toggle Made before puts it on with)
+  // Chip hanya bisa di-tap dalam mode Remove, dan tap tersebut menghapus mark
+  // dari hari ini (memakai toggle yang sama dengan Made before untuk
+  // menambahkannya)
   const markForm = document.getElementById("mark-form");
   const removeToggle = document.getElementById("remove-mark-toggle");
 

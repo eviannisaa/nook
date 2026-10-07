@@ -1,10 +1,11 @@
-<!-- The Actions menu of a detail page (a note, a contact): a quiet button
-     in the header's words, with a small chevron (turning up while open),
-     its menu a small paper card under it. The buttons beside it (a note's
-     "Decrypt") share the same look: .header-link, .is-primary in sage -->
+<!-- Menu Actions di halaman detail (catatan, kontak): tombol kalem bergaya
+     teks header, dengan chevron kecil yang menghadap ke atas saat terbuka,
+     dan menunya berupa kartu kertas kecil di bawahnya. Tombol di sebelahnya
+     ("Decrypt" pada catatan) memakai tampilan yang sama: .header-link, dan
+     .is-primary untuk warna sage -->
 <style>
-  /* Actions: a quiet button with a small chevron (turning up while open),
-     its menu a small paper card under it */
+  /* Actions: tombol kalem dengan chevron kecil yang menghadap ke atas saat
+     terbuka, dan menunya berupa kartu kertas kecil di bawahnya */
   .actions-menu {
     position: relative;
   }
@@ -24,8 +25,8 @@
     transition: color 0.5s var(--ease-smooth);
   }
 
-  /* the marker stroke, as under the note's title: tilted a touch and
-     crossing the lower half of the words, drawn in slowly from the left */
+  /* Garis marker seperti di bawah judul catatan: sedikit miring, menutupi
+     separuh bawah teks, dan muncul perlahan dari kiri */
   .header-link::before {
     content: "";
     position: absolute;
@@ -88,8 +89,8 @@
     rotate: -90deg;
   }
 
-  /* the menu: a small paper card under Actions, opening to the left from its
-     right edge */
+  /* Menu berupa kartu kertas kecil di bawah Actions, terbuka ke kiri dari
+     tepi kanannya */
   .actions-menu-list {
     position: absolute;
     top: calc(100% + 0.35rem);
@@ -145,7 +146,7 @@
     outline: none;
   }
 
-  /* delete waits at the bottom, going berry red under the pointer */
+  /* Delete ada di paling bawah dan berubah merah berry saat di-hover */
   .actions-menu-list button.is-danger:hover,
   .actions-menu-list button.is-danger:focus-visible {
     color: var(--color-berry);
@@ -182,7 +183,7 @@
     }
   }
 
-  /* an item a page hides for now (a locked note's PDF) */
+  /* Item yang sedang disembunyikan halaman (PDF catatan terkunci) */
   .actions-menu-list [role="menuitem"][hidden] {
     display: none;
   }

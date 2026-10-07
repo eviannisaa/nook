@@ -1,12 +1,12 @@
 <style>
-  /* same ink line + lighter second pencil pass as the contact cards */
+  /* Garis tinta dan goresan pensil kedua yang lebih tipis, sama seperti kartu kontak */
   .home-card {
     position: relative;
     border: 1.5px solid var(--color-ink);
     border-radius: 30px 24px 32px 22px / 22px 32px 24px 30px;
   }
 
-  /* body text in Comic Neue; the title and menu names keep the display font */
+  /* Teks isi memakai Comic Neue; judul dan nama menu tetap memakai font display */
   .home-card {
     font-family: var(--font-comic);
   }
@@ -21,21 +21,23 @@
     pointer-events: none;
   }
 
-  /* entrance: a calmer cascade than the default list stagger */
+  /* Animasi masuk bertahap, lebih pelan daripada stagger default pada list */
   .home-card [data-stagger] {
     animation-duration: 0.8s;
     animation-delay: calc(150ms + var(--i, 0) * 90ms);
   }
 
-  /* menu rows without a box: icon, a highlighter swipe behind the name,
-     and an arrow. Each row has its own accent.
+  /* Baris menu tanpa kotak: ikon, sapuan stabilo di belakang nama, dan panah.
+     Setiap baris punya warna aksen sendiri.
 
-     Only the arrow is a link. The hover is read from the link box, which never
-     moves, and only the drawing inside it slides. That keeps the hover steady
-     instead of flickering when the arrow moves out from under the cursor.
+     Hanya panah yang berupa link. Hover dibaca dari kotak link yang tidak
+     pernah bergerak, sedangkan yang bergeser hanya gambar di dalamnya. Dengan
+     begitu, hover tetap stabil dan tidak berkedip saat panah keluar dari
+     bawah kursor.
 
-     Every pose change uses one duration and one even curve so the pieces move
-     together; a tiny cascade (0 / 40 / 80ms) keeps it from feeling mechanical. */
+     Semua perubahan tampilan memakai durasi dan kurva yang sama agar setiap
+     bagian bergerak bersamaan; jeda kecil (0 / 40 / 80ms) membuatnya tidak
+     terasa kaku. */
   .home-option {
     --accent: var(--color-marker);
     --icon-bg: var(--color-blush);
@@ -55,7 +57,7 @@
     --highlight: color-mix(in srgb, var(--color-crayon) 25%, #cfeaa0);
   }
 
-  /* stationary hit area around the arrow */
+  /* Area klik di sekitar panah yang tidak ikut bergerak */
   .home-option-link {
     display: inline-flex;
     align-items: center;
@@ -79,7 +81,7 @@
     transition-timing-function: var(--ease-smooth);
   }
 
-  /* text drifts a few pixels toward the arrow */
+  /* Teks bergeser beberapa piksel ke arah panah */
   .home-option-name {
     position: relative;
     isolation: isolate;
@@ -105,7 +107,7 @@
     transition-delay: 40ms;
   }
 
-  /* stabilo swipe, drawn as its own layer so it can scale on the GPU */
+  /* Sapuan stabilo digambar sebagai layer sendiri agar scale-nya diproses GPU */
   .home-option-name::before {
     content: "";
     position: absolute;
@@ -159,7 +161,7 @@
     box-shadow: 4px 4px 0 -1px color-mix(in srgb, var(--accent) 60%, transparent);
   }
 
-  /* little comic "pop" lines off the icon's top-left: quiet at rest, clear on hover */
+  /* Garis "pop" ala komik di kiri atas ikon: samar saat diam, jelas saat hover */
   .home-option-pop {
     position: absolute;
     top: -0.75rem;
@@ -184,7 +186,7 @@
     transition-delay: 40ms;
   }
 
-  /* the arrow drawing slides inside the still link box */
+  /* Gambar panah bergeser di dalam kotak link yang tetap diam */
   .home-option-arrow {
     box-sizing: content-box;
     padding: 0.45rem;
@@ -209,15 +211,15 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
   }
 
-  /* press feedback, last so it wins over the hover pose */
+  /* Efek saat ditekan, diletakkan paling akhir agar menimpa tampilan hover */
   .home-option .home-option-link:active .home-option-arrow {
     transform: translateX(4px) scale(0.92);
     transition-duration: 0.15s;
     transition-delay: 0ms;
   }
 
-  /* phones: as wide as the other pages' cards (2.5rem gutters), and every
-     bit of it a step smaller, like them */
+  /* Ponsel: selebar kartu di halaman lain (gutter 2.5rem), dan semua
+     bagiannya satu ukuran lebih kecil, sama seperti kartu-kartu itu */
   @media (max-width: 639px) {
     .home-page {
       padding-right: 2.5rem;

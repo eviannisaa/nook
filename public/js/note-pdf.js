@@ -1,13 +1,14 @@
-// Download a note as a PDF, made right in the browser from the note shown on
-// the page (so an unlocked note never goes back to the server). The PDF holds
-// real text in Comic Neue: selectable, searchable and sharp at any zoom.
+// Download catatan sebagai PDF yang dibuat langsung di browser dari catatan
+// di halaman, sehingga catatan yang sudah dibuka kuncinya tidak dikirim lagi
+// ke server. Teks di PDF memakai font Comic Neue dan berupa teks asli: bisa
+// dipilih, dicari, dan tetap tajam di zoom berapa pun.
 //
 //   notePdf({ body, title, meta, fileName, decrypted })
 //
-// body: the .note-body element; title / meta: the heading and the line under
-// it (date · mood); decrypted: an encrypted note opened with its key, with
-// "· Decrypted" at the end of that line. jsPDF and the font files load on the
-// first download.
+// body: elemen .note-body; title / meta: judul dan baris di bawahnya
+// (tanggal · mood); decrypted: true untuk catatan terkunci yang dibuka dengan
+// key-nya, lalu baris meta diakhiri "· Decrypted". jsPDF dan file font baru
+// dimuat saat download pertama.
 (function () {
   const JSPDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
   const FONT = "ComicNeue";
@@ -18,11 +19,11 @@
     bolditalic: "/fonts/comic-neue/ComicNeue-BoldItalic.ttf",
   };
 
-  // A4 in points, with a roomy margin
+  // ukuran A4 dalam point, dengan margin yang cukup lebar
   const PAGE = { w: 595.28, h: 841.89, margin: 56 };
   const SIZE = { title: 22, meta: 10, body: 11, h2: 16, h3: 13, footer: 8 };
-  const LINE = 1.6; // line height, as a multiple of the font size
-  const INDENT = 18; // per list level
+  const LINE = 1.6; // tinggi baris, kelipatan dari ukuran font
+  const INDENT = 18; // per level list
   const QUOTE_INDENT = 14;
 
   let ready = null;
@@ -47,7 +48,8 @@
     return btoa(bin);
   }
 
-  // jsPDF and the four font styles, fetched once and kept
+  // jsPDF dan keempat gaya font di-fetch sekali lalu disimpan. Jika gagal,
+  // dicoba lagi pada download berikutnya
   function prepare() {
     if (!ready) {
       ready = Promise.all([
@@ -59,7 +61,7 @@
     return ready;
   }
 
-  // the page's own colours, so the PDF matches the theme
+  // memakai warna dari halaman agar PDF sesuai dengan tema
   function cssColor(name, fallback) {
     const probe = document.createElement("span");
     probe.style.color = `var(${name}, ${fallback})`;
@@ -69,7 +71,7 @@
     return [r, g, b];
   }
 
-  // the font has no emoji: leave them out rather than print empty boxes
+  // emoji dibuang karena tidak ada di font, agar tidak tercetak sebagai kotak kosong
   const EMOJI = /[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu;
   const clean = (text) => text.replace(EMOJI, "").replace(/ {2,}/g, " ");
 
@@ -114,7 +116,7 @@
       }
     };
 
-    // ---- the title, on a marker stroke like the page's headings ----
+    // ---- judul, dengan coretan marker seperti heading di halaman ----
     setFont(SIZE.title, { bold: true });
     const titleLines = pdf.splitTextToSize(clean(title) || "Untitled", width);
     titleLines.forEach((text) => {
@@ -130,8 +132,8 @@
       y += lh;
     });
 
-    // the date and mood, and "Decrypted" after them for an encrypted note
-    // opened with its key, all split by the same dot
+    // tanggal dan mood, ditambah "Decrypted" untuk catatan terkunci yang
+    // dibuka dengan key-nya, semuanya dipisahkan dengan titik yang sama
     const metaLine = [meta, decrypted && "Decrypted"].filter(Boolean).join("  ·  ");
     if (metaLine) {
       y += 4;
@@ -141,7 +143,7 @@
       y += SIZE.meta * 1.6;
     }
 
-    // a pale dashed line before the note
+    // garis putus-putus tipis sebelum isi catatan
     y += 8;
     pdf.setDrawColor(...line);
     pdf.setLineWidth(0.8);
@@ -150,7 +152,7 @@
     pdf.setLineDashPattern([], 0);
     y += 18;
 
-    // ---- inline text: runs of words with their style, wrapped to a width ----
+    // ---- teks inline: potongan kata beserta gayanya, di-wrap sesuai lebar ----
     function runsOf(node, style = {}, out = []) {
       node.childNodes.forEach((child) => {
         if (child.nodeType === Node.TEXT_NODE) {
@@ -161,7 +163,7 @@
         if (child.nodeType !== Node.ELEMENT_NODE) return;
         const tag = child.tagName.toLowerCase();
         if (tag === "br") return out.push({ br: true });
-        if (tag === "ol" || tag === "ul" || tag === "img") return; // blocks, handled on their own
+        if (tag === "ol" || tag === "ul" || tag === "img") return; // block, diproses terpisah
         const next = { ...style };
         if (tag === "strong" || tag === "b") next.bold = true;
         if (tag === "em" || tag === "i") next.italic = true;
@@ -173,10 +175,10 @@
       return out;
     }
 
-    // lays the runs out line by line from the current y, at `x` and `w`
+    // menyusun runs baris per baris mulai dari y saat ini, di posisi `x` dengan lebar `w`
     function paragraph(runs, { size, x = left, w = width, align = "left", color = ink, bold = false, strike = false }) {
       const lh = size * LINE;
-      // words keep their trailing space, so widths add up the way they read
+      // spasi di akhir kata tetap disimpan agar total lebarnya sesuai dengan teks
       const words = [];
       runs.forEach((run) => {
         if (run.br) return words.push({ br: true });
@@ -200,7 +202,7 @@
         const bare = pdf.getTextWidth(word.text.trimEnd());
         if (used + bare > w && current.length) push();
         if (!current.length && word.text === " ") return;
-        // a single word longer than the line breaks where it must
+        // kata yang lebih panjang dari satu baris dipotong per karakter
         if (bare > w) {
           let piece = "";
           for (const ch of word.text) {
@@ -250,7 +252,7 @@
     async function picture(img, x, w) {
       const size = await imageSize(img.src);
       if (!size) return;
-      // pictures keep their shape, at most the text's width (and a page tall)
+      // gambar tetap proporsional, maksimal selebar teks (dan setinggi satu halaman)
       let dw = Math.min(w, size.w * 0.75);
       let dh = (dw / size.w) * size.h;
       const maxH = bottom - PAGE.margin;
@@ -268,7 +270,7 @@
       y += dh + 8;
     }
 
-    // ---- blocks ----
+    // ---- elemen block ----
     async function blocks(parent, { x = left, w = width, level = 0, color = ink } = {}) {
       for (const el of parent.children) {
         const tag = el.tagName.toLowerCase();
@@ -290,7 +292,7 @@
         } else if (tag === "blockquote") {
           const top = y;
           paragraph(runsOf(el), { size, x: x + QUOTE_INDENT, w: w - QUOTE_INDENT, align: alignOf(el), color: soft });
-          // the bar runs down the quote's side (on its last page if it split)
+          // garis di sisi kutipan (hanya di halaman terakhir jika kutipan terpotong)
           const barTop = y < top ? PAGE.margin : top;
           pdf.setDrawColor(...marker);
           pdf.setLineWidth(2.5);
@@ -308,7 +310,7 @@
               size: SIZE.body, x: ix, w: w - INDENT * (level + 1), align: alignOf(li),
               color: done ? soft : color, strike: done,
             });
-            // the marker sits on the item's first line (a new page moves it)
+            // penanda di baris pertama item (pindah ke atas halaman baru jika ada pergantian halaman)
             const markTop = y - lineHeight < top ? PAGE.margin : top;
             const mid = markTop + lineHeight / 2;
             pdf.setDrawColor(...soft);
@@ -327,7 +329,7 @@
             } else {
               pdf.circle(ix - 8, mid, 1.8, "F");
             }
-            // a list inside the item, one step further in
+            // list di dalam item, menjorok satu level lebih dalam
             for (const sub of li.children) {
               const t = sub.tagName.toLowerCase();
               if (t === "ul" || t === "ol") await blocks({ children: [sub] }, { x, w, level: level + 1, color });
@@ -340,7 +342,7 @@
 
     await blocks(body);
 
-    // ---- footer: title and page on every page ----
+    // ---- footer: judul dan nomor halaman di setiap halaman ----
     const pages = pdf.getNumberOfPages();
     for (let i = 1; i <= pages; i++) {
       pdf.setPage(i);

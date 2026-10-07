@@ -1,6 +1,6 @@
 <%
-  // Open Peeps style line-art people. Pass `pose` ("wave", "write", "read", "call", "chat", "add", "edit", "think")
-  // and optionally `cls` for sizing, e.g. include("partials/peep", { pose: "wave", cls: "h-28" })
+  // Ilustrasi orang bergaya garis ala Open Peeps. Kirim `pose` ("wave", "write", "read", "call", "chat", "add", "edit", "think")
+  // dan `cls` (opsional) untuk ukuran, misalnya include("partials/peep", { pose: "wave", cls: "h-28" })
   const peepPose = typeof pose !== "undefined" ? pose : "wave";
   const peepCls = typeof cls !== "undefined" ? cls : "h-28";
 %>
@@ -15,15 +15,15 @@
   aria-hidden="true"
 >
   <% if (peepPose === "wave") { %>
-  <!-- shirt + waving sleeve -->
+  <!-- baju dan lengan yang melambai -->
   <path d="M46 199 C48 162 66 140 100 138 C134 140 150 160 154 199" fill="var(--color-marker)" />
   <path d="M136 152 C148 134 154 116 156 98 L172 100 C170 122 162 146 150 164" fill="var(--color-marker)" />
   <ellipse cx="164" cy="88" rx="10" ry="12" fill="var(--color-card)" />
   <path d="M182 72 q7 7 4 16 M150 66 q-7 5 -6 14" stroke-width="2.5" />
-  <!-- neck -->
+  <!-- leher -->
   <path d="M90 118 L90 138 M110 118 L110 138" />
   <path d="M86 139 Q100 150 114 139" />
-  <!-- head -->
+  <!-- kepala -->
   <path d="M72 88 C70 60 84 46 102 46 C122 46 132 62 130 88 C128 110 116 122 100 122 C84 122 74 110 72 88 Z" fill="var(--color-card)" />
   <path d="M129 86 c8 -3 10 10 1 12" fill="var(--color-card)" />
   <path d="M68 88 C60 56 80 34 104 36 C128 38 140 58 134 86 C130 74 124 66 114 60 C106 70 90 72 78 70 C73 75 70 81 68 88 Z" fill="currentColor" />
@@ -35,12 +35,12 @@
   <path d="M102 93 q-4 7 1 8" stroke-width="2.5" />
   <path d="M92 108 q10 8 20 0" />
   <% } else if (peepPose === "write") { %>
-  <!-- shirt -->
+  <!-- baju -->
   <path d="M46 199 C48 162 66 140 100 138 C134 140 150 160 154 199" fill="var(--color-mint)" />
-  <!-- neck -->
+  <!-- leher -->
   <path d="M90 118 L90 138 M110 118 L110 138" />
   <path d="M86 139 Q100 150 114 139" />
-  <!-- head with bun -->
+  <!-- kepala dengan rambut dicepol -->
   <circle cx="102" cy="34" r="11" fill="currentColor" />
   <path d="M72 88 C70 60 84 46 102 46 C122 46 132 62 130 88 C128 110 116 122 100 122 C84 122 74 110 72 88 Z" fill="var(--color-card)" />
   <path d="M71 86 C66 58 82 42 102 42 C124 42 136 58 131 86 C126 70 116 60 102 60 C88 60 77 70 71 86 Z" fill="currentColor" />
@@ -49,7 +49,7 @@
   <path d="M86 94 q4 3 8 0 M108 94 q4 3 8 0" stroke-width="2.5" />
   <path d="M102 96 q-4 6 1 7" stroke-width="2.5" />
   <path d="M96 111 q5 3 10 0" />
-  <!-- notebook + pencil -->
+  <!-- buku catatan dan pensil -->
   <path d="M58 156 L126 146 L134 199 L66 199 Z" fill="var(--color-card)" />
   <path d="M72 166 L118 159 M74 176 L114 170 M76 186 L106 182" stroke-width="2" />
   <ellipse cx="62" cy="176" rx="8" ry="10" fill="var(--color-card)" />
@@ -57,88 +57,88 @@
   <path d="M142 162 L166 128" stroke-width="2" />
   <ellipse cx="140" cy="166" rx="9" ry="8" fill="var(--color-card)" />
   <% } else if (peepPose === "chat") { %>
-  <!-- same person, mid-conversation: head tilted into the handset, smiling.
-       Kept minimal: no props beyond the phone. -->
-  <!-- shirt with a v-neck -->
+  <!-- orang yang sama sedang mengobrol di telepon, kepala miring ke gagang
+       telepon sambil tersenyum. Tanpa properti lain selain telepon. -->
+  <!-- baju berkerah V -->
   <path d="M44 199 C46 164 64 142 100 140 C136 142 154 164 156 199" fill="var(--color-marker)" />
   <path d="M86 141 Q100 163 114 141" fill="var(--color-card)" stroke-width="2.5" />
-  <!-- neck -->
+  <!-- leher -->
   <path d="M92 122 L92 143 M108 122 L108 143" />
-  <!-- raised arm bringing the handset up -->
+  <!-- lengan terangkat memegang gagang telepon -->
   <path d="M132 150 C148 146 160 132 161 116 L146 111 C144 124 136 134 122 142" fill="var(--color-marker)" />
-  <!-- head, tilted toward the phone -->
+  <!-- kepala, miring ke arah telepon -->
   <g transform="rotate(-7 100 124)">
     <circle cx="104" cy="35" r="11" fill="currentColor" />
     <path d="M72 88 C70 60 84 46 102 46 C122 46 132 62 130 88 C128 110 116 122 100 122 C84 122 74 110 72 88 Z" fill="var(--color-card)" />
     <path d="M71 86 C66 58 82 42 102 42 C124 42 136 58 131 86 C126 70 116 60 102 60 C88 60 77 70 71 86 Z" fill="currentColor" />
     <circle cx="84" cy="104" r="5" fill="var(--color-blush)" stroke="none" />
     <circle cx="118" cy="104" r="5" fill="var(--color-blush)" stroke="none" />
-    <!-- happy, squinting eyes -->
+    <!-- mata menyipit karena senang -->
     <path d="M85 95 q4.5 -5 9 0 M107 95 q4.5 -5 9 0" stroke-width="2.6" />
     <path d="M101 98 q-3.5 5.5 1 6.5" stroke-width="2.4" />
-    <!-- laughing mouth -->
+    <!-- mulut tertawa -->
     <path d="M91 108 Q101 120 111 108 Z" fill="currentColor" stroke-width="2.4" />
   </g>
-  <!-- handset, tipped against the ear -->
+  <!-- gagang telepon, menempel miring di telinga -->
   <g transform="rotate(-10 140 100)">
     <path d="M128 72 C134 64 148 66 150 76 L148 84 C142 80 136 80 132 84 Z" fill="var(--color-crayon)" />
     <path d="M144 80 C156 92 156 114 140 126 L134 120 C146 110 146 96 138 88 Z" fill="var(--color-crayon)" />
     <path d="M140 126 C136 134 124 134 120 128 L126 122 C130 125 134 124 136 120 Z" fill="var(--color-crayon)" />
   </g>
   <ellipse cx="152" cy="106" rx="9" ry="11" fill="var(--color-card)" />
-  <!-- a short, light cord -->
+  <!-- kabel pendek yang tipis -->
   <path d="M123 131 c-7 4 -3 11 -10 14 c-7 3 -3 10 -9 14" stroke-width="1.8" />
   <% } else if (peepPose === "read") { %>
-  <!-- same person as "write", eyes down on an open book held in both
-       hands, with a little heart floating up from the page -->
+  <!-- orang yang sama dengan "write", menunduk membaca buku terbuka yang
+       dipegang dua tangan, dengan hati kecil melayang dari halamannya -->
   <path d="M46 199 C48 162 66 140 100 138 C134 140 150 160 154 199" fill="var(--color-sky)" />
-  <!-- neck -->
+  <!-- leher -->
   <path d="M90 118 L90 138 M110 118 L110 138" />
   <path d="M86 139 Q100 150 114 139" />
-  <!-- head with bun -->
+  <!-- kepala dengan rambut dicepol -->
   <circle cx="102" cy="34" r="11" fill="currentColor" />
   <path d="M72 88 C70 60 84 46 102 46 C122 46 132 62 130 88 C128 110 116 122 100 122 C84 122 74 110 72 88 Z" fill="var(--color-card)" />
   <path d="M71 86 C66 58 82 42 102 42 C124 42 136 58 131 86 C126 70 116 60 102 60 C88 60 77 70 71 86 Z" fill="currentColor" />
   <circle cx="84" cy="106" r="5" fill="var(--color-blush)" stroke="none" />
   <circle cx="118" cy="106" r="5" fill="var(--color-blush)" stroke="none" />
-  <!-- eyes lowered to the page -->
+  <!-- mata menunduk ke halaman -->
   <path d="M85 95 q4.5 4 9 0 M108 95 q4.5 4 9 0" stroke-width="2.6" />
   <path d="M84 88 q5 -2 10 0 M108 88 q5 -2 10 0" stroke-width="2" opacity=".6" />
   <path d="M102 97 q-4 6 1 7" stroke-width="2.5" />
   <path d="M95 112 q6 4 12 0" />
-  <!-- open book: cover peeking out behind two curved pages -->
+  <!-- buku terbuka: sampulnya terlihat sedikit di balik dua halaman yang melengkung -->
   <path d="M48 164 C66 157 86 159 100 171 C114 159 134 157 152 164 L152 199 L48 199 Z" fill="var(--color-crayon)" />
   <path d="M54 160 C70 153 87 155 100 166 L100 199 C87 190 70 188 54 194 Z" fill="var(--color-card)" />
   <path d="M146 160 C130 153 113 155 100 166 L100 199 C113 190 130 188 146 194 Z" fill="var(--color-card)" />
   <path d="M63 169 C73 166 83 167 92 171 M63 178 C73 175 83 176 92 180 M63 187 C70 185 77 185 84 187" stroke-width="2" />
   <path d="M108 171 C117 167 127 166 137 169 M108 180 C117 176 127 175 137 178" stroke-width="2" />
-  <!-- hands on the edges -->
+  <!-- tangan memegang tepi buku -->
   <ellipse cx="52" cy="178" rx="8" ry="10" fill="var(--color-card)" />
   <ellipse cx="148" cy="178" rx="8" ry="10" fill="var(--color-card)" />
-  <!-- heart + sparkle drifting up -->
+  <!-- hati dan kilau yang melayang ke atas -->
   <path d="M156 128 c-3 -7 -13 -4 -10 3 c1.5 3.5 6 6.5 10 10 c4 -3.5 8.5 -6.5 10 -10 c3 -7 -7 -10 -10 -3 Z" fill="var(--color-marker)" stroke-width="2" />
   <path d="M40 124 l2.5 -7 l2.5 7 l7 2.5 l-7 2.5 l-2.5 7 l-2.5 -7 l-7 -2.5 Z" stroke-width="2" fill="var(--color-mint)" />
   <% } else if (peepPose === "add") { %>
-  <!-- same person, holding up an address book with a phone label -->
+  <!-- orang yang sama, mengangkat buku alamat berlabel telepon -->
   <path d="M46 199 C48 162 66 140 100 138 C134 140 150 160 154 199" fill="var(--color-blush)" />
-  <!-- neck -->
+  <!-- leher -->
   <path d="M90 118 L90 138 M110 118 L110 138" />
   <path d="M86 139 Q100 150 114 139" />
-  <!-- head with bun -->
+  <!-- kepala dengan rambut dicepol -->
   <circle cx="102" cy="34" r="11" fill="currentColor" />
   <path d="M72 88 C70 60 84 46 102 46 C122 46 132 62 130 88 C128 110 116 122 100 122 C84 122 74 110 72 88 Z" fill="var(--color-card)" />
   <path d="M71 86 C66 58 82 42 102 42 C124 42 136 58 131 86 C126 70 116 60 102 60 C88 60 77 70 71 86 Z" fill="currentColor" />
   <circle cx="84" cy="104" r="5" fill="var(--color-blush)" stroke="none" />
   <circle cx="118" cy="104" r="5" fill="var(--color-blush)" stroke="none" />
-  <!-- open, happy eyes -->
+  <!-- mata terbuka, tampak senang -->
   <circle cx="90" cy="92" r="2.6" fill="currentColor" stroke="none" />
   <circle cx="112" cy="92" r="2.6" fill="currentColor" stroke="none" />
   <path d="M85 84 q5 -3 10 0 M107 84 q5 -3 10 0" stroke-width="2.5" />
   <path d="M101 95 q-4 6 1 7" stroke-width="2.5" />
   <path d="M92 108 q9 8 18 0" />
-  <!-- address book held upright: green cover, spiral binding on the left,
-       colored A–Z style index tabs on the right, a phone label on the cover
-       and a small sparkle beside it (all in the green family) -->
+  <!-- buku alamat dipegang tegak: sampul hijau, jilid spiral di kiri, tab
+       indeks warna-warni ala A–Z di kanan, label telepon di sampul, dan kilau
+       kecil di sampingnya (semuanya dalam nuansa hijau) -->
   <path d="M130 142 L139 142.5 Q141 143 141 145 L141 153 Q141 155 139 155 L130 155 Z" fill="var(--color-secondary)" />
   <path d="M130 158 L139 158.5 Q141 159 141 161 L141 169 Q141 171 139 171 L130 171 Z" fill="color-mix(in srgb, var(--color-secondary) 50%, var(--color-mint))" />
   <path d="M130 174 L139 174.5 Q141 175 141 177 L141 185 Q141 187 139 187 L130 187 Z" fill="var(--color-mint)" />
@@ -153,21 +153,21 @@
     <path d="M6.9 3.8c1.2-.4 2.2.2 2.7 1.3l1.1 2.6c.4 1-.1 1.9-.9 2.5l-1 .7c1 2.3 2.8 4.2 5.1 5.3l.8-1c.6-.8 1.6-1.2 2.5-.8l2.6 1.2c1 .5 1.6 1.5 1.2 2.6-.5 1.6-2 2.8-3.7 2.7C10.3 20.6 3.6 13.8 3.3 7.4c-.1-1.6 1.4-3.1 3.6-3.6z" fill="color-mix(in srgb, var(--color-crayon) 25%, transparent)" />
   </g>
   <path d="M89 186 L119 185.5 M89 193 L111 192.7" stroke="color-mix(in srgb, var(--color-mint) 45%, transparent)" stroke-width="2" />
-  <!-- hands holding it at the bottom corners -->
+  <!-- tangan memegang buku di kedua sudut bawah -->
   <ellipse cx="64" cy="192" rx="8" ry="9" fill="var(--color-card)" />
   <ellipse cx="136" cy="193" rx="8" ry="9" fill="var(--color-card)" />
-  <!-- a little "new" sparkle: one four-point star, a smaller one and a dot -->
+  <!-- kilau kecil penanda "baru": satu bintang empat sudut, satu yang lebih kecil, dan satu titik -->
   <path d="M156 100 l3.2 9.3 l9.3 3.2 l-9.3 3.2 l-3.2 9.3 l-3.2 -9.3 l-9.3 -3.2 l9.3 -3.2 Z" fill="var(--color-mint)" stroke-width="2.2" />
   <path d="M174 128 l1.8 5.2 l5.2 1.8 l-5.2 1.8 l-1.8 5.2 l-1.8 -5.2 l-5.2 -1.8 l5.2 -1.8 Z" fill="var(--color-mint)" stroke-width="1.8" />
   <circle cx="146" cy="134" r="2" fill="currentColor" stroke="none" />
   <% } else if (peepPose === "edit") { %>
-  <!-- same person and address book as "add", now touching up the entry
-       with a pencil instead of showing it off -->
+  <!-- orang dan buku alamat yang sama dengan "add", kali ini sedang
+       memperbaiki isinya dengan pensil, bukan memamerkannya -->
   <path d="M46 199 C48 162 66 140 100 138 C134 140 150 160 154 199" fill="var(--color-mint)" />
-  <!-- neck -->
+  <!-- leher -->
   <path d="M90 118 L90 138 M110 118 L110 138" />
   <path d="M86 139 Q100 150 114 139" />
-  <!-- head with bun, eyes down on the page -->
+  <!-- kepala dengan rambut dicepol, mata menunduk ke halaman -->
   <circle cx="102" cy="34" r="11" fill="currentColor" />
   <path d="M72 88 C70 60 84 46 102 46 C122 46 132 62 130 88 C128 110 116 122 100 122 C84 122 74 110 72 88 Z" fill="var(--color-card)" />
   <path d="M71 86 C66 58 82 42 102 42 C124 42 136 58 131 86 C126 70 116 60 102 60 C88 60 77 70 71 86 Z" fill="currentColor" />
@@ -176,7 +176,7 @@
   <path d="M86 94 q4 3 8 0 M108 94 q4 3 8 0" stroke-width="2.5" />
   <path d="M101 96 q-4 6 1 7" stroke-width="2.5" />
   <path d="M95 110 q6 4 12 0" />
-  <!-- address book, same cover, spiral and index tabs as "add" -->
+  <!-- buku alamat dengan sampul, spiral, dan tab indeks yang sama seperti "add" -->
   <path d="M130 142 L139 142.5 Q141 143 141 145 L141 153 Q141 155 139 155 L130 155 Z" fill="var(--color-secondary)" />
   <path d="M130 158 L139 158.5 Q141 159 141 161 L141 169 Q141 171 139 171 L130 171 Z" fill="color-mix(in srgb, var(--color-secondary) 50%, var(--color-mint))" />
   <path d="M130 174 L139 174.5 Q141 175 141 177 L141 185 Q141 187 139 187 L130 187 Z" fill="var(--color-mint)" />
@@ -190,28 +190,28 @@
   <g transform="translate(89.5 145) scale(1.25)" stroke="var(--color-crayon)" stroke-width="2.3">
     <path d="M6.9 3.8c1.2-.4 2.2.2 2.7 1.3l1.1 2.6c.4 1-.1 1.9-.9 2.5l-1 .7c1 2.3 2.8 4.2 5.1 5.3l.8-1c.6-.8 1.6-1.2 2.5-.8l2.6 1.2c1 .5 1.6 1.5 1.2 2.6-.5 1.6-2 2.8-3.7 2.7C10.3 20.6 3.6 13.8 3.3 7.4c-.1-1.6 1.4-3.1 3.6-3.6z" fill="color-mix(in srgb, var(--color-crayon) 25%, transparent)" />
   </g>
-  <!-- the line being rewritten: old one struck through, new one squiggled in -->
+  <!-- baris yang sedang ditulis ulang: baris lama dicoret, baris baru ditulis berlekuk -->
   <path d="M89 186 L119 185.5" stroke="color-mix(in srgb, var(--color-mint) 45%, transparent)" stroke-width="2" />
   <path d="M87 186.5 L121 185" stroke-width="1.8" />
   <path d="M89 193 c4 -3 7 3 11 0 c4 -3 7 3 11 0" stroke="var(--color-marker)" stroke-width="2.2" />
-  <!-- hand steadying the book -->
+  <!-- tangan menahan buku -->
   <ellipse cx="64" cy="192" rx="8" ry="9" fill="var(--color-card)" />
-  <!-- pencil coming in from the right, tip on the new line -->
+  <!-- pensil datang dari kanan, ujungnya di baris baru -->
   <path d="M160 150 L118 191" stroke-width="8" stroke="var(--color-marker)" />
   <path d="M160 150 L118 191" stroke-width="2" />
   <path d="M121 188 L114 196 L118 186 Z" fill="currentColor" stroke-width="1.6" />
   <path d="M157 147 L164 154" stroke-width="3" stroke="var(--color-blush)" />
   <ellipse cx="146" cy="166" rx="9" ry="8" fill="var(--color-card)" />
-  <!-- two little "fixing it" ticks by the pencil -->
+  <!-- dua garis kecil di dekat pensil, tanda sedang memperbaiki -->
   <path d="M170 128 l4 -8 M178 136 l8 -4" stroke-width="2.5" />
   <% } else if (peepPose === "call") { %>
-  <!-- same person as "write", different shirt, holding a handset -->
+  <!-- orang yang sama dengan "write", bajunya berbeda, memegang gagang telepon -->
   <path d="M46 199 C48 162 66 140 100 138 C134 140 150 160 154 199" fill="var(--color-marker)" />
   <path d="M130 146 C146 142 158 130 160 114 L144 108 C142 122 134 132 120 140" fill="var(--color-marker)" />
-  <!-- neck -->
+  <!-- leher -->
   <path d="M90 118 L90 138 M110 118 L110 138" />
   <path d="M86 139 Q100 150 114 139" />
-  <!-- head with bun -->
+  <!-- kepala dengan rambut dicepol -->
   <circle cx="102" cy="34" r="11" fill="currentColor" />
   <path d="M72 88 C70 60 84 46 102 46 C122 46 132 62 130 88 C128 110 116 122 100 122 C84 122 74 110 72 88 Z" fill="var(--color-card)" />
   <path d="M71 86 C66 58 82 42 102 42 C124 42 136 58 131 86 C126 70 116 60 102 60 C88 60 77 70 71 86 Z" fill="currentColor" />
@@ -220,23 +220,23 @@
   <path d="M86 94 q4 3 8 0 M108 94 q4 3 8 0" stroke-width="2.5" />
   <path d="M102 96 q-4 6 1 7" stroke-width="2.5" />
   <path d="M96 111 q5 3 10 0" />
-  <!-- curly cord -->
+  <!-- kabel spiral -->
   <path d="M126 124 c-8 6 2 12 -5 18 c-7 6 3 12 -4 18 c-7 6 3 12 -4 18" stroke-width="2" />
-  <!-- handset: earpiece at the ear, mouthpiece by the chin -->
+  <!-- gagang telepon: bagian untuk mendengar di telinga, bagian untuk bicara di dekat dagu -->
   <path d="M126 70 C132 62 146 64 148 74 L146 82 C140 78 134 78 130 82 Z" fill="var(--color-crayon)" />
   <path d="M142 78 C154 90 154 112 138 124 L132 118 C144 108 144 94 136 86 Z" fill="var(--color-crayon)" />
   <path d="M138 124 C134 132 122 132 118 126 L124 120 C128 123 132 122 134 118 Z" fill="var(--color-crayon)" />
   <ellipse cx="150" cy="104" rx="9" ry="11" fill="var(--color-card)" />
   <path d="M143 98 q5 -2 9 1 M143 105 q5 -2 9 1" stroke-width="2" />
-  <!-- ringing lines -->
+  <!-- garis tanda telepon berdering -->
   <path d="M160 62 q9 7 7 18 M170 50 q15 11 11 32" stroke-width="2.5" />
   <% } else { %>
-  <!-- shirt + arm up to the chin -->
+  <!-- baju dan lengan yang terangkat ke dagu -->
   <path d="M46 199 C48 162 66 140 100 138 C134 140 150 160 154 199" fill="var(--color-lilac)" />
-  <!-- neck -->
+  <!-- leher -->
   <path d="M90 118 L90 138 M110 118 L110 138" />
   <path d="M86 139 Q100 150 114 139" />
-  <!-- head, spiky hair -->
+  <!-- kepala dengan rambut jabrik -->
   <path d="M72 88 C70 60 84 46 102 46 C122 46 132 62 130 88 C128 110 116 122 100 122 C84 122 74 110 72 88 Z" fill="var(--color-card)" />
   <path d="M129 86 c8 -3 10 10 1 12" fill="var(--color-card)" />
   <path d="M70 86 C64 62 76 44 96 42 L100 32 L108 42 L118 34 L120 46 C134 52 136 70 131 86 C124 72 112 66 98 68 C86 70 76 76 70 86 Z" fill="currentColor" />
@@ -247,7 +247,7 @@
   <path d="M98 110 q7 -3 13 1" />
   <path d="M62 170 C64 150 76 132 92 126 L100 138 C88 146 80 158 78 176" fill="var(--color-lilac)" />
   <ellipse cx="97" cy="124" rx="10" ry="9" fill="var(--color-card)" />
-  <!-- thought doodles -->
+  <!-- doodle tanda sedang berpikir -->
   <path d="M150 44 c0 -12 20 -12 20 0 c0 9 -10 9 -10 18" stroke-width="2.5" />
   <circle cx="160" cy="72" r="2" fill="currentColor" stroke="none" />
   <path d="M40 58 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 Z" stroke-width="2" fill="var(--color-marker)" />

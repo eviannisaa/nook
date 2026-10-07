@@ -1,7 +1,7 @@
-<!-- Encrypt / Decrypt Key Modal -->
+<!-- Modal key untuk encrypt / decrypt -->
 <style>
-  /* Cancel as a quiet text button, as in the delete popups (this modal also
-     opens on the edit page, where detail-styles isn't loaded) */
+  /* Cancel berupa tombol teks yang kalem, seperti di popup delete (modal ini
+     juga dibuka di halaman edit, yang tidak memuat detail-styles) */
   .key-cancel {
     display: inline-flex;
     align-items: center;
@@ -33,18 +33,18 @@
     display: none;
   }
 
-  /* the same taped paper as the delete and share popups (.delete-dialog,
-     from the scrapbook); its frame is set here too, as detail-styles isn't
-     on the edit page */
+  /* Kertas bertempel selotip yang sama dengan popup delete dan share
+     (.delete-dialog dari scrapbook). Ukuran bingkainya juga diatur di sini
+     karena halaman edit tidak memuat detail-styles */
   .key-dialog {
     position: relative;
     width: min(22rem, calc(100vw - 2rem));
     padding: 1.75rem;
   }
 
-  /* on a phone a step smaller all through, as the delete popup */
+  /* Di ponsel, semuanya satu ukuran lebih kecil, sama seperti popup delete */
   @media (max-width: 639px) {
-    /* as wide as the page's content, inside its 2.5rem gutters */
+    /* Selebar konten halaman, di dalam gutter 2.5rem */
     .key-dialog {
       width: calc(100vw - 5rem);
       padding: 1.4rem;
@@ -66,10 +66,10 @@
     }
   }
 </style>
-<!-- The key is only used here in the browser (public/js/note-crypto.js):
-     the form never posts it. Each page says what its actions do with it in
-     window.keyModalActions: action(key, id) resolves when done, or throws
-     with the message to show under the field -->
+<!-- Key hanya dipakai di browser (public/js/note-crypto.js) dan tidak
+     pernah dikirim oleh form. Setiap halaman menentukan apa yang dilakukan
+     setiap action di window.keyModalActions: action(key, id) resolve jika
+     selesai, atau throw dengan pesan yang ditampilkan di bawah field -->
 <script src="/js/note-crypto.js"></script>
 <div id="key-modal" class="doodle-modal">
   <div class="delete-dialog key-dialog" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" aria-describedby="key-modal-desc">
@@ -119,28 +119,28 @@
   const keySubmit = document.getElementById("key-submit");
 
   const keyActions = {
-    // lock: encrypt the note with a key
+    // Lock: encrypt catatan dengan key
     encrypt: {
       title: "Lock Note",
       desc: "Enter a key to lock this note. You will need the same key to read it again.",
       submit: "Lock",
       busy: "Locking…",
     },
-    // remove the lock for good: the note is saved without encryption
+    // Membuka kunci secara permanen: catatan disimpan tanpa enkripsi
     decrypt: {
       title: "Remove Lock",
       desc: "Enter the note's key to remove its lock. It will be saved without encryption.",
       submit: "Remove lock",
       busy: "Removing…",
     },
-    // read the note once; it stays encrypted
+    // Membaca catatan sekali saja; catatan tetap terenkripsi
     unlock: {
       title: "Locked Note",
       desc: "This note is encrypted. Enter its key to decrypt it.",
       submit: "Decrypt",
       busy: "Decrypting…",
     },
-    // open it in the editor; it's locked again with the same key on save
+    // Membuka catatan di editor; saat disimpan, catatan dikunci lagi dengan key yang sama
     edit: {
       title: "Locked Note",
       desc: "Enter the note's key to edit it. It stays locked when you save.",

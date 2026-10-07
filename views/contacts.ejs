@@ -4,9 +4,9 @@
   const viewAllLink = "/contacts?all=1" + keep;
   const initials = (name) =>
     name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-  // group contacts by the first letter of their name (A–Z, anything else
-  // under "#"), letters in order and names A–Z inside each group. Done here
-  // too, so the grouping holds whatever order the list arrives in.
+  // kontak dikelompokkan per huruf pertama namanya (A–Z, sisanya masuk "#").
+  // Huruf dan nama di tiap grup diurutkan A–Z. Sort juga dibuat di sini supaya
+  // hasilnya tetap benar, apa pun urutan data yang diterima.
   const byName = (a, b) =>
     (a.name || "").localeCompare(b.name || "", "en", { sensitivity: "base" });
   const buckets = {};
@@ -19,20 +19,21 @@
     .sort((a, b) => (a === "#") - (b === "#") || a.localeCompare(b))
     .map((letter) => ({ letter, items: buckets[letter].sort(byName) }));
   let cardIndex = 0;
-  // the search box starts open for an active search, unless it found nothing:
-  // then it's already tucked away (query kept, badge on the button) before the
-  // empty state shows
+  // search box langsung terbuka jika ada search aktif, kecuali hasilnya kosong.
+  // Dalam kondisi itu box sudah disembunyikan (query tetap ada, badge muncul di
+  // tombol) sebelum empty state tampil
   const searchOpen = !!search && students.length > 0;
 %>
 <style>
-  /* page styles come before the markup so cards never paint unstyled first
-     (an unstyled → styled switch would animate the card border on refresh) */
+  /* style halaman ditulis sebelum markup supaya card tidak sempat tampil tanpa
+     style (perubahan dari tanpa style ke ber-style membuat border card
+     teranimasi saat refresh) */
 
-  /* list / card switch (right end of the count row): a small doodle segmented control so it reads as "pick one".
-     A paper-white thumb slides behind the active icon; everything stays pale
-     so it never competes with the contacts. */
+  /* switch list / card (ujung kanan baris jumlah kontak): segmented control doodle kecil supaya terbaca sebagai "pilih salah satu".
+     Thumb putih kertas bergeser di belakang ikon yang aktif. Semuanya dibuat
+     pucat supaya tidak bersaing dengan daftar kontak. */
   .view-switch {
-    /* short, slightly wide segments so the control sits low in the row */
+    /* segmen pendek dan agak lebar supaya control tidak terlalu tinggi di barisnya */
     --seg-w: 1.9rem;
     --seg-h: 1.4rem;
     --pad: 0.12rem;
@@ -41,10 +42,10 @@
     align-items: center;
     padding: var(--pad);
     background-color: color-mix(in srgb, var(--color-paper-deep) 55%, var(--color-paper));
-    /* pen-drawn outline: wobbly corners like the search box and cards */
+    /* outline seperti goresan pena: sudutnya tidak rata, sama seperti search box dan card */
     border: 1.5px solid color-mix(in srgb, var(--color-ink) 14%, var(--color-line));
     border-radius: 16px 12px 17px 11px / 11px 17px 12px 16px;
-    overflow: hidden; /* keeps the thumb's marker offset inside the outline */
+    overflow: hidden; /* offset marker pada thumb tetap di dalam outline */
   }
 
   .view-switch::before {
@@ -57,7 +58,7 @@
     background-color: var(--color-card);
     border: 1.5px solid color-mix(in srgb, var(--color-ink) 22%, var(--color-line));
     border-radius: 12px 9px 13px 8px / 8px 13px 9px 12px;
-    /* faint marker fill printed off the line, like the avatars */
+    /* warna marker samar yang sedikit bergeser dari garisnya, seperti avatar */
     box-shadow: 2px 2px 0 -1px color-mix(in srgb, var(--color-marker) 35%, transparent);
     transition: transform 0.4s var(--ease-smooth);
   }
@@ -95,15 +96,15 @@
     outline-offset: 1px;
   }
 
-  /* list layout: plain text rows, no card box and no avatar; name on the
-     left, number (still the stabilo focal point) on the right */
+  /* layout list: baris teks biasa tanpa kotak card dan tanpa avatar. Nama di
+     kiri, nomor (tetap jadi fokus utama dengan stabilo) di kanan */
   .contact-groups.is-list ul {
     grid-template-columns: 1fr;
     gap: 0.1rem;
   }
 
   .contact-groups.is-list .contact-card {
-    /* rows never show a border, so there's nothing to animate there */
+    /* baris tidak pernah menampilkan border, jadi border tidak perlu dianimasikan */
     transition-property: transform, box-shadow, background-color;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -123,7 +124,7 @@
 
   .contact-groups.is-list .contact-name {
     font-size: 1rem;
-    /* softer than the number, so the number still leads the row */
+    /* lebih samar dari nomor, supaya nomor tetap paling menonjol di baris */
     color: var(--color-ink-soft);
   }
 
@@ -132,7 +133,7 @@
     margin-top: 0;
   }
 
-  /* hover in the list: no lift or frame, the text just firms up */
+  /* hover di list: tanpa efek terangkat atau bingkai, hanya teksnya yang lebih tegas */
   @media (hover: hover) {
     .contact-groups.is-list .contact-card:hover {
       background-color: transparent;
@@ -151,15 +152,15 @@
     border-color: transparent;
   }
 
-  /* layout switch (View Transitions): each card glides and resizes into its
-     new spot. The old snapshot leaves out the border (and shadow) so it isn't
-     seen stretching; the new card brings its border in as it lands. */
+  /* perpindahan layout (View Transitions): tiap card bergeser dan berubah ukuran
+     ke posisi barunya. Snapshot lama dibuat tanpa border (dan shadow) supaya
+     border tidak terlihat melar; border card baru muncul saat card sampai. */
   html.vt-switch .contact-card {
     border-color: transparent;
     box-shadow: none;
   }
 
-  /* border changes are instant during a switch, never a lagging fade */
+  /* selama perpindahan, border berubah seketika tanpa fade yang tertinggal */
   html.vt-instant .contact-card {
     transition: none;
   }
@@ -169,8 +170,8 @@
     animation-timing-function: var(--ease-smooth);
   }
 
-  /* the new card (with its border) shows up over the second half, when it's
-     close to its final size, so the border is barely scaled when seen */
+  /* card baru (dengan border-nya) muncul di paruh kedua animasi, saat ukurannya
+     hampir final, jadi border yang terlihat hampir tidak ter-scale */
   ::view-transition-new(*.contact) {
     animation-name: card-new-in;
   }
@@ -185,7 +186,7 @@
     }
   }
 
-  /* empty state framed exactly like a contact card */
+  /* bingkai empty state dibuat persis seperti card kontak */
   .empty-card {
     background-color: var(--color-card);
     border: 1.5px solid color-mix(in srgb, var(--color-ink) 50%, var(--color-line));
@@ -195,8 +196,8 @@
       0 4px 12px -8px rgba(0, 0, 0, 0.18);
   }
 
-  /* A, B, C... sections: a big hand-lettered initial with a stabilo swipe
-     and a soft rule running out to the right, cards underneath */
+  /* bagian A, B, C...: huruf awal besar bergaya tulisan tangan dengan coretan
+     stabilo dan garis tipis ke kanan, lalu card di bawahnya */
   .contact-groups {
     display: flex;
     flex-direction: column;
@@ -231,7 +232,7 @@
     border-radius: 3px 8px 4px 10px;
   }
 
-  /* quiet rule: a thin line in the page's line colour that fades out to the right */
+  /* garis tipis dengan warna garis halaman, makin pudar ke kanan */
   .group-letter::after {
     content: "";
     flex: 1;
@@ -244,8 +245,8 @@
     border-radius: 1px;
   }
 
-  /* clean card with comic touches: thin pen outline and a marker-offset
-     avatar. Each card cycles colors. */
+  /* card polos dengan sentuhan komik: outline pena tipis dan avatar dengan
+     offset marker. Warna card bergantian. */
   .contact-card {
     --avatar: var(--color-blush);
     --accent: var(--color-marker);
@@ -260,17 +261,17 @@
     font-family: var(--font-comic);
     color: var(--color-ink);
     background-color: var(--color-card);
-    /* softer ink so the frame sits with the quiet avatar/name and lets the
-       number lead; it firms up to full ink on hover */
+    /* warna tinta lebih lembut supaya bingkai serasi dengan avatar dan nama,
+       dan nomor tetap menonjol. Saat hover, warnanya jadi tinta penuh */
     border: 1.5px solid color-mix(in srgb, var(--color-ink) 50%, var(--color-line));
-    /* same wobbly capsule feel as the search box, scaled up for a tall card */
+    /* bentuk kapsul tidak rata seperti search box, diperbesar untuk card yang tinggi */
     border-radius: 34px 28px 36px 26px / 26px 36px 28px 34px;
-    /* two-layer shadow (contact + ambient) so the lift reads as depth, not blur */
+    /* shadow dua lapis (dekat + ambient) supaya efek terangkat terasa dalam, bukan blur */
     box-shadow:
       0 1px 2px rgba(0, 0, 0, 0.04),
       0 4px 12px -8px rgba(0, 0, 0, 0.18);
-    /* hover motion: one even curve, one duration for every piece, a small
-       cascade inside (frame → avatar → name → number) */
+    /* gerakan hover: satu kurva dan satu durasi untuk semua bagian, dengan
+       jeda kecil berurutan di dalamnya (bingkai → avatar → nama → nomor) */
     --hover-time: 0.5s;
     transition-property: transform, box-shadow, border-color, background-color;
     transition-duration: var(--hover-time);
@@ -291,7 +292,7 @@
     position: relative;
   }
 
-  /* marker fill printed slightly off the line, kept faint so it doesn't pull focus */
+  /* warna marker sedikit bergeser dari garis, dibuat samar supaya tidak mencuri perhatian */
   .contact-avatar {
     display: inline-flex;
     width: 3.25rem;
@@ -313,7 +314,7 @@
     margin-bottom: 0.25rem;
   }
 
-  /* a small badge on the avatar of a contact someone shared with you */
+  /* badge kecil di avatar kontak yang dibagikan orang lain ke akun ini */
   .contact-shared {
     position: absolute;
     right: -0.35rem;
@@ -327,7 +328,7 @@
     border-radius: 999px;
   }
 
-  /* reading order inside a card: number first, then name, then the avatar */
+  /* urutan penekanan di dalam card: nomor paling menonjol, lalu nama, lalu avatar */
   .contact-name {
     font-size: 0.95rem;
     font-weight: 700;
@@ -351,13 +352,13 @@
     white-space: nowrap;
     padding: 0 0.3rem;
     font-family: var(--font-comic);
-    /* same size as the name; it still leads through ink colour + stabilo */
+    /* ukurannya sama dengan nama; nomor tetap menonjol lewat warna tinta dan stabilo */
     font-size: 0.95rem;
     font-weight: 700;
     letter-spacing: 0.03em;
   }
 
-  /* stabilo swipe as its own layer, so hover can thicken it on the GPU */
+  /* coretan stabilo dibuat sebagai layer sendiri, supaya hover bisa menebalkannya di GPU */
   .contact-phone-num::before {
     content: "";
     position: absolute;
@@ -376,13 +377,13 @@
     opacity: 0.65;
   }
 
-  /* the icon stays a step lighter so the number itself leads */
+  /* ikon dibuat sedikit lebih terang supaya nomornya yang menonjol */
   .contact-phone .doodle-i {
     font-size: 0.95rem;
     color: var(--color-ink-soft);
   }
 
-  /* every moving piece shares the card's timing */
+  /* semua bagian yang bergerak memakai timing yang sama dengan card */
   .contact-avatar,
   .contact-name,
   .contact-phone .doodle-i,
@@ -407,8 +408,8 @@
     transition-property: transform, opacity;
   }
 
-  /* hover pose (mouse only, so a tap on touch screens doesn't leave it stuck)
-     and the same pose for keyboard focus */
+  /* tampilan hover (hanya untuk mouse, supaya tap di layar sentuh tidak membuat
+     tampilan ini tertahan) dan tampilan serupa untuk focus keyboard */
   @media (hover: hover) {
     .contact-card:hover {
       border-color: var(--color-ink);
@@ -457,7 +458,7 @@
     transform: scaleY(1.7);
   }
 
-  /* press: settle back down quickly, like pushing a card into the table */
+  /* saat ditekan: card cepat turun kembali, seperti ditekan ke meja */
   .contact-card:active {
     transform: translateY(-1px) scale(0.985);
     box-shadow:
@@ -493,12 +494,12 @@
     background-color: var(--color-primary);
   }
 
-  /* phones: laid out like the writing page, the page title and its line a
-     size down, and the count close under the header. The contact cards
-     stay slim here (4rem gutters), narrower than the calendar and the
-     detail pages */
+  /* ponsel: layout-nya mengikuti halaman writing. Judul halaman dan baris di
+     bawahnya turun satu ukuran, dan jumlah kontak berada dekat di bawah
+     header. Card kontak tetap ramping (gutter 4rem), lebih sempit dari
+     kalender dan halaman detail */
   @media (max-width: 639px) {
-    /* (.contacts-page: the shared list styles load after this block) */
+    /* (pakai .contacts-page karena style list bersama dimuat setelah blok ini) */
     .contacts-page.list-page {
       padding-right: 4rem;
       padding-left: 4rem;
@@ -517,8 +518,8 @@
       font-size: 0.8rem;
     }
 
-    /* the rest of the page's text a step smaller with it: the group
-       letters, the cards, the pages row and the empty note */
+    /* teks lain di halaman juga diperkecil satu tingkat: huruf grup, card,
+       baris pagination, dan teks empty state */
     .group-letter {
       font-size: 1.3rem;
     }
@@ -560,7 +561,7 @@
     </div>
   </div>
 
-  <!-- floating add button, right edge (vertically centred with the search button) -->
+  <!-- tombol add mengambang di tepi kanan, segaris vertikal dengan tombol search -->
   <a
     href="/contact/new"
     aria-label="New contact"
@@ -570,7 +571,7 @@
     <%- include("partials/doodle-icon", { name: "plus", cls: "fab-icon" }) %>
   </a>
 
-  <!-- floating search button, above the add button: jumps to the search box -->
+  <!-- tombol search mengambang di atas tombol add: membuka atau menutup search box -->
   <button
     type="button"
     onclick="toggleSearch()"
@@ -581,15 +582,15 @@
     title="Search contacts"
     class="fab-search fab-simple doodle-btn fixed right-6 z-40 h-12 w-12 p-0 text-xl"
   >
-    <!-- search icon while closed; a "tuck away" chevron while the box is open -->
+    <!-- ikon search saat box tertutup; chevron untuk menyembunyikan box saat terbuka -->
     <%- include("partials/doodle-icon", { name: "search", cls: "fab-icon fab-icon-open" }) %>
     <%- include("partials/doodle-icon", { name: "chevron-right", cls: "fab-icon fab-icon-close" }) %>
-    <!-- shows the first letter of an active search while the box is hidden -->
+    <!-- menampilkan huruf pertama search yang aktif selama box disembunyikan -->
     <span class="search-badge" aria-hidden="true"></span>
   </button>
 
-  <!-- paper scrim behind the open search box on phones/tablets, so the
-       content underneath doesn't show through around the input -->
+  <!-- lapisan kertas di belakang search box yang terbuka di ponsel, supaya
+       konten di bawahnya tidak terlihat di sekitar input -->
   <div class="search-scrim" aria-hidden="true"></div>
 
 
@@ -599,9 +600,9 @@
     <span class="contact-count-label"><%= totalContacts === 1 ? "contact" : "contacts" %></span>
   </span>
 
-  <!-- search: inline in this row on tablet/desktop; on phones it becomes the
-       floating capsule that grows out of the search button (hidden until
-       opened, kept open while a search with results is active) -->
+  <!-- search: tampil sebaris di baris ini pada tablet/desktop. Di ponsel,
+       search jadi kapsul mengambang yang muncul dari tombol search
+       (tersembunyi sampai dibuka, tetap terbuka selama search aktif punya hasil) -->
   <div id="search-box" class="search-box <%= searchOpen ? 'is-open' : '' %>">
     <span class="search-inline-icon" aria-hidden="true"><%- include("partials/doodle-icon", { name: "search" }) %></span>
     <input
@@ -627,7 +628,7 @@
     <% } %>
   </div>
 
-  <!-- view switch: list rows or cards -->
+  <!-- switch tampilan: baris list atau card -->
   <div class="view-switch" role="group" aria-label="Layout">
     <button type="button" class="view-btn" data-view="list" aria-pressed="false" title="List view" aria-label="List view">
       <%- include("partials/doodle-icon", { name: "list" }) %>
@@ -652,11 +653,11 @@
   <% } else { %>
   <div class="contact-groups" id="contact-groups">
     <script>
-      // apply the remembered layout before first paint, so there's no flash
+      // pasang layout yang tersimpan sebelum halaman tampil, supaya tidak berkedip
       try {
-        // remembered separately for phones and for tablet/desktop, so a list
-        // picked on a phone never makes the desktop open as a list; both
-        // default to cards
+        // disimpan terpisah untuk ponsel dan tablet/desktop, supaya list yang
+        // dipilih di ponsel tidak membuat desktop ikut terbuka sebagai list.
+        // Default keduanya adalah card
         const key = matchMedia("(min-width: 640px)").matches ? "contacts-view-wide" : "contacts-view-phone";
         if (localStorage.getItem(key) === "list") {
           document.currentScript.parentElement.classList.add("is-list");
@@ -680,7 +681,7 @@
               <span class="contact-avatar text-sm font-bold"><%= initials(contact.name) %></span>
               <% } %>
               <% if (String(contact.owner._id) !== String(user._id)) { %>
-              <!-- someone else's contact, shared with this account -->
+              <!-- kontak milik orang lain yang dibagikan ke akun ini -->
               <span class="contact-shared" title="Shared by <%= contact.owner.username %>">
                 <%- include("partials/doodle-icon", { name: "share" }) %>
                 <span class="sr-only">Shared by <%= contact.owner.username %></span>
@@ -757,8 +758,8 @@
         params.set("search", value);
       }
 
-      // a search shows every match on one list, so it carries no page;
-      // clearing it goes back to the first page
+      // hasil search tampil semua dalam satu list, jadi parameter page dihapus.
+      // Saat search dikosongkan, list kembali ke halaman pertama
       params.delete("page");
       params.delete("all");
 
@@ -766,8 +767,8 @@
     }, 400);
   }
 
-  // list / card switch; remembered per browser, morphs smoothly where the
-  // View Transitions API is available
+  // switch list / card. Pilihan disimpan per browser, dan perpindahannya
+  // dianimasikan halus jika View Transitions API tersedia
   (function () {
     const groups = document.getElementById("contact-groups");
     const buttons = document.querySelectorAll(".view-btn");
@@ -786,14 +787,14 @@
         const apply = () => {
           groups.classList.toggle("is-list", toList);
           sync();
-          // the new layout is captured with its border back in place
+          // layout baru di-capture dengan border yang sudah kembali
           root.classList.remove("vt-switch");
         };
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (document.startViewTransition && !reduce) {
-          // the old layout is captured without the card border (that's the
-          // snapshot that stretches most); vt-instant keeps the border from
-          // fading, so it's simply there in the new layout and after
+          // layout lama di-capture tanpa border card (snapshot inilah yang
+          // paling melar). vt-instant mencegah border memudar, jadi border
+          // langsung tampil di layout baru dan seterusnya
           root.classList.add("vt-switch", "vt-instant");
           document
             .startViewTransition(apply)

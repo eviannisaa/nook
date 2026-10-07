@@ -4,12 +4,12 @@
   const onJournal = path.startsWith("/writing");
 %>
 <style>
-  /* geometry: four items sit 30° apart on a quarter circle around the menu
-     button's centre (up to left). --x/--y on each item are its cos/sin on that arc,
-     which opens upward from the tab in the bottom-right corner. */
+  /* geometri: empat item berjarak 30° pada seperempat lingkaran di sekitar
+     titik tengah tombol menu (dari atas ke kiri). --x/--y pada setiap item adalah
+     nilai cos/sin-nya di busur itu, yang terbuka ke atas dari tab di pojok kanan bawah. */
   .menu-dial {
-    /* the layout gives every body child "position: relative; z-index: 1",
-       which would trap these fixed buttons under the page; stay neutral */
+    /* layout memberi setiap anak body "position: relative; z-index: 1", yang
+       membuat tombol fixed ini tertutup halaman. Karena itu, nilainya dibuat netral */
     position: static;
     z-index: auto;
     --menu-size: 2.5rem;
@@ -19,8 +19,8 @@
     --radius: 5.6rem;
   }
 
-  /* a tab on the right edge: round on its left, flat where it meets the
-     screen's edge, as tall as the search / + buttons (2.5rem) */
+  /* tab di tepi kanan: bulat di sisi kiri, rata di sisi yang menempel ke
+     tepi layar, dan setinggi tombol search / + (2.5rem) */
   .home-nav {
     right: var(--menu-right);
     bottom: var(--menu-bottom);
@@ -31,7 +31,7 @@
     border-radius: 999px 0 0 999px;
   }
 
-  /* dim the page (and the other floating buttons) while the dial is open */
+  /* halaman (dan tombol melayang lainnya) diredupkan selama dial terbuka */
   .menu-dial-scrim {
     position: fixed;
     inset: 0;
@@ -54,14 +54,14 @@
       visibility 0s;
   }
 
-  /* the menu stays the one green button; a shade deeper while open */
+  /* menu tetap satu-satunya tombol hijau, sedikit lebih gelap saat terbuka */
   .menu-dial.is-open .home-nav {
     z-index: 50;
     background-color: var(--color-primary-hover);
     border-color: var(--color-primary-hover);
   }
 
-  /* menu icon ↔ close icon, swapped in place */
+  /* ikon menu ↔ ikon close, bergantian di posisi yang sama */
   .home-nav .fab-icon {
     transition:
       opacity 0.3s var(--ease-smooth),
@@ -84,11 +84,11 @@
     transform: none;
   }
 
-  /* items start tucked behind the menu button and fan out along the arc */
+  /* item awalnya tersembunyi di belakang tombol menu, lalu menyebar di sepanjang busur */
   .dial-item {
     position: fixed;
-    /* 0.5rem in from the edge, so the item straight above (or under) the
-       tab doesn't touch it */
+    /* bergeser 0.5rem dari tepi agar item yang tepat di atas (atau di bawah)
+       tab tidak menempel ke tepi */
     right: calc(var(--menu-right) + (var(--menu-size) - var(--item-size)) / 2 + 0.5rem);
     bottom: calc(var(--menu-bottom) + (var(--menu-size) - var(--item-size)) / 2);
     z-index: 50;
@@ -132,8 +132,8 @@
       visibility 0s;
   }
 
-  /* while fanning out, the items pass under the pointer still resting on
-     the menu: they take no hover until they've landed, so no label flashes */
+  /* saat menyebar, item melewati pointer yang masih berada di atas menu.
+     Item baru menerima hover setelah sampai di posisinya, agar label tidak berkedip */
   .menu-dial.is-opening .dial-item {
     pointer-events: none;
   }
@@ -150,16 +150,16 @@
       0 8px 18px -10px rgba(0, 0, 0, 0.4);
   }
 
-  /* the page you're on is filled in */
+  /* item untuk halaman yang sedang dibuka diberi warna isi */
   .dial-item.is-current {
     color: var(--color-on-primary);
     background-color: var(--color-primary);
     border-color: var(--color-primary);
   }
 
-  /* small paper label above an item (left of it for .is-left), shown on hover / keyboard
-     focus only (always-on labels would collide along the arc); the text is
-     still the link's accessible name */
+  /* label kertas kecil di atas item (di kiri untuk .is-left), hanya tampil saat hover / fokus
+     keyboard (label yang selalu tampil akan saling bertabrakan di busur). Teksnya
+     tetap menjadi accessible name link */
   .dial-label {
     position: absolute;
     bottom: calc(100% + 0.4rem);
@@ -187,9 +187,9 @@
     transform: translate(-50%, 0);
   }
 
-  /* Writing and Contacts: the label above the item, lined up with its
-     right side and running leftward, so Writing's (straight above the tab,
-     close to the screen's edge) isn't cut off by the edge */
+  /* Writing dan Contacts: label berada di atas item, rata dengan sisi
+     kanannya dan memanjang ke kiri, agar label Writing (tepat di atas tab,
+     dekat tepi layar) tidak terpotong */
   .dial-label:not(.is-left) {
     right: 0;
     left: auto;
@@ -201,8 +201,8 @@
     transform: none;
   }
 
-  /* Home sits to the left of the button, so its label goes on its left
-     side instead of above */
+  /* Home berada di kiri tombol, sehingga labelnya diletakkan di sisi kiri,
+     bukan di atas */
   .dial-label.is-left {
     right: calc(100% + 0.5rem);
     bottom: auto;
@@ -216,14 +216,14 @@
     transform: translate(0, -50%);
   }
 
-  /* hovered/focused item floats above its neighbours so its label is clear */
+  /* item yang di-hover/fokus tampil di atas item sebelahnya agar labelnya terlihat */
   .dial-item:hover,
   .dial-item:focus-visible {
     z-index: 51;
   }
 
-  /* phones: matches the smaller floating buttons (1.75rem). Plain CSS (not
-     in a Tailwind layer) so it wins over the size utilities. */
+  /* di ponsel, ukurannya mengikuti tombol melayang yang lebih kecil (1.75rem).
+     Ditulis dengan CSS biasa (bukan di layer Tailwind) agar menang atas utility ukuran. */
   @media (max-width: 639px) {
     .menu-dial {
       --menu-size: 1.75rem;
@@ -233,13 +233,13 @@
       --radius: 4.5rem;
     }
 
-    /* the icon with it: 0.9rem */
+    /* ikonnya ikut mengecil menjadi 0.9rem */
     .home-nav {
       font-size: 0.75rem;
     }
 
-    /* the floating buttons look 1.75rem here, but each still takes a 2.75rem
-       (44px) touch: an unseen ring around it, out over the edge air */
+    /* tombol melayang tampil 1.75rem di sini, tetapi area sentuhnya tetap
+       2.75rem (44px) lewat lingkaran tak terlihat di sekelilingnya, hingga melewati tepi layar */
     .home-nav::after,
     .fab-simple::after {
       content: "";
@@ -253,9 +253,9 @@
     }
   }
 </style>
-<!-- Menu: a round button in the bottom-right corner. Pressing it fans out
-     Writing / Contacts / Home / Sign out in an arc around it (a speed dial) instead of
-     jumping straight home. -->
+<!-- Menu: tombol bulat di pojok kanan bawah. Saat ditekan, Writing / Contacts /
+     Home / Sign out muncul menyebar dalam busur di sekelilingnya (speed dial),
+     bukan langsung kembali ke halaman home. -->
 <div class="menu-dial" id="menu-dial">
   <div class="menu-dial-scrim" data-dial-close aria-hidden="true"></div>
 
@@ -286,7 +286,7 @@
       <%- include("doodle-icon", { name: "home" }) %>
       <span class="dial-label is-left">Home</span>
     </a>
-    <!-- sign out: a form, so a link elsewhere can't sign anyone out -->
+    <!-- sign out memakai form, agar link dari tempat lain tidak bisa membuat user logout -->
     <form action="/logout" method="post" class="contents">
       <button type="submit" class="dial-item" style="--x: -1; --y: 0; --d: 120ms" aria-label="Sign out <%= user.username %>">
         <%- include("doodle-icon", { name: "logout" }) %>
@@ -301,7 +301,7 @@
     const dial = document.getElementById("menu-dial");
     if (!dial) return;
     const btn = dial.querySelector(".home-nav");
-    // the fan-out: 0.45s, the last item 80ms behind
+    // durasi animasi menyebar: 0.45s, ditambah jeda item terakhir
     const OPENING_MS = 550;
     let openingTimer = null;
     const setOpen = (open) => {
@@ -314,7 +314,7 @@
     };
     btn.addEventListener("click", () => setOpen(!dial.classList.contains("is-open")));
 
-    // the spot an earlier version let the menu be dragged to: not used now
+    // posisi menu hasil drag dari versi lama, sudah tidak dipakai sehingga dihapus
     try {
       localStorage.removeItem("menu-dial-position");
     } catch {}
