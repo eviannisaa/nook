@@ -33,9 +33,13 @@
     display: none;
   }
 
-  /* never wider than the screen, with room at its sides */
+  /* the same taped paper as the delete and share popups (.delete-dialog,
+     from the scrapbook); its frame is set here too, as detail-styles isn't
+     on the edit page */
   .key-dialog {
-    width: min(21.875rem, calc(100vw - 2rem));
+    position: relative;
+    width: min(22rem, calc(100vw - 2rem));
+    padding: 1.75rem;
   }
 
   /* on a phone a step smaller all through, as the delete popup */
@@ -51,13 +55,10 @@
     }
 
     .key-dialog p,
-    .key-dialog .doodle-input {
-      font-size: 0.85rem;
-    }
-
+    .key-dialog .doodle-input,
     .key-dialog .doodle-btn,
     .key-dialog .key-cancel {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
     }
 
     .key-error {
@@ -71,12 +72,9 @@
      with the message to show under the field -->
 <script src="/js/note-crypto.js"></script>
 <div id="key-modal" class="doodle-modal">
-  <div class="doodle-card key-dialog">
-    <h2 class="mb-1 text-2xl">
-      <i class="bi bi-key text-crayon mr-1"></i>
-      <span id="key-modal-title">Lock Note</span>
-    </h2>
-    <p id="key-modal-desc" class="text-ink-soft">
+  <div class="delete-dialog key-dialog" role="dialog" aria-modal="true" aria-labelledby="key-modal-title" aria-describedby="key-modal-desc">
+    <h2 id="key-modal-title" class="mb-1 text-2xl">Lock Note</h2>
+    <p id="key-modal-desc" class="text-ink-soft font-comic font-bold">
       Enter a key to lock this note.
     </p>
 

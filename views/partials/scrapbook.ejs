@@ -1,0 +1,297 @@
+<%#
+  The minimalist scrapbook look, laid over every page's own styles (it is
+  included after the page, so at equal specificity it wins). Pages keep
+  their clean dotted paper background; what changes is the things on it:
+  cards become sheets of paper held by a strip of washi tape, the forms are
+  lined, labels are handwritten, buttons are ink-edged stickers that press
+  in, toasts are sticky notes. The sign-in pages have their own design and
+  don't load this.
+%>
+<style>
+  :root {
+    --sb-paper: #fffefb;
+    --sb-hair: rgba(30, 50, 40, 0.08);
+    --sb-accent: #e58a74;
+    --sb-tape-mint: rgba(159, 211, 176, 0.6);
+    --sb-tape-blush: rgba(244, 196, 178, 0.75);
+    --sb-tape-butter: rgba(255, 228, 150, 0.8);
+    --sb-mint: #9fd3b0;
+    --sb-note: #fff1bf;
+    --sb-cut: 6px 6px 16px 6px;
+    --sb-shadow:
+      0 1px 2px rgba(30, 50, 40, 0.05),
+      0 18px 36px -24px rgba(30, 60, 42, 0.4);
+    --sb-tape-edge: polygon(4% 0, 96% 6%, 100% 50%, 95% 100%, 3% 94%, 0 50%);
+  }
+
+  /* ---- sheets of paper ---- */
+
+  .form-card,
+  .detail-card,
+  .calendar-card,
+  .home-card,
+  .doodle-card.empty-card {
+    background-color: var(--sb-paper);
+    border: 1px solid var(--sb-hair);
+    border-radius: var(--sb-cut);
+    box-shadow: var(--sb-shadow);
+  }
+
+  /* the second pencil pass each card had becomes a strip of washi tape
+     holding it down at the top */
+  .form-card::after,
+  .detail-card::after,
+  .calendar-card::after,
+  .home-card::after {
+    content: "";
+    inset: auto;
+    position: absolute;
+    top: -0.65rem;
+    left: 50%;
+    width: 5.25rem;
+    height: 1.3rem;
+    margin-left: -2.6rem;
+    border: 0;
+    border-radius: 2px;
+    background: var(--sb-tape, var(--sb-tape-mint));
+    transform: rotate(-3deg);
+    clip-path: var(--sb-tape-edge);
+    pointer-events: none;
+  }
+
+  .detail-card {
+    --sb-tape: var(--sb-tape-blush);
+  }
+
+  .detail-card::after {
+    left: auto;
+    right: 1.5rem;
+    margin-left: 0;
+    transform: rotate(4deg);
+  }
+
+  .calendar-card {
+    --sb-tape: var(--sb-tape-butter);
+  }
+
+  .calendar-card::after {
+    left: 2rem;
+    margin-left: 0;
+    transform: rotate(-5deg);
+  }
+
+  .home-card {
+    --sb-tape: var(--sb-tape-blush);
+  }
+
+  /* forms are written on lined paper */
+  .form-card {
+    background:
+      repeating-linear-gradient(
+        180deg,
+        transparent 0,
+        transparent 1.95rem,
+        rgba(159, 211, 176, 0.22) 1.95rem,
+        rgba(159, 211, 176, 0.22) calc(1.95rem + 1px)
+      ),
+      var(--sb-paper);
+  }
+
+  /* ---- contacts: small paper cards, a touch crooked, straightened by
+     the pointer ---- */
+
+  .contact-card {
+    border: 1px solid var(--sb-hair);
+    border-radius: 10px 10px 18px 10px;
+    background-color: var(--sb-paper);
+    box-shadow: var(--sb-shadow);
+    transition-property: transform, box-shadow, border-color, background-color, rotate;
+  }
+
+  .contact-groups:not(.is-list) li:nth-child(3n + 1) .contact-card {
+    rotate: -0.8deg;
+  }
+
+  .contact-groups:not(.is-list) li:nth-child(3n + 2) .contact-card {
+    rotate: 0.6deg;
+  }
+
+  .contact-groups:not(.is-list) li:nth-child(3n + 3) .contact-card {
+    rotate: -0.3deg;
+  }
+
+  .contact-groups:not(.is-list) li .contact-card:hover,
+  .contact-groups:not(.is-list) li .contact-card:focus-visible {
+    rotate: 0deg;
+  }
+
+  /* ---- handwritten labels ---- */
+
+  .field-label,
+  .detail-label {
+    font-family: var(--font-hand);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.01em;
+  }
+
+  .field-label {
+    color: color-mix(in srgb, var(--color-ink) 82%, var(--color-ink-soft));
+  }
+
+  .field:focus-within .field-label {
+    color: color-mix(in srgb, var(--sb-accent) 85%, var(--color-ink));
+  }
+
+  /* ---- inputs: hand-cut boxes, a hard mint shadow on focus ---- */
+
+  .field-input,
+  .field-input:hover,
+  .field-input:focus,
+  .doodle-input {
+    background-color: rgba(255, 255, 255, 0.92);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 20%, transparent);
+    border-radius: 14px 10px 15px 9px / 10px 15px 9px 14px;
+  }
+
+  textarea.field-input {
+    border-radius: 14px 10px 15px 9px / 10px 15px 9px 14px;
+  }
+
+  .field-input:hover,
+  .doodle-input:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 34%, transparent);
+  }
+
+  .field-input:focus,
+  .doodle-input:focus {
+    background-color: #fff;
+    border-color: var(--color-ink);
+    box-shadow: 3px 3px 0 color-mix(in srgb, var(--sb-mint) 80%, transparent);
+  }
+
+  .field.has-error .field-input {
+    border-color: var(--color-berry);
+  }
+
+  /* ---- buttons: ink-edged stickers that lift softly and press in ----
+     Every state has the same two shadow layers (a hard ink offset and a
+     soft ambient one), so the browser can glide between them instead of
+     swapping; the lift is straight up, no tilt, so the label stays crisp */
+
+  .doodle-btn:not(.fab-simple):not(.home-nav) {
+    --btn-ink: var(--color-ink);
+    border: 1.5px solid var(--btn-ink);
+    border-radius: 13px 10px 14px 9px / 10px 14px 9px 13px;
+    box-shadow:
+      3px 3px 0 var(--btn-ink),
+      0 6px 12px -10px rgba(30, 40, 35, 0);
+    transform: translateY(0);
+    transition:
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 0.45s var(--ease-smooth),
+      border-color 0.45s var(--ease-smooth),
+      color 0.45s var(--ease-smooth);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  .doodle-btn:not(.fab-simple):not(.home-nav):hover {
+    transform: translateY(-2px);
+    box-shadow:
+      3px 5px 0 var(--btn-ink),
+      0 14px 22px -12px rgba(30, 40, 35, 0.35);
+  }
+
+  .doodle-btn:not(.fab-simple):not(.home-nav):active {
+    transform: translateY(2px);
+    box-shadow:
+      1px 1px 0 var(--btn-ink),
+      0 6px 12px -10px rgba(30, 40, 35, 0);
+    transition-duration: 0.15s;
+  }
+
+  .doodle-btn:not(.fab-simple):not(.home-nav):disabled {
+    --btn-ink: var(--color-disabled);
+    transform: none;
+  }
+
+  .doodle-btn.doodle-btn-danger:not(.fab-simple):not(.home-nav) {
+    --btn-ink: var(--color-berry);
+  }
+
+  /* small buttons: the same, a size down */
+  .doodle-btn-sm:not(.fab-simple):not(.home-nav) {
+    box-shadow:
+      2px 2px 0 var(--btn-ink),
+      0 4px 10px -8px rgba(30, 40, 35, 0);
+  }
+
+  .doodle-btn-sm:not(.fab-simple):not(.home-nav):hover {
+    transform: translateY(-1.5px);
+    box-shadow:
+      2px 3.5px 0 var(--btn-ink),
+      0 10px 16px -10px rgba(30, 40, 35, 0.3);
+  }
+
+  .doodle-btn-sm:not(.fab-simple):not(.home-nav):active {
+    transform: translateY(1.5px);
+    box-shadow:
+      1px 1px 0 var(--btn-ink),
+      0 4px 10px -8px rgba(30, 40, 35, 0);
+  }
+
+  /* ---- popups: a sheet of paper, taped ---- */
+
+  .delete-dialog {
+    background-color: var(--sb-paper);
+    border: 1px solid var(--sb-hair);
+    border-radius: var(--sb-cut);
+    box-shadow: var(--sb-shadow);
+  }
+
+  .delete-dialog::before {
+    content: "";
+    position: absolute;
+    top: -0.65rem;
+    left: 1.75rem;
+    width: 4.5rem;
+    height: 1.2rem;
+    border-radius: 2px;
+    background: var(--sb-tape-blush);
+    transform: rotate(-4deg);
+    clip-path: var(--sb-tape-edge);
+    pointer-events: none;
+  }
+
+  .day-modal-card {
+    background-color: var(--sb-paper);
+    border-radius: var(--sb-cut);
+  }
+
+  /* ---- toasts: a sticky note, a little crooked ---- */
+
+  #toast-success.toast,
+  #toast-error.toast {
+    background-color: var(--sb-note);
+    border: 0;
+    border-radius: 3px 3px 12px 3px;
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.05),
+      0 14px 24px -14px rgba(90, 70, 20, 0.45);
+    rotate: -1.5deg;
+  }
+
+  #toast-error.toast {
+    background-color: #fde3da;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact-card,
+    .doodle-btn {
+      transition: none;
+    }
+  }
+</style>
