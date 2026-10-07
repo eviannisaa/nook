@@ -138,11 +138,18 @@
         <span class="header-title-mark"><%= contact.name %></span>
       </h2>
       <p class="detail-caption"><%= contact.company ? contact.company : "No company" %></p>
+      <% if (access !== "owner") { %>
+      <p class="detail-shared">
+        <%- include("partials/doodle-icon", { name: "share" }) %>
+        Shared by <%= contact.owner.username %> · <%= access === "edit" ? "you can edit" : "view only" %>
+      </p>
+      <% } %>
     </div>
     </div>
 
     <!-- the contact's actions, on the same line as the name
-         (space-between), as on a note: edit · delete -->
+         (space-between), as on a note: edit · delete (or, when it's
+         shared with this account, taking it off this account) -->
     <div class="detail-actions">
       <div class="actions-menu">
         <button type="button" class="header-link actions-menu-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="contact-actions-menu">
@@ -150,15 +157,31 @@
           <span class="actions-menu-chevron" aria-hidden="true"><%- include("partials/doodle-icon", { name: "chevron-right" }) %></span>
         </button>
         <div class="actions-menu-list" id="contact-actions-menu" role="menu" aria-label="Contact actions">
+          <% if (access !== "view") { %>
           <a href="/contact/edit/<%= contact._id %>" role="menuitem">
             <%- include("partials/doodle-icon", { name: "pencil" }) %>
             Edit
           </a>
+          <% } %>
+          <% if (access === "owner") { %>
+          <button type="button" role="menuitem" onclick="openModal(document.getElementById('share-modal'))">
+            <%- include("partials/doodle-icon", { name: "share" }) %>
+            Share
+          </button>
           <span class="actions-menu-sep" role="separator"></span>
           <button type="button" role="menuitem" class="is-danger" onclick="openDeleteModal()">
             <%- include("partials/doodle-icon", { name: "trash" }) %>
             Delete
           </button>
+          <% } else { %>
+          <% if (access === "edit") { %>
+          <span class="actions-menu-sep" role="separator"></span>
+          <% } %>
+          <button type="button" role="menuitem" class="is-danger" onclick="openDeleteModal()">
+            <%- include("partials/doodle-icon", { name: "trash" }) %>
+            Remove from my list
+          </button>
+          <% } %>
         </div>
       </div>
     </div>
@@ -242,6 +265,9 @@
 
   </div>
 
+  <% if (access === "owner") { %>
+  <%- include("partials/share-modal", { base: "/contact/" + contact._id, noun: "contact", shares }) %>
+
   <!-- delete confirmation -->
   <div id="delete-modal" class="doodle-modal">
     <div class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title">
@@ -254,7 +280,6 @@
         <button type="button" onclick="closeDeleteModal()" class="delete-link">Cancel</button>
         <form id="delete-form" action="/contact?_method=DELETE" method="post">
           <input type="hidden" name="_id" value="<%= contact._id %>" />
-          <input type="hidden" name="name" value="<%= contact.name %>" />
           <button type="submit" class="doodle-btn doodle-btn-sm doodle-btn-danger">
             Yes
           </button>
@@ -262,6 +287,26 @@
       </div>
     </div>
   </div>
+  <% } else { %>
+  <!-- shared with this account: taken off it only, the owner keeps it -->
+  <div id="delete-modal" class="doodle-modal">
+    <div class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <h2 id="delete-title" class="mb-1 text-2xl">Remove contact?</h2>
+      <p class="text-ink-soft font-comic font-bold">
+        <%= contact.name %> will be removed from your list. <%= contact.owner.username %> still keeps it.
+      </p>
+
+      <div class="mt-6 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeDeleteModal()" class="delete-link">Cancel</button>
+        <form id="delete-form" action="/contact/<%= contact._id %>/shares/<%= user._id %>?_method=DELETE" method="post">
+          <button type="submit" class="doodle-btn doodle-btn-sm doodle-btn-danger">
+            Yes
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <% } %>
 </div>
 
 <%- include("partials/actions-menu-script") %>

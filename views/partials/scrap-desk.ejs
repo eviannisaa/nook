@@ -1,0 +1,144 @@
+<%# the desk around the home page: a few scraps near the edges, soft and
+    still, some running off it; a fine paper grain over all %>
+<style>
+  .scrap-desk {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  body > .scrap-desk {
+    position: fixed;
+    z-index: 0;
+  }
+
+  .scrap-desk::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.2 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .scrap-desk > * {
+    position: absolute;
+  }
+
+  .scrap-desk .scrap {
+    top: -1.2rem;
+    right: 6%;
+    width: 9rem;
+    height: 6.5rem;
+    background: #d9eee0;
+    clip-path: polygon(0 4%, 12% 0, 26% 5%, 41% 1%, 57% 6%, 72% 0, 86% 4%, 100% 1%, 98% 40%, 100% 72%, 96% 100%, 80% 96%, 64% 100%, 47% 95%, 31% 100%, 15% 96%, 0 100%, 3% 66%, 0 34%);
+    rotate: 9deg;
+  }
+
+  .scrap-desk .tape {
+    width: 4.6rem;
+    height: 1.3rem;
+    clip-path: polygon(4% 0, 96% 6%, 100% 50%, 95% 100%, 3% 94%, 0 50%);
+  }
+
+  .scrap-desk .tape.is-scrap {
+    top: 4.4rem;
+    right: calc(6% + 6.6rem);
+    background: rgba(244, 196, 178, 0.8);
+    rotate: -28deg;
+  }
+
+  .scrap-desk .tape.is-edge {
+    top: 46%;
+    left: -1.4rem;
+    background: rgba(255, 228, 150, 0.85);
+    rotate: 78deg;
+  }
+
+  .scrap-desk .stamp {
+    bottom: 7%;
+    left: 4.5%;
+    display: grid;
+    place-items: center;
+    width: 4.6rem;
+    height: 5.4rem;
+    background: #fff;
+    border: 0.32rem dotted #f4f1e9;
+    rotate: -8deg;
+    box-shadow: 0 8px 16px -10px rgba(30, 60, 42, 0.35);
+  }
+
+  .scrap-desk .stamp i {
+    display: grid;
+    place-items: center;
+    width: 3.3rem;
+    height: 4.1rem;
+    background: #fbe6dd;
+    border-radius: 2px;
+  }
+
+  .scrap-desk .stamp svg {
+    width: 2rem;
+    fill: none;
+    stroke: #c9714d;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .scrap-desk .polaroid {
+    right: -2.5rem;
+    bottom: -3rem;
+    width: 9.5rem;
+    padding: 0.6rem 0.6rem 2.2rem;
+    background: #fff;
+    border-radius: 3px;
+    rotate: -12deg;
+    box-shadow: 0 14px 30px -18px rgba(30, 60, 42, 0.45);
+  }
+
+  .scrap-desk .polaroid i {
+    display: block;
+    height: 7.8rem;
+    background:
+      radial-gradient(circle at 30% 70%, rgba(159, 211, 176, 0.9), transparent 55%),
+      radial-gradient(circle at 75% 30%, rgba(247, 214, 202, 0.95), transparent 55%),
+      #f3efe4;
+  }
+
+  .scrap-desk .leaf {
+    top: 18%;
+    left: 4%;
+    width: 3rem;
+    rotate: -18deg;
+    fill: #cfe7d6;
+    stroke: rgba(91, 111, 99, 0.7);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* phones and tablets: the scrap at the top alone */
+  @media (max-width: 899px) {
+    .scrap-desk .stamp,
+    .scrap-desk .polaroid,
+    .scrap-desk .leaf,
+    .scrap-desk .tape {
+      display: none;
+    }
+
+    .scrap-desk .scrap {
+      right: -2rem;
+      width: 7rem;
+      height: 5rem;
+    }
+  }
+</style>
+<div class="scrap-desk" aria-hidden="true">
+  <span class="scrap"></span>
+  <span class="tape is-scrap"></span>
+  <span class="tape is-edge"></span>
+  <span class="stamp"><i><svg viewBox="0 0 48 40"><path d="M6 20 L24 5 L42 20" /><path d="M11 17 V35 H37 V17" /><path d="M21 35 V25 H27 V35" /><path d="M33 12 V6 H37 V15" /></svg></i></span>
+  <span class="polaroid"><i></i></span>
+  <svg class="leaf" viewBox="0 0 40 60"><path d="M20 58 C20 46 20 30 21 6" /><path d="M21 8 C33 14 36 30 30 42 C26 50 21 52 20 52 C19 52 13 50 9 42 C4 30 8 14 21 8 Z" /><path d="M20.5 24 L28 18 M20.4 32 L30 26 M20.3 40 L27 36 M20.5 24 L13 18 M20.4 32 L11 26 M20.3 40 L14 36" /></svg>
+</div>

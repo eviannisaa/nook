@@ -73,6 +73,21 @@
     color: var(--color-ink-soft);
   }
 
+  /* on something shared with you: whose it is and what you may do */
+  .detail-shared {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+    padding: 0.15rem 0.65rem;
+    font-family: var(--font-comic);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-ink);
+    background-color: color-mix(in srgb, var(--color-mint) 60%, var(--color-card));
+    border-radius: 999px;
+  }
+
   /* the card: wobbly capsule corners, pale line, a second pencil pass */
   .detail-card {
     position: relative;

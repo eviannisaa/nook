@@ -6,6 +6,7 @@ public/uploads/*
 !public/uploads/.gitkeep
 
 # environment and secrets
+.session-secret
 .env
 .env.*
 !.env.example
@@ -16,12 +17,22 @@ yarn-debug.log*
 yarn-error.log*
 *.log
 
+# tool caches and packed builds
+.eslintcache
+.npm/
+*.tgz
+
+# Claude Code: skills and settings stay local
+.claude/
+
 # backups
 *.bak
+*.orig
 src/bak/
 
 # screenshots and scratch images in the project root
 /*.png
+/*.jpg
 
 # OS and editor files
 .DS_Store

@@ -1,6 +1,6 @@
-# Contact App
+# Nook
 
-**Contact App** adalah aplikasi pengelolaan kontak sederhana berbasis web yang dibangun menggunakan Node.js dan Express. Aplikasi ini memungkinkan pengguna untuk menyimpan, melihat, mengedit, dan menghapus data kontak dengan fitur tambahan seperti pencarian, pagination, dan unggah foto profil.
+**Nook** adalah aplikasi pengelolaan kontak sederhana berbasis web yang dibangun menggunakan Node.js dan Express. Aplikasi ini memungkinkan pengguna untuk menyimpan, melihat, mengedit, dan menghapus data kontak dengan fitur tambahan seperti pencarian, pagination, dan unggah foto profil.
 
 ## Fitur Utama
 
@@ -51,7 +51,7 @@ npm install
 
 ### 3. Persiapan Database
 
-Pastikan layanan MongoDB Anda sudah aktif. Aplikasi ini akan otomatis membuat database bernama `contact-app` saat dijalankan (lihat konfigurasi di `utils/db.js`).
+Pastikan layanan MongoDB Anda sudah aktif. Aplikasi ini akan otomatis membuat database bernama `nook` saat dijalankan (lihat konfigurasi di `utils/db.js`).
 
 ### 4. Build Tailwind CSS (Opsional/Development)
 

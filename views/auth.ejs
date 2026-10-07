@@ -1,0 +1,1505 @@
+<%
+  // sign in and sign up share one page; mode says which
+  const isLogin = mode === "login";
+  const errorList = typeof formErrors !== "undefined" && formErrors ? formErrors : [];
+  const fieldError = (field) => {
+    const hit = errorList.find((e) => e.path === field);
+    return hit ? hit.msg : "";
+  };
+  // a sign-in error isn't about one field: it shows above the fields
+  const formError = errorList.filter((e) => !e.path).map((e) => e.msg)[0] || "";
+  const SPARK = "M14 1.5 Q16.6 11.4 26.5 14 Q16.6 16.6 14 26.5 Q11.4 16.6 1.5 14 Q11.4 11.4 14 1.5 Z";
+%>
+<style>
+  /* Sign in / sign up as a scrapbook page: things laid down by hand,
+     a little crooked and overlapping. The name on a torn scrap of mint
+     paper under its roof; the line written on a sticky note; two
+     stickers of the app; the form on a sheet of lined paper, taped down;
+     a dashed pen arrow from the note to the form. Coral is the one
+     accent; the stickers and tape carry the colour. */
+  /* the palette, shared by the page and the desk around it */
+  .zine,
+  .zine-desk {
+    --accent: #e58a74;
+    --accent-soft: #f7d6ca;
+    --mint: #9fd3b0;
+    --note: #fff1bf;
+  }
+
+  .zine {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    align-content: center;
+    gap: 2rem;
+    width: 100%;
+    max-width: 27rem;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin-inline: auto;
+    padding: 3.25rem 1.25rem 2.5rem;
+  }
+
+  @media (min-width: 1000px) {
+    .zine {
+      max-width: 70rem;
+      grid-template-columns: 1fr 25rem;
+      align-items: center;
+      column-gap: 4.5rem;
+      padding: 3rem 2.5rem;
+    }
+  }
+
+  /* ---- backdrop: a mint wash that thins around the pointer ---- */
+  .auth-wash {
+    --mx: -9999px;
+    --my: -9999px;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60rem 40rem at 0% 0%, rgba(207, 233, 214, 0.95), transparent 60%),
+      radial-gradient(40rem 30rem at 100% 100%, rgba(247, 214, 202, 0.7), transparent 60%);
+    --fade: radial-gradient(
+      circle 20rem at var(--mx) var(--my),
+      rgba(0, 0, 0, 0.12) 0%,
+      rgba(0, 0, 0, 0.3) 35%,
+      rgba(0, 0, 0, 0.7) 70%,
+      #000 100%
+    );
+    -webkit-mask-image: var(--fade);
+    mask-image: var(--fade);
+  }
+
+  /* ---- the desk around the page: a few scraps near the edges, soft and
+     still, some running off it; a fine paper grain over all ---- */
+  .zine-desk {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .zine-desk::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.2 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.9;
+  }
+
+  .zine-desk > * {
+    position: absolute;
+  }
+
+  /* a torn scrap of mint paper, taped, top right */
+  .desk-scrap {
+    top: -1.2rem;
+    right: 6%;
+    width: 9rem;
+    height: 6.5rem;
+    background: #d9eee0;
+    clip-path: polygon(0 4%, 12% 0, 26% 5%, 41% 1%, 57% 6%, 72% 0, 86% 4%, 100% 1%, 98% 40%, 100% 72%, 96% 100%, 80% 96%, 64% 100%, 47% 95%, 31% 100%, 15% 96%, 0 100%, 3% 66%, 0 34%);
+    rotate: 9deg;
+    box-shadow: 0 8px 16px -10px rgba(30, 60, 42, 0.35);
+  }
+
+  .desk-tape {
+    width: 4.6rem;
+    height: 1.3rem;
+    background: color-mix(in srgb, var(--accent-soft) 85%, transparent);
+    clip-path: polygon(4% 0, 96% 6%, 100% 50%, 95% 100%, 3% 94%, 0 50%);
+  }
+
+  .desk-tape.is-scrap {
+    top: 4.4rem;
+    right: calc(6% + 6.6rem);
+    rotate: -28deg;
+  }
+
+  .desk-tape.is-edge {
+    top: 46%;
+    left: -1.4rem;
+    rotate: 78deg;
+    background: color-mix(in srgb, var(--note) 95%, transparent);
+  }
+
+  /* a postage stamp with a little house, bottom left */
+  .desk-stamp {
+    bottom: 7%;
+    left: 4.5%;
+    display: grid;
+    place-items: center;
+    width: 4.6rem;
+    height: 5.4rem;
+    background: #fff;
+    /* the perforated edge: dots of the desk's colour round a white card */
+    border: 0.32rem dotted #f4f1e9;
+    rotate: -8deg;
+    box-shadow: 0 8px 16px -10px rgba(30, 60, 42, 0.35);
+  }
+
+  .desk-stamp i {
+    display: grid;
+    place-items: center;
+    width: 3.3rem;
+    height: 4.1rem;
+    background: color-mix(in srgb, var(--accent-soft) 70%, #fff);
+    border-radius: 2px;
+  }
+
+  .desk-stamp svg {
+    width: 2rem;
+    fill: none;
+    stroke: color-mix(in srgb, var(--accent) 85%, var(--color-ink));
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* a polaroid frame running off the bottom right */
+  .desk-polaroid {
+    right: -2.5rem;
+    bottom: -3rem;
+    width: 9.5rem;
+    padding: 0.6rem 0.6rem 2.2rem;
+    background: #fff;
+    border-radius: 3px;
+    rotate: -12deg;
+    box-shadow: 0 14px 30px -18px rgba(30, 60, 42, 0.45);
+  }
+
+  .desk-polaroid i {
+    display: block;
+    height: 7.8rem;
+    background:
+      radial-gradient(circle at 30% 70%, rgba(159, 211, 176, 0.9), transparent 55%),
+      radial-gradient(circle at 75% 30%, rgba(247, 214, 202, 0.95), transparent 55%),
+      #f3efe4;
+  }
+
+  /* a pressed leaf, left edge */
+  .desk-leaf {
+    top: 18%;
+    left: 2.5%;
+    width: 3rem;
+    rotate: -18deg;
+    fill: #cfe7d6;
+    stroke: color-mix(in srgb, var(--color-crayon) 70%, transparent);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  @media (max-width: 1199px) {
+    .desk-leaf {
+      display: none;
+    }
+  }
+
+  /* phones and tablets: only the scrap at the top and the tape on the
+     edge, so the stacked page has room */
+  @media (max-width: 999px) {
+    .desk-stamp,
+    .desk-polaroid,
+    .desk-leaf,
+    .desk-tape.is-edge {
+      display: none;
+    }
+
+    .desk-scrap {
+      right: -2rem;
+      width: 7rem;
+      height: 5rem;
+    }
+
+    .desk-tape.is-scrap {
+      top: 3.4rem;
+      right: 2.6rem;
+    }
+  }
+
+  /* phones: the scrap alone, its tape would sit on the name's spark */
+  @media (max-width: 639px) {
+    .desk-tape.is-scrap {
+      display: none;
+    }
+
+  }
+
+  /* a paperclip on the form's top right corner */
+  .zine-clip {
+    position: absolute;
+    top: -1.4rem;
+    right: 2.2rem;
+    width: 1.2rem;
+    height: auto;
+    rotate: 8deg;
+    fill: none;
+    stroke: #9aa3a0;
+    stroke-width: 2;
+    stroke-linecap: round;
+    overflow: visible;
+  }
+
+  /* ---- the brand cluster ---- */
+  .zine-brand {
+    position: relative;
+    display: grid;
+    justify-items: start;
+    gap: 0.5rem;
+  }
+
+  /* the name, on a torn scrap of mint paper */
+  .zine-name {
+    position: relative;
+    isolation: isolate;
+    margin-left: 0.25rem;
+    padding: 1.6rem 1.6rem 0.9rem 1.2rem;
+    font-family: var(--font-display);
+    font-size: 3.6rem;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    color: var(--color-ink);
+    rotate: -2deg;
+  }
+
+  .zine-name::before {
+    content: "";
+    position: absolute;
+    inset: 0.9rem -0.2rem 0 -0.4rem;
+    z-index: -1;
+    background: #cfe9d6;
+    /* a torn edge all round */
+    clip-path: polygon(0% 6%, 7% 0%, 15% 5%, 24% 1%, 33% 6%, 44% 0%, 55% 4%, 66% 0%, 77% 5%, 88% 1%, 100% 7%, 98% 30%, 100% 55%, 97% 80%, 100% 100%, 88% 95%, 76% 100%, 63% 96%, 51% 100%, 38% 95%, 25% 100%, 13% 96%, 0% 100%, 3% 75%, 0% 50%, 2% 25%);
+    box-shadow: 0 6px 14px -8px rgba(30, 60, 42, 0.4);
+  }
+
+  .auth-roof {
+    position: absolute;
+    left: 2.15rem;
+    top: -0.2rem;
+    width: 1.25em;
+    height: auto;
+    transform: rotate(-4deg);
+    overflow: visible;
+  }
+
+  .auth-roof .smoke {
+    stroke-width: 1.8;
+    opacity: 0.4;
+  }
+
+  .zine-name .spark {
+    position: absolute;
+    top: 0.6rem;
+    right: -0.6rem;
+    width: 0.4em;
+    height: 0.4em;
+    fill: var(--accent);
+    stroke: var(--color-ink);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+    rotate: 14deg;
+  }
+
+  /* the line, handwritten on a sticky note, taped at the top */
+  .zine-sticky {
+    position: relative;
+    max-width: 19rem;
+    margin: 0.4rem 0 0 2.4rem;
+    padding: 1.35rem 1.4rem 1.2rem;
+    font-family: var(--font-hand);
+    font-size: 1.65rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: color-mix(in srgb, var(--color-ink) 85%, #6b5a2e);
+    background: var(--note);
+    border-radius: 3px 3px 12px 3px;
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.05),
+      0 14px 24px -14px rgba(90, 70, 20, 0.45);
+    rotate: 2.5deg;
+  }
+
+  .zine-sticky .tape {
+    position: absolute;
+    top: -0.65rem;
+    left: 50%;
+    width: 4rem;
+    height: 1.2rem;
+    margin-left: -2rem;
+    background: color-mix(in srgb, var(--mint) 55%, transparent);
+    rotate: -4deg;
+    clip-path: polygon(4% 0, 96% 6%, 100% 50%, 95% 100%, 3% 94%, 0 50%);
+  }
+
+  /* the two words that matter: circled and underlined by pen */
+  .zine-word {
+    position: relative;
+    font-style: normal;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--accent) 80%, var(--color-ink));
+  }
+
+  .zine-word::after {
+    content: "";
+    position: absolute;
+    left: -0.05em;
+    right: -0.05em;
+    bottom: -0.05em;
+    height: 0.22em;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 6'%3E%3Cpath d='M0 3 C2.5 0.6 5.5 0.6 8 3 S13.5 5.4 16 3' fill='none' stroke='%23e58a74' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")
+      left center / auto 100% repeat-x;
+    animation: zine-underline 0.8s cubic-bezier(0.65, 0, 0.35, 1) var(--d, 1s) backwards;
+  }
+
+  .zine-word.is-later::after {
+    --d: 1.2s;
+  }
+
+  @keyframes zine-underline {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+  }
+
+  /* stickers of the app: white-edged, a little crooked */
+  .zine-stickers {
+    position: relative;
+    width: 21rem;
+    height: 9.5rem;
+    margin: 1rem 0 0 0.5rem;
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .zine-stickers {
+      display: block;
+    }
+  }
+
+  .sticker {
+    position: absolute;
+    display: grid;
+    padding: 0.85rem 0.95rem;
+    background: #fff;
+    border: 4px solid #fff;
+    border-radius: 16px;
+    outline: 1px solid rgba(30, 50, 40, 0.06);
+    box-shadow:
+      0 1px 2px rgba(30, 50, 40, 0.06),
+      0 14px 26px -16px rgba(30, 60, 42, 0.45);
+    animation: zine-bob var(--t, 7s) ease-in-out calc(var(--d, 0s) + 0.9s) infinite;
+  }
+
+  .sticker.is-contact {
+    top: 0.6rem;
+    left: 0;
+    width: 11rem;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0.65rem;
+    rotate: -5deg;
+  }
+
+  .sticker.is-note {
+    top: 2.4rem;
+    left: 10rem;
+    width: 10.5rem;
+    gap: 0.45rem;
+    rotate: 6deg;
+    --t: 8.5s;
+  }
+
+  .sticker .face {
+    width: 2.1rem;
+    height: 2.1rem;
+    background: var(--accent-soft);
+    border-radius: 50%;
+  }
+
+  .sticker .lines {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .sticker .date {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .sticker .date::before {
+    content: "";
+    width: 0.35rem;
+    height: 0.35rem;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  /* laid down first, then bobbing gently */
+  .sticker.auth-reveal {
+    animation:
+      zine-drop 0.8s cubic-bezier(0.34, 1.35, 0.64, 1) var(--d, 0s) backwards,
+      zine-bob var(--t, 7s) ease-in-out calc(var(--d, 0s) + 0.9s) infinite;
+  }
+
+  @keyframes zine-bob {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    50% {
+      translate: 0 -5px;
+    }
+  }
+
+  /* skeleton bars, a slow light passing over */
+  .sk {
+    display: block;
+    height: 0.55rem;
+    border-radius: 999px;
+    background:
+      linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.8) 50%, transparent 70%) 0 0 / 250% 100% no-repeat,
+      var(--sk, #ece9e1);
+    animation: sk-shine 2.6s ease-in-out infinite;
+  }
+
+  .sk.is-thin {
+    height: 0.38rem;
+    --sk: #f0ede6;
+  }
+
+  .sk.is-title {
+    height: 0.65rem;
+    --sk: #e2ded4;
+  }
+
+  .sk.is-accent {
+    height: 0.42rem;
+    --sk: color-mix(in srgb, var(--accent-soft) 85%, #fff);
+  }
+
+  @keyframes sk-shine {
+    from {
+      background-position: 150% 0, 0 0;
+    }
+    to {
+      background-position: -50% 0, 0 0;
+    }
+  }
+
+  /* little pen marks scattered round the cluster */
+  .zine-doodle {
+    position: absolute;
+    pointer-events: none;
+    fill: none;
+    stroke: var(--color-ink);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.55;
+  }
+
+  .zine-doodle.is-star {
+    top: 0.2rem;
+    left: 15.5rem;
+    width: 1.3rem;
+    fill: var(--note);
+    opacity: 0.8;
+    rotate: 10deg;
+  }
+
+  .zine-doodle.is-swirl {
+    top: 11.5rem;
+    left: -1.6rem;
+    width: 2rem;
+    display: none;
+  }
+
+  .zine-doodle.is-heart {
+    bottom: 0.5rem;
+    left: 20rem;
+    width: 1.3rem;
+    fill: var(--accent-soft);
+    stroke: var(--accent);
+    opacity: 0.9;
+    rotate: -12deg;
+    display: none;
+  }
+
+  @media (min-width: 1000px) {
+    .zine-name {
+      font-size: 4.6rem;
+    }
+
+    .zine-sticky {
+      font-size: 1.95rem;
+      max-width: 22rem;
+    }
+
+    .zine-doodle.is-star {
+      left: 19rem;
+    }
+
+    .zine-doodle.is-swirl,
+    .zine-doodle.is-heart {
+      display: block;
+    }
+  }
+
+  /* ---- the form, on a sheet of lined paper, taped down ---- */
+  .zine-paper {
+    position: relative;
+    display: grid;
+    gap: 1.05rem;
+    padding: 2.1rem 1.75rem 1.6rem 2.6rem;
+    background:
+      /* the red margin line */
+      linear-gradient(90deg, transparent 1.6rem, rgba(229, 138, 116, 0.35) 1.6rem, rgba(229, 138, 116, 0.35) calc(1.6rem + 1.5px), transparent calc(1.6rem + 1.5px)),
+      /* the ruled lines */
+      repeating-linear-gradient(180deg, transparent 0, transparent 1.9rem, rgba(159, 211, 176, 0.32) 1.9rem, rgba(159, 211, 176, 0.32) calc(1.9rem + 1px)),
+      #fffefb;
+    border-radius: 6px 6px 18px 6px;
+    box-shadow:
+      0 1px 2px rgba(30, 50, 40, 0.06),
+      0 24px 48px -28px rgba(30, 60, 42, 0.45);
+    rotate: 1.2deg;
+  }
+
+  .zine-paper .tape {
+    position: absolute;
+    top: -0.7rem;
+    width: 4.4rem;
+    height: 1.3rem;
+    background: color-mix(in srgb, var(--accent-soft) 90%, transparent);
+    clip-path: polygon(4% 0, 96% 6%, 100% 50%, 95% 100%, 3% 94%, 0 50%);
+  }
+
+  .zine-paper .tape.is-left {
+    left: -0.9rem;
+    rotate: -32deg;
+  }
+
+  .zine-paper .tape.is-right {
+    right: -0.9rem;
+    rotate: 28deg;
+    background: color-mix(in srgb, var(--mint) 55%, transparent);
+  }
+
+  /* the form keeps its own lines straight */
+  .zine-paper > * {
+    rotate: -0.4deg;
+  }
+
+  /* a trail of twinkling stars from the sticky note to the paper, like
+     the pointer's comet: along a wave with one loop, small at the tail and
+     growing toward the form; laid in from the tail on opening, then each
+     twinkles in its own time (stars placed by the script, wide screens) */
+  .zine-trail {
+    position: absolute;
+    top: 2.4rem;
+    right: calc(100% + 0.2rem);
+    z-index: 2;
+    display: none;
+    width: clamp(6.5rem, 10vw, 9.5rem);
+    height: auto;
+    overflow: visible;
+    rotate: 6deg;
+  }
+
+  .zine-trail .guide {
+    fill: none;
+    stroke: none;
+  }
+
+  .trail-star {
+    animation:
+      trail-in 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) calc(1.3s + var(--i) * 0.04s) backwards,
+      trail-twinkle var(--tw, 2.4s) ease-in-out calc(2.1s + var(--i) * 0.13s) infinite;
+  }
+
+  .trail-star path {
+    stroke-linejoin: round;
+  }
+
+  @keyframes trail-in {
+    from {
+      opacity: 0;
+      transform: scale(0.1) rotate(-60deg);
+    }
+  }
+
+  @keyframes trail-twinkle {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      opacity: 0.35;
+      transform: scale(0.55) rotate(25deg);
+    }
+  }
+
+  @media (min-width: 1000px) {
+    .zine-trail {
+      display: block;
+    }
+  }
+
+  .auth-head {
+    display: grid;
+    gap: 0.25rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .auth-title {
+    position: relative;
+    justify-self: start;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: var(--color-ink);
+  }
+
+  /* a quick pen loop under the title */
+  .auth-title::after {
+    content: "";
+    position: absolute;
+    left: -0.1em;
+    right: 0.3em;
+    bottom: -0.3em;
+    height: 0.4em;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 14' preserveAspectRatio='none'%3E%3Cpath d='M3 9 C40 3 80 4 120 6 C135 7 150 8 157 5' fill='none' stroke='%23e58a74' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E")
+      center / 100% 100% no-repeat;
+    animation: zine-underline 0.8s cubic-bezier(0.65, 0, 0.35, 1) 0.9s backwards;
+  }
+
+  .auth-sub {
+    font-family: var(--font-hand);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-ink-soft);
+  }
+
+  /* a message about the whole form (wrong password, too many tries) */
+  .auth-alert {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    padding: 0.7rem 0.85rem;
+    font-family: var(--font-display);
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: color-mix(in srgb, var(--color-berry) 85%, var(--color-ink));
+    background-color: color-mix(in srgb, var(--color-blush) 75%, #fff);
+    border: 1px dashed color-mix(in srgb, var(--color-berry) 35%, transparent);
+    border-radius: 12px;
+  }
+
+  .auth-alert svg {
+    flex-shrink: 0;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin-top: 0.05rem;
+  }
+
+  /* ---- fields ---- */
+  .auth-field {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .auth-label {
+    font-family: var(--font-hand);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1;
+    color: color-mix(in srgb, var(--color-ink) 80%, var(--color-ink-soft));
+    transition: color 0.25s var(--ease-smooth);
+  }
+
+  .auth-field:focus-within .auth-label {
+    color: color-mix(in srgb, var(--accent) 85%, var(--color-ink));
+  }
+
+  .auth-control {
+    position: relative;
+  }
+
+  .auth-input {
+    width: 100%;
+    height: 3rem;
+    padding: 0 1rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1.5px solid color-mix(in srgb, var(--color-ink) 22%, transparent);
+    /* a hand-cut box */
+    border-radius: 14px 10px 15px 9px / 10px 15px 9px 14px;
+    outline: none;
+    transition:
+      border-color 0.25s var(--ease-smooth),
+      box-shadow 0.25s var(--ease-smooth);
+  }
+
+  .auth-input::placeholder {
+    font-weight: 500;
+    color: color-mix(in srgb, var(--color-ink-soft) 70%, transparent);
+  }
+
+  .auth-input:hover {
+    border-color: color-mix(in srgb, var(--color-ink) 35%, transparent);
+  }
+
+  .auth-input:focus {
+    border-color: var(--color-ink);
+    box-shadow: 3px 3px 0 color-mix(in srgb, var(--mint) 80%, transparent);
+  }
+
+  .auth-field.has-error .auth-input {
+    border-color: color-mix(in srgb, var(--color-berry) 70%, transparent);
+  }
+
+  .auth-field.has-error .auth-input:focus {
+    box-shadow: 3px 3px 0 color-mix(in srgb, var(--color-blush) 90%, transparent);
+  }
+
+  .auth-hint,
+  .auth-field-error {
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .auth-hint {
+    color: var(--color-ink-soft);
+  }
+
+  .auth-field-error {
+    color: color-mix(in srgb, var(--color-berry) 85%, var(--color-ink));
+  }
+
+  .auth-control.has-toggle .auth-input {
+    padding-right: 3rem;
+  }
+
+  .auth-peek {
+    position: absolute;
+    top: 50%;
+    right: 0.45rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    color: var(--color-ink-soft);
+    background: none;
+    border: 0;
+    border-radius: 10px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    transition:
+      color 0.2s var(--ease-smooth),
+      background-color 0.2s var(--ease-smooth);
+  }
+
+  .auth-peek:hover {
+    color: var(--color-ink);
+    background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  }
+
+  .auth-peek:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-crayon) 60%, transparent);
+    outline-offset: 1px;
+  }
+
+  .auth-peek svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .auth-peek .eye-off,
+  .auth-peek[aria-pressed="true"] .eye-on {
+    display: none;
+  }
+
+  .auth-peek[aria-pressed="true"] .eye-off {
+    display: block;
+  }
+
+  /* ---- the button: an ink-edged block with a hard offset shadow ---- */
+  .auth-submit {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    height: 3.1rem;
+    margin-top: 0.45rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+    background-color: var(--color-crayon);
+    border: 1.5px solid var(--color-ink);
+    border-radius: 14px 11px 15px 10px / 11px 15px 10px 14px;
+    box-shadow:
+      4px 4px 0 var(--color-ink),
+      0 8px 14px -12px rgba(30, 40, 35, 0);
+    cursor: pointer;
+    /* a soft straight lift on hover (the same two shadow layers in every
+       state, so it glides); the press stays quick */
+    transition:
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 0.45s var(--ease-smooth);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  .auth-submit:hover {
+    background-color: color-mix(in srgb, var(--color-crayon) 90%, #000);
+    transform: translateY(-2px);
+    box-shadow:
+      4px 6px 0 var(--color-ink),
+      0 16px 24px -12px rgba(30, 40, 35, 0.35);
+  }
+
+  .auth-submit:active {
+    transform: translateY(3px);
+    box-shadow:
+      1px 1px 0 var(--color-ink),
+      0 8px 14px -12px rgba(30, 40, 35, 0);
+    transition-duration: 0.15s;
+  }
+
+  .auth-submit:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--mint) 80%, transparent);
+    outline-offset: 4px;
+  }
+
+  .auth-submit .arrow {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.3s var(--ease-soft);
+  }
+
+  .auth-submit:hover .arrow {
+    transform: translateX(3px);
+  }
+
+  .auth-shine {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.26) 48%, rgba(255, 255, 255, 0.05) 60%, transparent 70%);
+    transform: translateX(-120%);
+  }
+
+  .auth-submit:hover .auth-shine {
+    transform: translateX(120%);
+    transition: transform 0.9s var(--ease-smooth);
+  }
+
+  .auth-submit[disabled] {
+    cursor: progress;
+    opacity: 0.85;
+    transform: none;
+  }
+
+  .auth-submit[disabled] .arrow {
+    display: none;
+  }
+
+  .auth-dots {
+    display: none;
+    gap: 0.22rem;
+  }
+
+  .auth-submit[disabled] .auth-dots {
+    display: inline-flex;
+  }
+
+  .auth-dots i {
+    width: 0.3rem;
+    height: 0.3rem;
+    background-color: currentColor;
+    border-radius: 50%;
+    animation: auth-dot 1s ease-in-out infinite;
+  }
+
+  .auth-dots i:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .auth-dots i:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes auth-dot {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: translateY(0);
+    }
+    40% {
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+  }
+
+  .auth-switch {
+    margin-top: 0.2rem;
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-ink-soft);
+    text-align: center;
+  }
+
+  .auth-switch a {
+    font-weight: 800;
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: var(--accent);
+    text-underline-offset: 4px;
+  }
+
+  .auth-switch a:hover,
+  .auth-switch a:focus-visible {
+    background: color-mix(in srgb, var(--note) 90%, transparent);
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--note) 90%, transparent);
+    border-radius: 3px;
+  }
+
+  /* ---- the pointer's comet ---- */
+  .auth-sparkles {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .auth-sparkle {
+    position: absolute;
+    width: var(--size);
+    height: var(--size);
+    margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+    fill: var(--fill);
+    stroke: var(--line);
+    stroke-width: 2.4;
+    stroke-linejoin: round;
+    animation: auth-sparkle var(--life, 1.8s) cubic-bezier(0.33, 0, 0.25, 1) forwards;
+  }
+
+  .auth-sparkle.is-speck {
+    stroke: none;
+  }
+
+  @keyframes auth-sparkle {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(0.6) rotate(0deg);
+    }
+    12% {
+      opacity: 1;
+      transform: translate(calc(var(--dx) * 0.08), calc(var(--dy) * 0.08)) scale(1) rotate(calc(var(--spin, 60deg) * 0.1));
+    }
+    55% {
+      opacity: 0.85;
+      transform: translate(calc(var(--dx) * 0.55), calc(var(--dy) * 0.55)) scale(0.75) rotate(calc(var(--spin, 60deg) * 0.55));
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(var(--spin, 60deg));
+    }
+  }
+
+  /* ---- opening: each piece is laid down in turn (--d) ---- */
+  .auth-reveal {
+    animation: zine-drop 0.8s cubic-bezier(0.34, 1.35, 0.64, 1) var(--d, 0s) backwards;
+  }
+
+  @keyframes zine-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-14px) scale(1.04);
+    }
+  }
+
+  .auth-roof .draw {
+    stroke-dasharray: 1;
+    animation: auth-draw 0.7s cubic-bezier(0.65, 0, 0.35, 1) var(--d, 0s) backwards;
+  }
+
+  @keyframes auth-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
+
+  .auth-roof .smoke {
+    stroke-dasharray: 1;
+    animation:
+      auth-draw 0.9s ease-out 1s backwards,
+      auth-smoke 4.5s ease-in-out 1.9s infinite;
+  }
+
+  @keyframes auth-smoke {
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: translateY(0);
+    }
+    50% {
+      opacity: 0.15;
+      transform: translateY(-2px);
+    }
+  }
+
+  @media (max-width: 639px) {
+    .zine-name {
+      font-size: 3rem;
+    }
+
+    .zine-sticky {
+      margin-left: 1rem;
+      font-size: 1.45rem;
+    }
+
+    .zine-paper {
+      padding: 1.8rem 1.25rem 1.4rem 2.2rem;
+    }
+
+    .auth-title {
+      font-size: 1.7rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .auth-reveal,
+    .auth-roof .draw,
+    .auth-roof .smoke,
+    .zine-word::after,
+    .auth-title::after,
+    .trail-star,
+    .sticker,
+    .sk,
+    .auth-submit,
+    .auth-input,
+    .auth-dots i,
+    .auth-shine {
+      transition: none;
+      animation: none;
+    }
+  }
+</style>
+
+<div class="auth-wash" id="auth-wash" aria-hidden="true"></div>
+<div class="auth-sparkles" id="auth-sparkles" aria-hidden="true"></div>
+
+<!-- the desk around the page -->
+<div class="zine-desk" aria-hidden="true">
+  <span class="desk-scrap"></span>
+  <span class="desk-tape is-scrap"></span>
+  <span class="desk-tape is-edge"></span>
+  <span class="desk-stamp"><i><svg viewBox="0 0 48 40"><path d="M6 20 L24 5 L42 20" /><path d="M11 17 V35 H37 V17" /><path d="M21 35 V25 H27 V35" /><path d="M33 12 V6 H37 V15" /></svg></i></span>
+  <span class="desk-polaroid"><i></i></span>
+  <svg class="desk-leaf" viewBox="0 0 40 60"><path d="M20 58 C20 46 20 30 21 6" /><path d="M21 8 C33 14 36 30 30 42 C26 50 21 52 20 52 C19 52 13 50 9 42 C4 30 8 14 21 8 Z" /><path d="M20.5 24 L28 18 M20.4 32 L30 26 M20.3 40 L27 36 M20.5 24 L13 18 M20.4 32 L11 26 M20.3 40 L14 36" /></svg>
+</div>
+
+<main class="zine">
+  <!-- the brand cluster: the name on a scrap, the line on a sticky note,
+       two stickers of the app, a few pen marks -->
+  <section class="zine-brand" aria-label="Nook">
+    <h1 class="zine-name auth-reveal" style="--d: 0.1s">
+      <svg class="auth-roof" viewBox="0 0 48 26" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path class="draw" pathLength="1" style="--d: 0.3s" d="M3 23 C10 16 17 9 24 3 C31 9 38 16 45 22.5" />
+        <path class="draw" pathLength="1" style="--d: 0.75s" d="M34 12.5 L34.5 4.5 L39.5 4.8 L39.2 16.5" />
+        <path class="smoke" pathLength="1" d="M37.5 0.5 C34.5 -2.5 40.5 -4.5 37.5 -8 C34.8 -11 40 -13 38 -16" />
+      </svg>
+      Nook
+      <svg class="spark" viewBox="0 0 28 28" aria-hidden="true"><path d="<%= SPARK %>" /></svg>
+    </h1>
+
+    <p class="zine-sticky auth-reveal" style="--d: 0.3s">
+      <span class="tape" aria-hidden="true"></span>
+      A little place for the <em class="zine-word">people</em> and
+      <em class="zine-word is-later">things</em> you want to keep.
+    </p>
+
+    <div class="zine-stickers" aria-hidden="true">
+      <div class="sticker is-contact auth-reveal" style="--d: 0.5s">
+        <span class="face"></span>
+        <span class="lines"><i class="sk" style="width: 78%"></i><i class="sk is-thin" style="width: 100%"></i></span>
+      </div>
+      <div class="sticker is-note auth-reveal" style="--d: 0.65s">
+        <span class="date"><i class="sk is-accent" style="width: 3.2rem"></i></span>
+        <i class="sk is-title" style="width: 70%"></i>
+        <i class="sk is-thin" style="width: 100%"></i>
+        <i class="sk is-thin" style="width: 62%"></i>
+      </div>
+    </div>
+
+    <svg class="zine-doodle is-star" viewBox="0 0 28 28" aria-hidden="true"><path d="<%= SPARK %>" /></svg>
+    <svg class="zine-doodle is-swirl" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 20 C20 17 23 16 25 18 C28 21 25 26 20 26 C14 26 11 20 13 15 C16 8 26 7 31 13 C36 19 34 30 25 33" /></svg>
+    <svg class="zine-doodle is-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2c-3.9-2.9-8.1-6.3-8.3-10.2-.2-2.7 1.7-5 4.3-5.1 1.7 0 3.1 1 4 2.4.9-1.5 2.4-2.5 4.1-2.4 2.6.2 4.3 2.5 4.1 5.2-.4 3.9-4.4 7.2-8.2 10.1z" /></svg>
+  </section>
+
+  <!-- the form, on lined paper -->
+  <form
+    method="post"
+    action="<%= isLogin ? '/login' : '/signup' %>"
+    class="zine-paper auth-reveal"
+    id="auth-form"
+    style="--d: 0.4s"
+    novalidate
+  >
+    <span class="tape is-left" aria-hidden="true"></span>
+    <svg class="zine-clip" viewBox="0 0 20 52" aria-hidden="true"><path d="M6 40 V10 C6 4.5 14 4.5 14 10 V44 C14 51 3 51 3 44 V16" /></svg>
+
+    <!-- a trail of twinkling stars from the note, wavy with one loop; the
+         stars are set along the guide by the script -->
+    <svg class="zine-trail" id="zine-trail" viewBox="0 0 120 84" aria-hidden="true">
+      <path class="guide" d="M3 64 C12 52 20 70 31 58 C40 48 40 28 58 24 C76 20 84 44 68 52 C52 60 46 36 62 30 C80 23 92 40 105 32 C109 29 112 26 115 22" />
+    </svg>
+
+    <div class="auth-head">
+      <h2 class="auth-title"><%= isLogin ? "Welcome back" : "Make your nook" %></h2>
+      <p class="auth-sub"><%= isLogin ? "pick up right where you left off ~" : "it only takes a moment ~" %></p>
+    </div>
+
+      <% if (isLogin) { %>
+      <input type="hidden" name="next" value="<%= next %>" />
+      <% } %>
+      <% if (formError) { %>
+      <p class="auth-alert" role="alert">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M12 3.5c4.8-.1 8.6 3.6 8.5 8.4-.1 4.7-3.9 8.4-8.6 8.3-4.6-.1-8.3-3.9-8.2-8.5.1-4.5 3.8-8.1 8.3-8.2z" />
+          <path d="M12 7.8v5" /><path d="M12 16.3v.1" />
+        </svg>
+        <span><%= formError %></span>
+      </p>
+      <% } %>
+
+      <div class="auth-field <%= fieldError('username') ? 'has-error' : '' %>">
+        <label for="username" class="auth-label">Username</label>
+        <div class="auth-control">
+          <input
+            type="text"
+            id="username"
+            name="username"
+            value="<%= username %>"
+            placeholder="yourname"
+            required
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
+            <%- isLogin ? "" : 'pattern="[A-Za-z0-9_.]{3,24}" aria-describedby="username-hint"' %>
+            <%- fieldError("username") ? 'aria-invalid="true"' : "" %>
+            class="auth-input"
+            <%- username ? "" : "autofocus" %>
+          />
+        </div>
+        <% if (fieldError("username")) { %>
+        <span class="auth-field-error"><%= fieldError("username") %></span>
+        <% } else if (!isLogin) { %>
+        <span class="auth-hint" id="username-hint">3–24 letters, numbers, _ or .</span>
+        <% } %>
+      </div>
+
+      <div class="auth-field <%= fieldError('password') ? 'has-error' : '' %>">
+        <label for="password" class="auth-label">Password</label>
+        <div class="auth-control has-toggle">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            <%- isLogin ? "" : 'minlength="8"' %>
+            autocomplete="<%= isLogin ? 'current-password' : 'new-password' %>"
+            placeholder="<%= isLogin ? 'Your password' : 'At least 8 characters' %>"
+            <%- fieldError("password") ? 'aria-invalid="true"' : "" %>
+            class="auth-input"
+            <%- username ? "autofocus" : "" %>
+          />
+          <button type="button" class="auth-peek" data-peek="password" aria-pressed="false" aria-label="Show password" title="Show password">
+            <svg class="eye-on" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2.6 12.2c2.3-4.2 5.6-6.4 9.5-6.4 3.8 0 7.1 2.2 9.3 6.3-2.2 4-5.5 6.2-9.4 6.2-3.9 0-7.1-2.1-9.4-6.1z" />
+              <path d="M12.1 9.1c1.7 0 3 1.4 2.9 3.1 0 1.6-1.4 2.9-3 2.9-1.7-.1-3-1.4-2.9-3 0-1.7 1.3-3 3-3z" />
+            </svg>
+            <svg class="eye-off" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2.6 12.2c2.3-4.2 5.6-6.4 9.5-6.4 3.8 0 7.1 2.2 9.3 6.3-2.2 4-5.5 6.2-9.4 6.2-3.9 0-7.1-2.1-9.4-6.1z" />
+              <path d="M4.2 4.4c5.2 5 10.3 10.1 15.5 15.2" />
+            </svg>
+          </button>
+        </div>
+        <% if (fieldError("password")) { %>
+        <span class="auth-field-error"><%= fieldError("password") %></span>
+        <% } %>
+      </div>
+
+      <% if (!isLogin) { %>
+      <div class="auth-field <%= fieldError('confirm') ? 'has-error' : '' %>">
+        <label for="confirm" class="auth-label">Password again</label>
+        <div class="auth-control has-toggle">
+          <input
+            type="password"
+            id="confirm"
+            name="confirm"
+            required
+            minlength="8"
+            autocomplete="new-password"
+            placeholder="The same again"
+            <%- fieldError("confirm") ? 'aria-invalid="true"' : "" %>
+            class="auth-input"
+          />
+          <button type="button" class="auth-peek" data-peek="confirm" aria-pressed="false" aria-label="Show password" title="Show password">
+            <svg class="eye-on" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2.6 12.2c2.3-4.2 5.6-6.4 9.5-6.4 3.8 0 7.1 2.2 9.3 6.3-2.2 4-5.5 6.2-9.4 6.2-3.9 0-7.1-2.1-9.4-6.1z" />
+              <path d="M12.1 9.1c1.7 0 3 1.4 2.9 3.1 0 1.6-1.4 2.9-3 2.9-1.7-.1-3-1.4-2.9-3 0-1.7 1.3-3 3-3z" />
+            </svg>
+            <svg class="eye-off" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2.6 12.2c2.3-4.2 5.6-6.4 9.5-6.4 3.8 0 7.1 2.2 9.3 6.3-2.2 4-5.5 6.2-9.4 6.2-3.9 0-7.1-2.1-9.4-6.1z" />
+              <path d="M4.2 4.4c5.2 5 10.3 10.1 15.5 15.2" />
+            </svg>
+          </button>
+        </div>
+        <% if (fieldError("confirm")) { %>
+        <span class="auth-field-error"><%= fieldError("confirm") %></span>
+        <% } %>
+      </div>
+      <% } %>
+
+      <button type="submit" class="auth-submit" id="auth-submit">
+        <span class="auth-shine" aria-hidden="true"></span>
+        <span class="auth-submit-label"><%= isLogin ? "Sign in" : "Create account" %></span>
+        <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13" /><path d="M13 6.5l5.5 5.5-5.5 5.5" /></svg>
+        <span class="auth-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+
+      <p class="auth-switch">
+        <% if (isLogin) { %>
+        New here? <a href="/signup">Create an account</a>
+        <% } else { %>
+        Have an account? <a href="/login">Sign in</a>
+        <% } %>
+      </p>
+  </form>
+</main>
+
+<script>
+  // show / hide a password, and a sending state that stops a double submit
+  (function () {
+    document.querySelectorAll("[data-peek]").forEach((btn) => {
+      const input = document.getElementById(btn.dataset.peek);
+      btn.addEventListener("click", () => {
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        btn.setAttribute("aria-pressed", String(show));
+        const label = show ? "Hide password" : "Show password";
+        btn.setAttribute("aria-label", label);
+        btn.title = label;
+        input.focus({ preventScroll: true });
+      });
+    });
+
+    const form = document.getElementById("auth-form");
+    const submit = document.getElementById("auth-submit");
+    const label = submit.querySelector(".auth-submit-label");
+    form.addEventListener("submit", (e) => {
+      // the browser's own check first (empty fields, too short)
+      if (!form.checkValidity()) {
+        e.preventDefault();
+        form.reportValidity();
+        return;
+      }
+      submit.disabled = true;
+      label.textContent = <%- JSON.stringify(isLogin ? "Signing in" : "Making it") %>;
+    });
+    // back to the page from history: ready to send again
+    addEventListener("pageshow", () => {
+      submit.disabled = false;
+      label.textContent = <%- JSON.stringify(isLogin ? "Sign in" : "Create account") %>;
+    });
+  })();
+
+  // the star trail: little stars and specks set along the guide path,
+  // growing from tail to head, each with its own twinkle
+  (function () {
+    const svg = document.getElementById("zine-trail");
+    const guide = svg?.querySelector(".guide");
+    if (!guide) return;
+    const NS = "http://www.w3.org/2000/svg";
+    const STAR = <%- JSON.stringify(SPARK) %>;
+    const LOOKS = [
+      ["#f4a582", "#c9714d"],
+      ["#ffd66e", "#c99a2e"],
+      ["#7fc79a", "#3f8a5c"],
+      ["#f7b6c8", "#cf7491"],
+    ];
+    const total = guide.getTotalLength();
+    const COUNT = 24;
+    for (let i = 0; i < COUNT; i++) {
+      const t = i / (COUNT - 1);
+      const p = guide.getPointAtLength(total * t);
+      const [fill, line] = LOOKS[i % LOOKS.length];
+      // every third one a round speck, the rest stars; the last a big star
+      const speck = i % 3 === 1 && i < COUNT - 1;
+      const size = speck ? 1.8 + t * 1.4 : 3.5 + t * 4.5 + (i === COUNT - 1 ? 1.5 : 0);
+      const at = document.createElementNS(NS, "g");
+      at.setAttribute("transform", `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+      const star = document.createElementNS(NS, "g");
+      star.setAttribute("class", "trail-star");
+      star.style.setProperty("--i", i);
+      star.style.setProperty("--tw", (1.8 + ((i * 37) % 10) / 10).toFixed(1) + "s");
+      star.style.transformOrigin = "0 0";
+      const shape = document.createElementNS(NS, speck ? "circle" : "path");
+      if (speck) {
+        shape.setAttribute("r", (size / 2).toFixed(2));
+      } else {
+        const k = size / 28;
+        shape.setAttribute("d", STAR);
+        shape.setAttribute("transform", `scale(${k.toFixed(3)}) translate(-14 -14)`);
+        shape.setAttribute("stroke-width", (1.4 / k).toFixed(2));
+      }
+      shape.setAttribute("fill", fill);
+      shape.setAttribute("stroke", speck ? "none" : line);
+      star.appendChild(shape);
+      at.appendChild(star);
+      svg.appendChild(at);
+    }
+  })();
+
+  // the wash thins in a pool that follows the pointer, easing after it;
+  // a comet of tiny sparkles trails the pointer. None
+  // of this on touch screens, and no sparkles with reduced motion
+  (function () {
+    const wash = document.getElementById("auth-wash");
+    if (!wash || !matchMedia("(hover: hover)").matches) return;
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let x = null, y = null, tx = 0, ty = 0, frame = 0;
+    const place = () => {
+      wash.style.setProperty("--mx", x.toFixed(1) + "px");
+      wash.style.setProperty("--my", y.toFixed(1) + "px");
+    };
+    const draw = () => {
+      x += (tx - x) * 0.14;
+      y += (ty - y) * 0.14;
+      place();
+      frame = Math.abs(tx - x) + Math.abs(ty - y) > 0.5 ? requestAnimationFrame(draw) : 0;
+    };
+
+    // tiny sparkles dropped along the pointer's path (one every ~5px), each
+    // drifting gently back the way it came and fading slowly; at most 260
+    const layer = document.getElementById("auth-sparkles");
+    const STAR_LOOKS = [
+      ["#f4a582", "#c9714d"],
+      ["#ffd66e", "#c99a2e"],
+      ["#7fc79a", "#3f8a5c"],
+      ["#f7b6c8", "#cf7491"],
+    ];
+    // the round specks never take the yellows
+    const SPECK_LOOKS = [
+      ["#f4a582", "#c9714d"],
+      ["#7fc79a", "#3f8a5c"],
+      ["#f7b6c8", "#cf7491"],
+    ];
+    const pick = (list) => list[Math.floor(Math.random() * list.length)];
+    const STAR = <%- JSON.stringify(SPARK) %>;
+    let lastX = null, lastY = null;
+    const sparkle = (px, py, ux, uy, speed) => {
+      if (!layer || layer.childElementCount >= 260) return;
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      el.setAttribute("viewBox", "0 0 28 28");
+      const speck = Math.random() < 0.4;
+      const [fill, line] = pick(speck ? SPECK_LOOKS : STAR_LOOKS);
+      el.setAttribute("class", "auth-sparkle" + (speck ? " is-speck" : ""));
+      el.innerHTML = speck ? '<circle cx="14" cy="14" r="9" />' : `<path d="${STAR}" />`;
+      const side = (Math.random() - 0.5) * 10;
+      el.style.left = px - uy * side + "px";
+      el.style.top = py + ux * side + "px";
+      el.style.setProperty("--size", (speck ? 0.2 + Math.random() * 0.16 : 0.38 + Math.random() * 0.34).toFixed(2) + "rem");
+      const back = 12 + Math.min(speed, 30) * (0.5 + Math.random() * 0.5);
+      const spread = (Math.random() - 0.5) * 14;
+      el.style.setProperty("--dx", (-ux * back - uy * spread).toFixed(1) + "px");
+      el.style.setProperty("--dy", (-uy * back + ux * spread + 6).toFixed(1) + "px");
+      el.style.setProperty("--spin", Math.round((Math.random() - 0.5) * 120) + "deg");
+      el.style.setProperty("--life", (1.4 + Math.random() * 0.8).toFixed(2) + "s");
+      el.style.setProperty("--fill", fill);
+      el.style.setProperty("--line", line);
+      el.addEventListener("animationend", () => el.remove());
+      layer.appendChild(el);
+    };
+
+    const comet = (cx, cy) => {
+      if (still) return;
+      if (lastX === null) {
+        lastX = cx;
+        lastY = cy;
+        return;
+      }
+      const dist = Math.hypot(cx - lastX, cy - lastY);
+      if (dist < 5) return;
+      const ux = (cx - lastX) / dist;
+      const uy = (cy - lastY) / dist;
+      // fill in the path since the last move, so a quick flick still
+      // leaves an unbroken tail
+      const steps = Math.min(Math.floor(dist / 5), 12);
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        sparkle(lastX + (cx - lastX) * t, lastY + (cy - lastY) * t, ux, uy, dist / steps);
+      }
+      lastX = cx;
+      lastY = cy;
+    };
+
+    addEventListener("pointermove", (e) => {
+      tx = e.clientX;
+      ty = e.clientY;
+      comet(tx, ty);
+      // the first move places it at once; after that it eases
+      if (x === null || still) {
+        x = tx;
+        y = ty;
+        place();
+        return;
+      }
+      if (!frame) frame = requestAnimationFrame(draw);
+    });
+    // off the page: the colour evens out again
+    document.documentElement.addEventListener("pointerleave", () => {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      x = y = null;
+      lastX = lastY = null;
+      wash.style.setProperty("--mx", "-9999px");
+      wash.style.setProperty("--my", "-9999px");
+    });
+  })();
+</script>

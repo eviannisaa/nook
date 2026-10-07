@@ -1,11 +1,11 @@
-<% if (path !== "/") { %>
+<% if (user && path !== "/") { %>
 <%
   const onContacts = path.startsWith("/contact");
   const onJournal = path.startsWith("/writing");
 %>
 <style>
-  /* geometry: items sit on a quarter circle around the menu button's centre
-     (up, up-left, left). --x/--y on each item are its cos/sin on that arc,
+  /* geometry: four items sit 30° apart on a quarter circle around the menu
+     button's centre (up to left). --x/--y on each item are its cos/sin on that arc,
      which opens upward from the tab in the bottom-right corner. */
   .menu-dial {
     /* the layout gives every body child "position: relative; z-index: 1",
@@ -16,7 +16,7 @@
     --menu-right: 0rem;
     --menu-bottom: 1.5rem;
     --item-size: 2.5rem;
-    --radius: 4.6rem;
+    --radius: 5.6rem;
   }
 
   /* a tab on the right edge: round on its left, flat where it meets the
@@ -112,6 +112,12 @@
       opacity 0.3s var(--ease-smooth),
       border-color 0.3s var(--ease-smooth),
       visibility 0s linear 0.45s;
+  }
+
+  button.dial-item {
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
   }
 
   .menu-dial.is-open .dial-item {
@@ -224,7 +230,7 @@
       --menu-right: 0rem;
       --menu-bottom: 0.75rem;
       --item-size: 2rem;
-      --radius: 3.6rem;
+      --radius: 4.5rem;
     }
 
     /* the icon with it: 0.9rem */
@@ -248,7 +254,7 @@
   }
 </style>
 <!-- Menu: a round button in the bottom-right corner. Pressing it fans out
-     Home / Contacts / Writing in an arc around it (a speed dial) instead of
+     Writing / Contacts / Home / Sign out in an arc around it (a speed dial) instead of
      jumping straight home. -->
 <div class="menu-dial" id="menu-dial">
   <div class="menu-dial-scrim" data-dial-close aria-hidden="true"></div>
@@ -271,15 +277,22 @@
       <%- include("doodle-icon", { name: "journal" }) %>
       <span class="dial-label">Writing</span>
     </a>
-    <a href="/contacts" class="dial-item <%= onContacts ? 'is-current' : '' %>" style="--x: -0.7071; --y: -0.7071; --d: 40ms"
+    <a href="/contacts" class="dial-item <%= onContacts ? 'is-current' : '' %>" style="--x: -0.5; --y: -0.866; --d: 40ms"
       <%- onContacts ? 'aria-current="page"' : '' %>>
       <%- include("doodle-icon", { name: "people" }) %>
       <span class="dial-label">Contacts</span>
     </a>
-    <a href="/" class="dial-item" style="--x: -1; --y: 0; --d: 80ms">
+    <a href="/" class="dial-item" style="--x: -0.866; --y: -0.5; --d: 80ms">
       <%- include("doodle-icon", { name: "home" }) %>
       <span class="dial-label is-left">Home</span>
     </a>
+    <!-- sign out: a form, so a link elsewhere can't sign anyone out -->
+    <form action="/logout" method="post" class="contents">
+      <button type="submit" class="dial-item" style="--x: -1; --y: 0; --d: 120ms" aria-label="Sign out <%= user.username %>">
+        <%- include("doodle-icon", { name: "logout" }) %>
+        <span class="dial-label is-left">Sign out <%= user.username %></span>
+      </button>
+    </form>
   </nav>
 </div>
 

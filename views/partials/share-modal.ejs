@@ -1,0 +1,164 @@
+<%#
+  Share popup for a contact or note, shown to its owner only:
+  include("partials/share-modal", { base: "/contact/<id>", noun: "contact", shares })
+  shares: [{ userId, username, canEdit }]
+%>
+<style>
+  .share-dialog {
+    width: min(26rem, calc(100vw - 2rem));
+  }
+
+  .share-form {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .share-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .share-row .doodle-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.45rem 0.9rem;
+  }
+
+  /* view / edit: two radio pills */
+  .share-access {
+    display: flex;
+    gap: 0.4rem;
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .share-access label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    color: var(--color-ink-soft);
+    border: 1.5px solid var(--color-line);
+    border-radius: 999px;
+    cursor: pointer;
+    transition:
+      color 0.3s var(--ease-smooth),
+      border-color 0.3s var(--ease-smooth),
+      background-color 0.3s var(--ease-smooth);
+  }
+
+  .share-access label:has(input:checked) {
+    color: var(--color-ink);
+    background-color: color-mix(in srgb, var(--color-mint) 55%, var(--color-card));
+    border-color: color-mix(in srgb, var(--color-ink) 45%, var(--color-line));
+  }
+
+  .share-access label:has(input:focus-visible) {
+    outline: 2px solid color-mix(in srgb, var(--color-secondary) 60%, transparent);
+    outline-offset: 2px;
+  }
+
+  .share-list {
+    display: grid;
+    gap: 0.25rem;
+    margin-top: 1.1rem;
+    padding-top: 0.9rem;
+    border-top: 1.5px dashed var(--color-line);
+  }
+
+  .share-list-title,
+  .share-empty {
+    font-family: var(--font-comic);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+  }
+
+  .share-person {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-comic);
+  }
+
+  .share-person-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 700;
+  }
+
+  .share-person-access {
+    font-size: 0.8rem;
+    color: var(--color-ink-soft);
+  }
+
+  .share-person-remove {
+    display: inline-flex;
+    padding: 0.3rem;
+    color: var(--color-ink-soft);
+    background: none;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 0.3s var(--ease-smooth);
+  }
+
+  .share-person-remove:hover,
+  .share-person-remove:focus-visible {
+    color: var(--color-berry);
+  }
+</style>
+
+<div id="share-modal" class="doodle-modal">
+  <div class="delete-dialog share-dialog" role="dialog" aria-modal="true" aria-labelledby="share-title">
+    <h2 id="share-title" class="mb-1 text-2xl">Share <%= noun %></h2>
+    <p class="text-ink-soft font-comic mb-4 font-bold">
+      Only the people you add can see it. You can stop sharing any time.
+    </p>
+
+    <form action="<%= base %>/shares" method="post" class="share-form">
+      <div class="share-row">
+        <input
+          type="text"
+          name="username"
+          required
+          placeholder="Their username"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          aria-label="Username to share with"
+          class="doodle-input"
+        />
+        <button type="submit" class="doodle-btn doodle-btn-sm doodle-btn-ink">Share</button>
+      </div>
+      <div class="share-access" role="radiogroup" aria-label="What they can do">
+        <label><input type="radio" name="canEdit" value="0" checked class="sr-only" />Can view</label>
+        <label><input type="radio" name="canEdit" value="1" class="sr-only" />Can edit</label>
+      </div>
+    </form>
+
+    <div class="share-list">
+      <span class="share-list-title">Shared with</span>
+      <% if (!shares.length) { %>
+      <span class="share-empty">No one yet.</span>
+      <% } %>
+      <% shares.forEach((share) => { %>
+      <div class="share-person">
+        <span class="share-person-name"><%= share.username %></span>
+        <span class="share-person-access"><%= share.canEdit ? "can edit" : "can view" %></span>
+        <form action="<%= base %>/shares/<%= share.userId %>?_method=DELETE" method="post">
+          <button type="submit" class="share-person-remove" title="Stop sharing with <%= share.username %>" aria-label="Stop sharing with <%= share.username %>">
+            <%- include("doodle-icon", { name: "x" }) %>
+          </button>
+        </form>
+      </div>
+      <% }) %>
+    </div>
+
+    <div class="mt-5 flex justify-end">
+      <button type="button" onclick="closeModal(document.getElementById('share-modal'))" class="delete-link">Done</button>
+    </div>
+  </div>
+</div>

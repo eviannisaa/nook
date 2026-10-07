@@ -4,6 +4,13 @@ const mongoose = require("mongoose");
 // so it never drifts across a day boundary
 const schema = new mongoose.Schema(
   {
+    // the account it belongs to (the same as its marker's)
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
     day: {
       type: String,
       required: true,
@@ -19,5 +26,6 @@ const schema = new mongoose.Schema(
 );
 
 schema.index({ day: 1, marker: 1 }, { unique: true });
+schema.index({ owner: 1, day: 1 });
 
 module.exports = mongoose.model("DayMark", schema);
