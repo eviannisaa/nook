@@ -927,12 +927,6 @@ app.get("/contact/:_id", async (req, res) => {
 
 shareRoutes(Contact, "/contact", "contact", (contact) => contact.name);
 
-// Old diary list path, kept so earlier links and bookmarks still land
-app.get("/diaries", (req, res) => {
-  const query = req.originalUrl.slice(req.path.length);
-  res.redirect(301, "/writing" + query);
-});
-
 // Lists only need a preview: the words of an open note, the start of an
 // encrypted one's ciphertext; the full content (with its images) stays out
 const PREVIEW_FIELDS = {
@@ -1216,12 +1210,6 @@ app.delete("/markers/:_id", async (req, res) => {
 // /writing/new and the like fall through to their own routes)
 const isNoteId = (id) => /^[0-9a-f]{24}$/i.test(String(id || ""));
 
-// Old new-note path, kept so earlier links and bookmarks still land
-app.get("/diary/new", (req, res) => {
-  const query = req.originalUrl.slice(req.path.length);
-  res.redirect(301, "/writing/new" + query);
-});
-
 // Form New Writing Page
 app.get("/writing/new", (req, res) => {
   res.render("new-writing", {
@@ -1384,13 +1372,6 @@ app.post("/writing/:_id/relock", async (req, res) => {
   res.json({ ok: true });
 });
 
-// Old unlock path: a locked note opens on its own page now, asking its key
-// there
-app.post("/diary/unlock", (req, res) => {
-  if (!isNoteId(req.body._id)) return res.redirect("/writing");
-  res.redirect(303, "/writing/" + req.body._id + "#open");
-});
-
 // Delete Writing
 app.delete("/writing", async (req, res) => {
   const found = await findFor(Writing, req.body._id, req.user, "owner");
@@ -1501,18 +1482,6 @@ app.get("/writing/:_id", async (req, res, next) => {
 });
 
 shareRoutes(Writing, "/writing", "note", (writing) => writing.title);
-
-// Old edit path, kept so earlier links and bookmarks still land
-app.get("/diary/edit/:_id", (req, res, next) => {
-  if (!isNoteId(req.params._id)) return next();
-  res.redirect(301, "/writing/edit/" + req.params._id);
-});
-
-// Old detail path, kept so earlier links and bookmarks still land
-app.get("/diary/:_id", (req, res, next) => {
-  if (!isNoteId(req.params._id)) return next();
-  res.redirect(301, "/writing/" + req.params._id);
-});
 
 // Anything else: not a page here
 app.use((req, res) => {

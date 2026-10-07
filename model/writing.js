@@ -70,9 +70,7 @@ const Writing = mongoose.model(
       },
     },
     { timestamps: true }
-  ),
-  // the collection from when notes were called diaries, so they stay put
-  "diaries"
+  )
 );
 
 module.exports = Writing;
