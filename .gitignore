@@ -22,8 +22,8 @@ yarn-error.log*
 .npm/
 *.tgz
 
-# Claude Code: personal settings stay local (the shared skills are kept)
-.claude/settings.local.json
+# Claude Code: skills and settings stay local
+.claude/
 
 # backups
 *.bak
