@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 const session = require("express-session");
 
-// Sessions kept in MongoDB, so a restart doesn't sign everyone out. Each
-// one is removed by Mongo itself once it expires (the TTL index)
+// Session disimpan di MongoDB, jadi kalau app di-restart, orang tidak
+// ter-logout. Session yang sudah habis waktunya dihapus otomatis oleh Mongo
 const Session = mongoose.model(
   "Session",
   new mongoose.Schema({

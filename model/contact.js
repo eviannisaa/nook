@@ -5,14 +5,14 @@ const Contact = mongoose.model(
   "Contact",
   new mongoose.Schema(
     {
-      // the account it belongs to
+      // akun pemiliknya
       owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
         index: true,
       },
-      // other accounts it is shared with
+      // akun lain yang diberi akses
       shares: {
         type: [shareSchema],
         default: [],

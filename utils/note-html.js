@@ -1,7 +1,7 @@
 const sanitizeHtml = require("sanitize-html");
 
-// Images live inside the note as data URLs, so encrypting the note covers
-// them too. Anything else (a pasted https image, a script) is dropped.
+// Gambar disimpan langsung di dalam teks catatan, jadi ikut terkunci.
+// Gambar dari link (https) dan script dibuang.
 const IMAGE_DATA_URL = /^data:image\/(png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i;
 
 const SANITIZE_OPTIONS = {
@@ -12,10 +12,10 @@ const SANITIZE_OPTIONS = {
   allowedAttributes: {
     a: ["href", "target", "rel"],
     img: ["src", "alt"],
-    // checklist items: a round box that is ticked or not
+    // item checklist: bulatan yang dicentang atau tidak
     li: [{ name: "data-list", multiple: false, values: ["checked", "unchecked"] }],
   },
-  // text alignment from the editor (left is the default, so no class)
+  // teks rata tengah/kanan dari editor (rata kiri tidak butuh class)
   allowedClasses: Object.fromEntries(
     ["p", "h2", "h3", "li", "blockquote"].map((tag) => [
       tag,
@@ -42,11 +42,11 @@ const escapeHtml = (text) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-// Notes written before the editor are plain text
+// Catatan lama (sebelum ada editor) cuma berisi teks biasa
 const isHtml = (content) => /^\s*</.test(content || "");
 
-// Plain-text notes become paragraphs: a blank line splits them, a single
-// line break stays a line break
+// Teks biasa diubah jadi paragraf. Baris kosong memisahkan paragraf,
+// satu enter tetap jadi baris baru
 const textToHtml = (text) =>
   (text || "")
     .split(/\r?\n\s*\r?\n/)
@@ -55,7 +55,8 @@ const textToHtml = (text) =>
     .map((para) => `<p>${escapeHtml(para).replace(/\r?\n/g, "<br>")}</p>`)
     .join("");
 
-// Safe HTML for showing a note or loading it into the editor
+// HTML catatan yang aman dipakai di halaman atau editor. Tag yang tidak
+// diizinkan, seperti script, dibuang
 const noteHtml = (content) =>
   isHtml(content)
     ? sanitizeHtml(content, SANITIZE_OPTIONS)
@@ -70,8 +71,8 @@ const decodeEntities = (text) =>
     .replace(/&#0*39;/g, "'")
     .replace(/&amp;/g, "&");
 
-// Words only, one line per block: used for previews and search, so the
-// image data never has to be loaded or matched
+// Cuma teksnya (tanpa HTML), satu baris per paragraf. Dipakai untuk preview
+// dan pencarian, supaya gambar tidak ikut dimuat atau dicari
 const noteText = (content) => {
   if (!isHtml(content)) return (content || "").trim();
 
@@ -88,7 +89,7 @@ const noteText = (content) => {
     .join("\n");
 };
 
-// A note counts as written once it has words or a picture
+// Catatan dianggap terisi kalau ada teks atau gambar
 const hasNoteContent = (content) =>
   noteText(content).length > 0 || /<img\s/i.test(noteHtml(content));
 

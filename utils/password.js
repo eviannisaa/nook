@@ -4,24 +4,26 @@ const { promisify } = require("util");
 const scrypt = promisify(crypto.scrypt);
 const KEY_LENGTH = 64;
 
-// OWASP's minimum for scrypt. N=2^17 takes 128MB while hashing, more than
-// Node's 32MB default, so the limit is raised for it
+// Setelan untuk mengacak password (scrypt), sesuai saran keamanan OWASP.
+// Setelan ini butuh memori 128MB, padahal batas bawaan Node cuma 32MB.
+// Jadi batasnya dinaikkan
 const N = 2 ** 17;
 const R = 8;
 const P = 1;
 const MAX_N = 2 ** 20;
 const maxmem = (n, r) => 256 * n * r;
 
-// "scrypt$N$r$p$salt$hash", salt and hash in hex; a fresh salt for every
-// password, and the settings kept with it so they can be raised later
+// Mengacak password jadi teks "scrypt$N$r$p$salt$hash". Tiap password
+// dapat salt (nilai acak) baru. Setelannya ikut disimpan, jadi nanti bisa
+// diganti tanpa merusak password lama
 const hashPassword = async (password) => {
   const salt = crypto.randomBytes(16);
   const hash = await scrypt(password, salt, KEY_LENGTH, { N, r: R, p: P, maxmem: maxmem(N, R) });
   return `scrypt$${N}$${R}$${P}$${salt.toString("hex")}$${hash.toString("hex")}`;
 };
 
-// The settings and parts of a stored hash. Older ones are "salt:hash", made
-// with Node's defaults (N=2^14, r=8, p=1)
+// Memecah password tersimpan jadi bagian-bagiannya. Password dari versi
+// lama formatnya "salt:hash", dengan setelan bawaan Node
 const readHash = (stored) => {
   const text = String(stored || "");
   if (!text.startsWith("scrypt$")) {
@@ -32,10 +34,11 @@ const readHash = (stored) => {
   return { n: Number(n), r: Number(r), p: Number(p), salt, hash };
 };
 
-// compared in constant time, so the answer's timing gives nothing away
+// Mengecek password. Lama pengecekannya selalu sama, jadi orang tidak bisa
+// menebak password dari waktu yang dibutuhkan
 const verifyPassword = async (password, stored) => {
   const { n, r, p, salt, hash } = readHash(stored);
-  // settings out of reach would only burn memory: refused
+  // setelan yang aneh atau terlalu besar ditolak, supaya memori tidak habis
   if (!salt || !hash || !Number.isInteger(n) || n < 2 || n > MAX_N || (n & (n - 1)) !== 0 || r !== 8 || p !== 1) {
     return false;
   }
@@ -49,11 +52,11 @@ const verifyPassword = async (password, stored) => {
   return crypto.timingSafeEqual(actual, expected);
 };
 
-// a hash made with cheaper settings than today's, to make again at sign-in
+// true kalau password ini masih pakai setelan lama. Diacak ulang saat login
 const needsRehash = (stored) => !String(stored || "").startsWith(`scrypt$${N}$${R}$${P}$`);
 
-// a hash to check against when the username doesn't exist, so a missing
-// account takes as long to refuse as a wrong password
+// password palsu, dicek kalau username-nya tidak ada. Jadi login yang gagal
+// selalu sama lamanya, dan orang tidak bisa menebak username mana yang ada
 const DUMMY_HASH = `scrypt$${N}$${R}$${P}$${"0".repeat(32)}$${"0".repeat(KEY_LENGTH * 2)}`;
 
 module.exports = { hashPassword, verifyPassword, needsRehash, DUMMY_HASH };

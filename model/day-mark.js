@@ -1,10 +1,12 @@
 const mongoose = require("mongoose");
 
-// One mark on one day, the day kept as a Jakarta calendar day ("2026-09-22")
-// so it never drifts across a day boundary
+// Satu tanda di satu tanggal, misalnya tanda "Gym" di 22 September.
+// Tanggalnya disimpan sebagai teks biasa ("2026-09-22"), bukan sebagai
+// tanggal plus jam. Jadi tanggalnya tidak bisa maju atau mundur sehari
+// karena beda zona waktu. Tanggal yang dipakai adalah tanggal di Jakarta.
 const schema = new mongoose.Schema(
   {
-    // the account it belongs to (the same as its marker's)
+    // akun pemiliknya (sama dengan pemilik marker-nya)
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
