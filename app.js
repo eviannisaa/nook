@@ -386,28 +386,32 @@ const findFor = async (Model, id, user, need = "view") => {
 };
 
 // Setup Multer for upload file: photos only, up to 2MB, under a random
-// name (the name sent with the file is never used)
+// name (the name sent with the file is never used). Multer keeps the file
+// in memory; the photo store (MinIO, or public/uploads without it) then
+// keeps it under that name
 const multer = require("multer");
-const UPLOAD_DIR = "public/uploads";
+const photos = require("./utils/photo-store");
 const PHOTO_TYPES = { "image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp", "image/gif": ".gif" };
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: (req, file, cb) => {
-    cb(null, crypto.randomBytes(16).toString("hex") + PHOTO_TYPES[file.mimetype]);
-  },
-});
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => cb(null, Boolean(PHOTO_TYPES[file.mimetype])),
 });
 
 // a photo too big comes back as a message on the form, not a crash
 const uploadPhoto = (req, res, next) =>
-  upload.single("image")(req, res, (err) => {
+  upload.single("image")(req, res, async (err) => {
+    if (!err && req.file) {
+      // req.file.filename is the name it is kept under, as with disk storage
+      req.file.filename = crypto.randomBytes(16).toString("hex") + PHOTO_TYPES[req.file.mimetype];
+      try {
+        await photos.save(req.file.filename, req.file.buffer);
+      } catch (saveErr) {
+        console.error(saveErr);
+        err = saveErr;
+      }
+    }
     if (err) {
       req.flash("error", err.code === "LIMIT_FILE_SIZE" ? "The photo can be up to 2MB." : "That photo couldn't be uploaded.");
       return res.redirect(safeRedirect(req.get("Referer")?.replace(/^https?:\/\/[^/]+/, ""), "/contacts"));
@@ -419,7 +423,7 @@ const uploadPhoto = (req, res, next) =>
 // nothing else, so a path from a form can never reach another file
 const PHOTO_PATH = /^\/uploads\/[a-zA-Z0-9_-]+\.(png|jpe?g|webp|gif)$/;
 const removePhoto = (image) => {
-  if (PHOTO_PATH.test(image || "")) fs.unlink("public" + image, () => {});
+  if (PHOTO_PATH.test(image || "")) photos.remove(image.slice("/uploads/".length)).catch(() => {});
 };
 
 // a photo goes only to who may see a contact that has it
@@ -428,7 +432,18 @@ app.get("/uploads/:file", async (req, res) => {
   if (!PHOTO_PATH.test(image)) return res.sendStatus(404);
   const contact = await Contact.exists({ image, ...visibleTo(req.user) });
   if (!contact) return res.sendStatus(404);
-  res.sendFile(image, { root: "public", headers: { "X-Content-Type-Options": "nosniff" } });
+  const stream = await photos.open(req.params.file);
+  if (!stream) return res.sendStatus(404);
+  res.set({
+    "Content-Type": photos.contentType(req.params.file),
+    "Cache-Control": "private, max-age=86400",
+    "X-Content-Type-Options": "nosniff",
+  });
+  stream.on("error", (err) => {
+    console.error(err);
+    res.destroy();
+  });
+  stream.pipe(res);
 });
 
 // ---- Sign in, sign up, sign out ----
