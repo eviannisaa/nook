@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require("path");
 const crypto = require("crypto");
 const express = require("express");
 const expressLayouts = require("express-ejs-layouts");
@@ -124,12 +125,14 @@ app.use((req, res, next) => {
 // Setup Method Override
 app.use(methodOverride("_method"));
 
-// Setup EJS
+// Setup EJS. Folders are found from this file, not from where the app was
+// started, so a host that runs it from elsewhere (like Vercel) finds them
 app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 app.use(expressLayouts);
 // public/ is served as it is, except uploaded photos: those go only to who
 // may see their contact (GET /uploads/:file, below)
-const servePublic = express.static("public");
+const servePublic = express.static(path.join(__dirname, "public"));
 app.use((req, res, next) =>
   req.path.startsWith("/uploads/") ? next() : servePublic(req, res, next)
 );
@@ -1525,8 +1528,13 @@ app.use((err, req, res, next) => {
 });
 
 // Only this computer can reach the app (HOST=0.0.0.0 opens it to the
-// network)
+// network). It listens only when started with `node app.js`; a host like
+// Vercel takes the exported app and runs it itself
 const host = process.env.HOST || "127.0.0.1";
-app.listen(port, host, () => {
-  console.log(`Nook | listening at http://localhost:${port}`);
-});
+if (require.main === module) {
+  app.listen(port, host, () => {
+    console.log(`Nook | listening at http://localhost:${port}`);
+  });
+}
+
+module.exports = app;
