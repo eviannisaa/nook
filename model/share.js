@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
-// Someone a contact or note is shared with, and whether they may edit it
-// (only its owner may delete or share it further)
+// Orang yang diberi akses ke kontak atau catatan, dan boleh mengedit atau
+// tidak. Cuma pemiliknya yang boleh menghapus atau membagikan lagi
 module.exports = new mongoose.Schema(
   {
     user: {

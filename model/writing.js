@@ -5,14 +5,14 @@ const Writing = mongoose.model(
   "Writing",
   new mongoose.Schema(
     {
-      // the account it belongs to
+      // akun pemiliknya
       owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
         index: true,
       },
-      // other accounts it is shared with
+      // akun lain yang diberi akses
       shares: {
         type: [shareSchema],
         default: [],
@@ -25,12 +25,12 @@ const Writing = mongoose.model(
         type: String,
         required: true,
       },
-      // Words of the note without markup or images, for previews and
-      // search; empty while the note is encrypted
+      // Teks catatan tanpa HTML dan gambar, untuk preview dan pencarian.
+      // Dihapus selama catatan terkunci, supaya isinya tidak bisa dibaca
       text: {
         type: String,
       },
-      // the paper the note was written on
+      // jenis kertas tempat catatan ditulis
       paper: {
         type: String,
         enum: ["plain", "lined"],
@@ -43,8 +43,8 @@ const Writing = mongoose.model(
         type: Date,
         required: true,
       },
-      // when the note was last saved from the edit page (not when it was
-      // locked or unlocked, which updatedAt also counts)
+      // waktu terakhir catatan diedit dari halaman edit. Beda dengan
+      // updatedAt, yang ikut berubah saat catatan dikunci atau dibuka
       editedAt: {
         type: Date,
       },
@@ -52,16 +52,16 @@ const Writing = mongoose.model(
         type: Boolean,
         default: false,
       },
-      // Only set while the note is encrypted
+      // salt dan iv cuma ada selama catatan terkunci
       salt: {
         type: String,
       },
       iv: {
         type: String,
       },
-      // 2: locked in the browser (PBKDF2-SHA256 + AES-256-GCM, base64, the
-      // auth tag on the ciphertext's end). Unset on a note locked on the
-      // server before that (scrypt, hex, with its own authTag)
+      // cara catatan dikunci. 2 = dikunci di browser (cara sekarang).
+      // Kosong = catatan lama yang dikunci di server, yang punya authTag
+      // sendiri
       encVersion: {
         type: Number,
       },

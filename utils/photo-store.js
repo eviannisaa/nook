@@ -2,19 +2,19 @@ const fs = require("fs");
 const path = require("path");
 const Minio = require("minio");
 
-// Where contact photos are kept. With MINIO_ENDPOINT set they go to a
-// MinIO (or any S3-compatible) bucket, so the app needs no disk of its own
-// (a host like Vercel can't write to it); without it they stay in
-// public/uploads, for running on this computer. Either way a photo is
-// known by its name only and is never public: the app hands it out after
-// checking who may see it.
+// Tempat menyimpan foto kontak. Kalau MINIO_ENDPOINT diisi, foto masuk ke
+// bucket MinIO (atau layanan sejenis, seperti S3). Jadi app tidak butuh
+// disk, karena host seperti Vercel tidak bisa menulis ke disk. Kalau
+// kosong, foto disimpan di public/uploads, untuk dipakai di komputer ini.
+// Foto tidak pernah bisa dibuka langsung dari luar. App cuma mengirimnya
+// ke orang yang boleh melihat.
 const UPLOAD_DIR = path.join(__dirname, "..", "public", "uploads");
 
 const CONTENT_TYPES = { ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif" };
 const contentType = (name) => CONTENT_TYPES[path.extname(name)] || "application/octet-stream";
 
-// MINIO_ENDPOINT is a full address, like https://minio.example.com or
-// http://127.0.0.1:9000
+// MINIO_ENDPOINT berisi alamat lengkap, misalnya https://minio.example.com
+// atau http://127.0.0.1:9000
 const minioClient = () => {
   const url = new URL(process.env.MINIO_ENDPOINT);
   const useSSL = url.protocol === "https:";
@@ -33,7 +33,8 @@ const minioStore = () => {
   const bucket = process.env.MINIO_BUCKET || "nook-uploads";
   const region = process.env.MINIO_REGION || "us-east-1";
 
-  // the bucket is made (private) on first use; a failed try is tried again
+  // bucket dibuat (privat) saat pertama dipakai. Kalau gagal, dicoba lagi
+  // di upload berikutnya
   let ready;
   const bucketReady = () => {
     ready ||= client
@@ -54,7 +55,7 @@ const minioStore = () => {
     async remove(name) {
       await client.removeObject(bucket, name);
     },
-    // a readable stream of the photo, or null when there is none
+    // isi foto untuk dikirim, atau null kalau fotonya tidak ada
     async open(name) {
       try {
         return await client.getObject(bucket, name);

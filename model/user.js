@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
-// One account per person; everything they make is theirs alone unless they
-// share it (see the shares on Contact and Writing)
+// Satu akun untuk satu orang. Semua yang dibuat akun ini cuma bisa dibuka
+// pemiliknya, kecuali dibagikan (lihat shares di Contact dan Writing)
 const User = mongoose.model(
   "User",
   new mongoose.Schema(
     {
-      // kept lowercase, so "Ani" and "ani" are the same account
+      // disimpan dalam huruf kecil, jadi "Ani" dan "ani" itu akun yang sama
       username: {
         type: String,
         required: true,
@@ -15,8 +15,8 @@ const User = mongoose.model(
         trim: true,
         match: /^[a-z0-9_.]{3,24}$/,
       },
-      // scrypt: "scrypt$N$r$p$salt$hash", or "salt:hash" from before
-      // (utils/password.js)
+      // password yang sudah diacak, bukan password aslinya. Caranya ada di
+      // utils/password.js
       passwordHash: {
         type: String,
         required: true,

@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
-// A kind of mark that can be put on calendar days, all made by hand
+// Jenis tanda untuk hari di kalender. Semuanya dibuat sendiri oleh user
 // ("Fasting", "Gym", "Sick", ...)
 const Marker = mongoose.model(
   "Marker",
   new mongoose.Schema(
     {
-      // the account it belongs to
+      // akun pemiliknya
       owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
