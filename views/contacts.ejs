@@ -313,6 +313,20 @@
     margin-bottom: 0.25rem;
   }
 
+  /* a small badge on the avatar of a contact someone shared with you */
+  .contact-shared {
+    position: absolute;
+    right: -0.35rem;
+    bottom: -0.2rem;
+    display: inline-flex;
+    padding: 0.2rem;
+    font-size: 0.7rem;
+    color: var(--color-ink);
+    background-color: color-mix(in srgb, var(--color-mint) 70%, var(--color-card));
+    border: 1.5px solid var(--color-card);
+    border-radius: 999px;
+  }
+
   /* reading order inside a card: number first, then name, then the avatar */
   .contact-name {
     font-size: 0.95rem;
@@ -537,7 +551,6 @@
 <div class="contacts-page list-page mx-auto grid w-full max-w-3xl grid-cols-1 gap-6 p-6 pt-14 pb-28">
   <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
     <div class="flex items-end gap-4">
-      <%- include("partials/peep", { pose: "call", cls: "header-peep-fade -mb-1 hidden h-24 sm:block" }) %>
       <div class="pb-1">
         <h2 class="header-title mb-1 text-4xl">
           <span class="header-title-mark">Contacts</span>
@@ -665,6 +678,13 @@
               <img src="<%= contact.image %>" alt="" class="contact-avatar object-cover" />
               <% } else { %>
               <span class="contact-avatar text-sm font-bold"><%= initials(contact.name) %></span>
+              <% } %>
+              <% if (String(contact.owner._id) !== String(user._id)) { %>
+              <!-- someone else's contact, shared with this account -->
+              <span class="contact-shared" title="Shared by <%= contact.owner.username %>">
+                <%- include("partials/doodle-icon", { name: "share" }) %>
+                <span class="sr-only">Shared by <%= contact.owner.username %></span>
+              </span>
               <% } %>
             </span>
 

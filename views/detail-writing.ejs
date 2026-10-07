@@ -229,7 +229,6 @@
        the note's actions on the same line -->
   <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
     <div class="detail-header-text flex items-end gap-4">
-      <%- include("partials/peep", { pose: "read", cls: "header-peep-fade -mb-1 hidden h-24 sm:block" }) %>
       <div class="pb-1">
         <h2 class="header-title mb-1 text-4xl">
           <span class="header-title-mark">Writing</span>
@@ -260,14 +259,21 @@
           <span class="actions-menu-chevron" aria-hidden="true"><%- include("partials/doodle-icon", { name: "chevron-right" }) %></span>
         </button>
         <div class="actions-menu-list" id="note-actions-menu" role="menu" aria-label="Note actions">
+          <% if (access !== "view") { %>
           <a href="/writing/edit/<%= writing._id %>" role="menuitem">
             <%- include("partials/doodle-icon", { name: "pencil" }) %>
             Edit
           </a>
+          <% } %>
           <!-- a locked note's PDF waits until it's opened -->
           <button type="button" role="menuitem" id="note-pdf" data-file="<%= pdfName %>" <%= lockedNote ? "hidden" : "" %>>
             <%- include("partials/doodle-icon", { name: "download" }) %>
             <span id="note-pdf-label">Download PDF</span>
+          </button>
+          <% if (access === "owner") { %>
+          <button type="button" role="menuitem" onclick="openModal(document.getElementById('share-modal'))">
+            <%- include("partials/doodle-icon", { name: "share" }) %>
+            Share
           </button>
           <% if (writing.isEncrypted) { %>
           <button type="button" role="menuitem" onclick="openKeyModal(event, 'decrypt', '<%= writing._id %>')">
@@ -285,6 +291,14 @@
             <%- include("partials/doodle-icon", { name: "trash" }) %>
             Delete
           </button>
+          <% } else { %>
+          <!-- shared with this account: taken off it only -->
+          <span class="actions-menu-sep" role="separator"></span>
+          <button type="button" role="menuitem" class="is-danger" onclick="openDeleteModal()">
+            <%- include("partials/doodle-icon", { name: "trash" }) %>
+            Remove from my notes
+          </button>
+          <% } %>
         </div>
       </div>
     </div>
@@ -292,6 +306,12 @@
 
   <!-- card -->
   <div class="detail-card grid grid-cols-1 gap-6 p-6 sm:p-8" data-stagger style="--i: 1">
+    <% if (access !== "owner") { %>
+    <p class="detail-shared justify-self-start">
+      <%- include("partials/doodle-icon", { name: "share" }) %>
+      Shared by <%= writing.owner.username %> · <%= access === "edit" ? "you can edit" : "view only" %>
+    </p>
+    <% } %>
     <div class="detail-rows">
       <div class="detail-row">
         <span class="detail-row-icon" style="--icon-bg: var(--color-blush)">
@@ -364,16 +384,29 @@
     </div>
   </div>
 
-  <!-- delete confirmation -->
+  <% if (access === "owner") { %>
+  <%- include("partials/share-modal", { base: "/writing/" + writing._id, noun: "note", shares }) %>
+  <% } %>
+
+  <!-- delete confirmation (shared with this account: taken off it only,
+       the owner keeps it) -->
   <div id="delete-modal" class="doodle-modal">
     <div class="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <% if (access === "owner") { %>
       <h2 id="delete-title" class="mb-1 text-2xl">Delete note?</h2>
       <p class="text-ink-soft font-comic font-bold">
         <%= writing.title %> will be removed from your notes.
       </p>
+      <% } else { %>
+      <h2 id="delete-title" class="mb-1 text-2xl">Remove note?</h2>
+      <p class="text-ink-soft font-comic font-bold">
+        <%= writing.title %> will be removed from your notes. <%= writing.owner.username %> still keeps it.
+      </p>
+      <% } %>
 
       <div class="mt-6 flex items-center justify-end gap-2">
         <button type="button" onclick="closeDeleteModal()" class="delete-link">Cancel</button>
+        <% if (access === "owner") { %>
         <form id="delete-form" action="/writing?_method=DELETE" method="post">
           <input type="hidden" name="_id" value="<%= writing._id %>" />
           <input type="hidden" name="title" value="<%= writing.title %>" />
@@ -381,6 +414,13 @@
             Yes
           </button>
         </form>
+        <% } else { %>
+        <form id="delete-form" action="/writing/<%= writing._id %>/shares/<%= user._id %>?_method=DELETE" method="post">
+          <button type="submit" class="doodle-btn doodle-btn-sm doodle-btn-danger">
+            Yes
+          </button>
+        </form>
+        <% } %>
       </div>
     </div>
   </div>

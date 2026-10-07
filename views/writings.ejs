@@ -352,6 +352,11 @@
     overflow: hidden;
   }
 
+  /* the Highlight menu may hang out over the marks below */
+  .day-notes.is-menu-open {
+    overflow: visible;
+  }
+
   .day-modal-body > .day-empty {
     padding-block: 0.75rem 1rem;
   }
@@ -688,6 +693,42 @@
     transition: color 0.45s var(--ease-smooth);
   }
 
+  /* tags under the time in the margin: a locked note, and a note someone
+     shared with this account (who it's from, in the same mint pill as on
+     the note's own page; a long name is cut short, the title says it whole) */
+  .day-note-locked,
+  .day-note-shared {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 0.2rem;
+    max-width: 100%;
+    margin-top: 0.2rem;
+    padding: 0.05rem 0.4rem;
+    font-size: 0.7rem;
+    color: var(--color-ink);
+    background-color: color-mix(in srgb, var(--color-mint) 60%, var(--color-card));
+    border-radius: 999px;
+  }
+
+  /* locked: the terracotta the padlock always had */
+  .day-note-locked {
+    color: var(--color-berry);
+    background-color: color-mix(in srgb, var(--color-blush) 70%, var(--color-card));
+  }
+
+  .day-note-locked .doodle-i,
+  .day-note-shared .doodle-i {
+    flex-shrink: 0;
+  }
+
+  .day-note-shared-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   /* locked notes are buttons (they open the key popup), so reset the
      button look to match the link rows */
   button.day-note {
@@ -696,23 +737,6 @@
     text-align: left;
     font: inherit;
     background: none;
-  }
-
-  /* the padlock takes the arrow's place: always a bit stronger than the
-     arrow, and on hover it wiggles like a lock being tried */
-  .day-note-go.day-note-lock {
-    --go-blob: var(--color-blush);
-    color: var(--color-berry);
-  }
-
-  .day-note-lock .doodle-i {
-    width: 1.15em;
-    height: 1.15em;
-  }
-
-  .day-note.is-locked:hover .day-note-go,
-  .day-note.is-locked:focus-visible .day-note-go {
-    transform: rotate(-10deg);
   }
 
   .day-note-text {
@@ -726,9 +750,9 @@
   }
 
 
-  /* arrow / padlock: just the coloured doodle, sage for a note you can
-     open, terracotta for one that needs its key. The row itself stays
-     plain on hover; only the icon gets a soft wobbly blob behind it */
+  /* the arrow: just the sage doodle, on every note (a locked one says so
+     under its time). The row itself stays plain on hover; only the arrow
+     gets a soft wobbly blob behind it */
   .day-note-go {
     --go-blob: var(--color-mint);
     position: relative;
@@ -745,7 +769,7 @@
     will-change: transform;
   }
 
-  /* only the arrow / padlock answers the pointer: the rest of the row
+  /* only the arrow answers the pointer: the rest of the row
      neither clicks nor hovers. A click on it still reaches the row's link
      (or unlock button), and hovering it still lights up the row */
   .day-note {
@@ -802,7 +826,6 @@
     }
 
     .day-note:hover .day-note-go,
-    .day-note.is-locked:hover .day-note-go,
     .day-modal-close:hover {
       transform: none;
     }
@@ -919,6 +942,11 @@
 
     .day-note-time {
       font-size: 0.8rem;
+    }
+
+    .day-note-locked,
+    .day-note-shared {
+      margin-top: 0;
     }
   }
 
@@ -2116,7 +2144,6 @@
 <div class="list-page mx-auto grid w-full max-w-3xl grid-cols-1 gap-6 p-6 pt-14 pb-28">
   <div class="header flex items-end justify-between gap-4" data-stagger style="--i: 0">
     <div class="flex items-end gap-4">
-      <%- include("partials/peep", { pose: "write", cls: "header-peep-fade -mb-1 hidden h-24 sm:block" }) %>
       <div class="pb-1">
         <h2 class="header-title mb-1 text-4xl">
           <span class="header-title-mark">Writing</span>
@@ -2320,7 +2347,6 @@
     <div class="doodle-card day-modal-card flex max-h-[85vh] w-full max-w-2xl flex-col">
       <div class="day-modal-head flex items-start justify-between gap-4">
         <div class="flex items-end gap-3">
-          <%- include("partials/peep", { pose: "read", cls: "header-peep-fade day-modal-peep hidden h-16 sm:block" }) %>
           <div>
             <h2 id="day-modal-title" class="day-modal-title">
               <span id="day-modal-weekday" class="day-modal-weekday"></span>
@@ -2546,7 +2572,7 @@
       <% if (writing.isEncrypted) { %>
       <button
         type="button"
-        class="day-note is-locked"
+        class="day-note"
         data-kind="locked"
         onclick="location.href = '/writing/<%= writing._id %>#open'"
         aria-label="<%= writing.title %>, locked. Enter the key to open"
@@ -2556,20 +2582,31 @@
       <% } %>
         <span class="day-note-meta">
           <span class="day-note-time"><%= formatTime(writing.date) %></span>
+          <% if (writing.isEncrypted) { %>
+          <span class="day-note-locked">
+            <%- include("partials/doodle-icon", { name: "lock" }) %>
+            Locked
+          </span>
+          <% } %>
+          <% if (writing.owner && String(writing.owner._id) !== String(user._id)) { %>
+          <!-- someone else's note, shared with this account -->
+          <span class="day-note-shared" title="Shared by <%= writing.owner.username %>">
+            <%- include("partials/doodle-icon", { name: "share" }) %>
+            <span class="sr-only">Shared by</span>
+            <span class="day-note-shared-name"><%= writing.owner.username %></span>
+          </span>
+          <% } %>
         </span>
         <span class="day-note-main">
           <span class="day-note-title"><%= writing.title %></span>
           <span class="day-note-text"><span class="day-note-ink"><%= writing.isEncrypted ? writing.content : writing.text %></span></span>
         </span>
-        <% if (writing.isEncrypted) { %>
-        <span class="day-note-go day-note-lock" aria-hidden="true">
-          <%- include("partials/doodle-icon", { name: "lock" }) %>
-        </span>
-      </button>
-        <% } else { %>
         <span class="day-note-go" aria-hidden="true">
           <%- include("partials/doodle-icon", { name: "arrow-right" }) %>
         </span>
+        <% if (writing.isEncrypted) { %>
+      </button>
+        <% } else { %>
       </a>
         <% } %>
       <% }) %>
@@ -2598,7 +2635,7 @@
       <% if (writing.isEncrypted) { %>
       <button
         type="button"
-        class="day-note is-locked"
+        class="day-note"
         data-kind="locked"
         data-stagger
         style="--i: <%= i + 3 %>"
@@ -2611,20 +2648,31 @@
         <span class="day-note-meta">
           <span class="day-note-day"><%= formatNoteDay(writing.date) %><% if (year) { %> <span class="day-note-year"><%= year %></span><% } %></span>
           <span class="day-note-time"><%= formatTime(writing.date) %></span>
+          <% if (writing.isEncrypted) { %>
+          <span class="day-note-locked">
+            <%- include("partials/doodle-icon", { name: "lock" }) %>
+            Locked
+          </span>
+          <% } %>
+          <% if (writing.owner && String(writing.owner._id) !== String(user._id)) { %>
+          <!-- someone else's note, shared with this account -->
+          <span class="day-note-shared" title="Shared by <%= writing.owner.username %>">
+            <%- include("partials/doodle-icon", { name: "share" }) %>
+            <span class="sr-only">Shared by</span>
+            <span class="day-note-shared-name"><%= writing.owner.username %></span>
+          </span>
+          <% } %>
         </span>
         <span class="day-note-main">
           <span class="day-note-title"><%= writing.title %></span>
           <span class="day-note-text"><span class="day-note-ink"><%= writing.isEncrypted ? writing.content : writing.text %></span></span>
         </span>
-        <% if (writing.isEncrypted) { %>
-        <span class="day-note-go day-note-lock" aria-hidden="true">
-          <%- include("partials/doodle-icon", { name: "lock" }) %>
-        </span>
-      </button>
-        <% } else { %>
         <span class="day-note-go" aria-hidden="true">
           <%- include("partials/doodle-icon", { name: "arrow-right" }) %>
         </span>
+        <% if (writing.isEncrypted) { %>
+      </button>
+        <% } else { %>
       </a>
         <% } %>
       <% }) %>
@@ -2779,9 +2827,18 @@
     kindToggle.setAttribute("aria-label", kind ? "Highlight: " + kindNames[kind] : "Highlight");
   }
 
+  // the notes section clips what spills out of it, the menu too: while the
+  // menu is out it doesn't, until the menu has faded away (.kind-menu's
+  // 0.35s) so it isn't cut off as it goes
+  const kindNotes = kindRow.closest(".day-notes");
+  let kindClipTimer;
+
   function toggleKindMenu(open) {
     const show = open ?? !kindRow.classList.contains("is-open");
     kindRow.classList.toggle("is-open", show);
+    clearTimeout(kindClipTimer);
+    if (show) kindNotes.classList.add("is-menu-open");
+    else kindClipTimer = setTimeout(() => kindNotes.classList.remove("is-menu-open"), 350);
     if (!show) glideAway();
     kindToggle.setAttribute("aria-expanded", String(show));
     if (show) kindMenu.querySelector('[aria-checked="true"]')?.focus();

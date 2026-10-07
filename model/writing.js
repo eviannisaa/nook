@@ -1,9 +1,22 @@
 const mongoose = require("mongoose");
+const shareSchema = require("./share");
 
 const Writing = mongoose.model(
   "Writing",
   new mongoose.Schema(
     {
+      // the account it belongs to
+      owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        index: true,
+      },
+      // other accounts it is shared with
+      shares: {
+        type: [shareSchema],
+        default: [],
+      },
       title: {
         type: String,
         required: true,
